@@ -1,0 +1,304 @@
+{
+  "katalog_version": "2025-02",
+  "basis": ["GwG 2017 i.d.F. 2024", "§25h KWG", "AMLA-Leitlinien", "BaFin AuA GwG"],
+  "pruefsektionen": [
+
+    {
+      "id": "S01",
+      "titel": "Risikoanalyse (§5 GwG)",
+      "rechtsgrundlagen": ["§5 GwG", "§25h Abs.1 KWG"],
+      "prueffelder": [
+        {
+          "id": "S01-01",
+          "frage": "Liegt eine dokumentierte, institutsindividuelle Risikoanalyse vor?",
+          "erwartete_evidenz": ["Risikoanalysedokument", "Versionierung", "Erstellungsdatum"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Dokument muss vorhanden, datiert und versioniert sein",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Es liegt keine dokumentierte Risikoanalyse gemäß §5 GwG vor."
+        },
+        {
+          "id": "S01-02",
+          "frage": "Wurde die Risikoanalyse in den letzten 12 Monaten aktualisiert bzw. auf Aktualität geprüft?",
+          "erwartete_evidenz": ["Revisionsdatum", "Revisionsprotokoll", "Freigabevermerk"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Letzte Überprüfung darf nicht älter als 12 Monate sein",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Risikoanalyse wurde nicht innerhalb des gesetzlich geforderten Turnus aktualisiert."
+        },
+        {
+          "id": "S01-03",
+          "frage": "Wurden alle relevanten Risikofaktoren berücksichtigt (Kunden, Produkte, Vertriebskanäle, Geografie)?",
+          "erwartete_evidenz": ["Abschnitte zu Kundenrisiko", "Produktrisiko", "Länderrisiko", "Kanalrisiko"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Alle vier BaFin-Risikodimensionen müssen adressiert sein",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Risikoanalyse deckt nicht alle nach GwG geforderten Risikodimensionen ab."
+        },
+        {
+          "id": "S01-04",
+          "frage": "Wurde die Risikoanalyse von der Geschäftsleitung genehmigt?",
+          "erwartete_evidenz": ["Unterschrift GL", "Freigabeprotokoll", "Vorstandsbeschluss"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Nachweis der GL-Genehmigung muss vorliegen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Eine nachweisliche Genehmigung der Risikoanalyse durch die Geschäftsleitung fehlt."
+        }
+      ]
+    },
+
+    {
+      "id": "S02",
+      "titel": "Kundensorgfaltspflichten (§§ 10-13 GwG)",
+      "rechtsgrundlagen": ["§10 GwG", "§11 GwG", "§12 GwG", "§13 GwG"],
+      "prueffelder": [
+        {
+          "id": "S02-01",
+          "frage": "Werden bei Neukunden die allgemeinen Sorgfaltspflichten (Identifizierung) vollständig erfüllt?",
+          "erwartete_evidenz": ["KYC-Prozessbeschreibung", "Onboarding-Checkliste", "Systemscreenshot Identifizierungsprozess"],
+          "input_typen": ["pdf", "screenshot", "excel"],
+          "bewertungskriterien": "Vollständige Identifizierung natürlicher/juristischer Personen inkl. wO-Ermittlung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Der Identifizierungsprozess entspricht nicht den Anforderungen des §10 GwG."
+        },
+        {
+          "id": "S02-02",
+          "frage": "Wird der wirtschaftlich Berechtigte (wB) systematisch ermittelt und dokumentiert?",
+          "erwartete_evidenz": ["wB-Ermittlungslogik", "Transparenzregisterabfragen", "Datenbankabzug wB-Quote"],
+          "input_typen": ["pdf", "excel", "screenshot"],
+          "bewertungskriterien": "wB muss bei juristischen Personen stets ermittelt werden; keine Pseudonymisierung ohne Begründung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die systematische Ermittlung des wirtschaftlich Berechtigten weist Lücken auf."
+        },
+        {
+          "id": "S02-03",
+          "frage": "Werden PEPs (Politisch exponierte Personen) erkannt und verstärkte Maßnahmen angewandt?",
+          "erwartete_evidenz": ["PEP-Screening-Prozess", "Eingesetzte PEP-Datenbanken", "Eskalationsverfahren"],
+          "input_typen": ["pdf", "screenshot", "interview"],
+          "bewertungskriterien": "PEP-Screening muss bei Onboarding und laufend erfolgen; GL-Freigabe für PEP-Geschäftsbeziehungen",
+          "schweregrad": "wesentlich",
+          "mangel_template": "PEP-Erkennung und verstärkte Sorgfaltspflichten sind nicht ausreichend implementiert."
+        },
+        {
+          "id": "S02-04",
+          "frage": "Werden Sanktionslisten (EU, UN, OFAC) systematisch und aktuell abgeglichen?",
+          "erwartete_evidenz": ["Sanktions-Screening-System", "Aktualisierungsfrequenz", "Treffermanagement-Prozess"],
+          "input_typen": ["pdf", "screenshot", "interview"],
+          "bewertungskriterien": "Echtzeit- oder tagesaktuelle Sanktionslistenprüfung, dokumentiertes Treffermanagement",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das Sanktionslistenscreening ist nicht anforderungskonform."
+        },
+        {
+          "id": "S02-05",
+          "frage": "Werden Hochrisikoländer (§15 GwG, EU-Hochrisikoliste) bei der Risikoklassifizierung berücksichtigt?",
+          "erwartete_evidenz": ["Länderliste im System", "Aktualisierungsnachweis", "Verstärkte Maßnahmen bei Hochrisikoländern"],
+          "input_typen": ["excel", "screenshot", "pdf"],
+          "bewertungskriterien": "EU-Delegierte Verordnung Hochrisikoliste muss aktuell im System hinterlegt sein",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Hochrisikoländer werden nicht korrekt oder aktuell im System berücksichtigt."
+        },
+        {
+          "id": "S02-06",
+          "frage": "Werden bestehende Kunden im Rahmen einer laufenden Überwachung re-identifiziert und neu bewertet?",
+          "erwartete_evidenz": ["Re-KYC-Prozess", "Trigger-basierte Aktualisierungen", "Datenbankabzug veralteter KYC-Daten"],
+          "input_typen": ["pdf", "excel", "interview"],
+          "bewertungskriterien": "Risikobasierter Re-KYC-Zyklus dokumentiert und nachweislich implementiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Ein systematischer Re-KYC-Prozess für Bestandskunden ist nicht erkennbar."
+        }
+      ]
+    },
+
+    {
+      "id": "S03",
+      "titel": "Transaktionsmonitoring (§25h Abs.2 KWG, §10 Abs.1 Nr.5 GwG)",
+      "rechtsgrundlagen": ["§25h Abs.2 KWG", "§10 Abs.1 Nr.5 GwG", "BaFin-Auslegungshinweise TM"],
+      "prueffelder": [
+        {
+          "id": "S03-01",
+          "frage": "Ist ein automatisiertes Transaktionsmonitoringsystem im Einsatz?",
+          "erwartete_evidenz": ["Systemdokumentation", "Vendor-Info", "Architekturdiagramm"],
+          "input_typen": ["pdf", "screenshot", "interview"],
+          "bewertungskriterien": "Automatisiertes TM-System muss nachweislich vorhanden und produktiv sein",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Es ist kein ausreichendes automatisiertes Transaktionsmonitoring implementiert."
+        },
+        {
+          "id": "S03-02",
+          "frage": "Sind die Monitoringszenarien und -schwellenwerte dokumentiert und methodisch begründet?",
+          "erwartete_evidenz": ["Szenariodokumentation", "Kalibrierungsnachweis", "Backtesting-Berichte"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Mindestens Dokumentation aller aktiven Szenarien inkl. Begründung der Schwellenwerte",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Transaktionsmonitoringszenarien sind nicht ausreichend dokumentiert oder methodisch begründet."
+        },
+        {
+          "id": "S03-03",
+          "frage": "Werden Alerts zeitnah und vollständig bearbeitet? Gibt es ein Rückstau-Problem?",
+          "erwartete_evidenz": ["Alert-Bearbeitungszeiten", "Rückstau-Reporting", "SLA-Dokumentation"],
+          "input_typen": ["excel", "screenshot", "pdf"],
+          "bewertungskriterien": "Bearbeitungszeit-KPIs vorhanden; kein signifikanter, nicht begründeter Rückstau",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Alert-Bearbeitung erfolgt nicht zeitnah; ein Rückstau wurde festgestellt."
+        },
+        {
+          "id": "S03-04",
+          "frage": "Wird die Qualität und Wirksamkeit des TM-Systems regelmäßig validiert?",
+          "erwartete_evidenz": ["Validierungsberichte", "Modell-Risiko-Framework", "Externe Review-Ergebnisse"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Mindestens jährliche Wirksamkeitsprüfung des TM nachweisbar",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Eine regelmäßige Wirksamkeitsvalidierung des Transaktionsmonitorings fehlt."
+        }
+      ]
+    },
+
+    {
+      "id": "S04",
+      "titel": "Geldwäschebeauftragter (§7 GwG)",
+      "rechtsgrundlagen": ["§7 GwG", "§25h Abs.7 KWG"],
+      "prueffelder": [
+        {
+          "id": "S04-01",
+          "frage": "Ist ein Geldwäschebeauftragter (GwB) ordnungsgemäß bestellt und der BaFin gemeldet?",
+          "erwartete_evidenz": ["Bestellungsbeschluss", "BaFin-Meldenachweis", "Stellenbeschreibung GwB"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Förmliche Bestellung und Meldung an BaFin muss nachgewiesen werden",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Der Geldwäschebeauftragte ist nicht ordnungsgemäß bestellt oder der BaFin gemeldet."
+        },
+        {
+          "id": "S04-02",
+          "frage": "Verfügt der GwB über ausreichende Ressourcen, Kompetenzen und Unabhängigkeit?",
+          "erwartete_evidenz": ["Organigramm", "Ressourcenplan", "Kompetenznachweise", "Direktberichtsweg GL"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "GwB muss direkt an GL berichten, ausreichende Personalausstattung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Ressourcenausstattung oder Unabhängigkeit des GwB ist nicht gewährleistet."
+        },
+        {
+          "id": "S04-03",
+          "frage": "Erstattet der GwB der Geschäftsleitung regelmäßig Bericht?",
+          "erwartete_evidenz": ["GwB-Jahresberichte", "Vorstandsprotokoll-Auszüge", "Berichtskalender"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Mindestens jährlicher schriftlicher Bericht an GL nachweisbar",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Eine regelmäßige Berichterstattung des GwB an die Geschäftsleitung ist nicht dokumentiert."
+        }
+      ]
+    },
+
+    {
+      "id": "S05",
+      "titel": "Verdachtsmeldewesen (§43 GwG)",
+      "rechtsgrundlagen": ["§43 GwG", "§44 GwG"],
+      "prueffelder": [
+        {
+          "id": "S05-01",
+          "frage": "Ist ein dokumentierter Prozess für die Abgabe von Verdachtsmeldungen (SAR/STR) vorhanden?",
+          "erwartete_evidenz": ["Meldeprozess-Dokumentation", "Eskalationsmatrix", "FIU-Anbindung"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Schriftlicher Meldeprozess inkl. FIU goAML-Anbindung muss vorliegen",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Ein dokumentierter SAR-Prozess gemäß §43 GwG ist nicht vorhanden."
+        },
+        {
+          "id": "S05-02",
+          "frage": "Werden Verdachtsmeldungen fristgerecht und vollständig bei der FIU eingereicht?",
+          "erwartete_evidenz": ["SAR-Meldelog", "Meldestatistik", "FIU-Bestätigungen"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Keine vermeidbaren Fristüberschreitungen; vollständige SAR-Dokumentation",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Verdachtsmeldungen wurden nicht fristgerecht oder nicht vollständig eingereicht."
+        },
+        {
+          "id": "S05-03",
+          "frage": "Wird das Tipping-Off-Verbot (§47 GwG) eingehalten und sind Mitarbeiter sensibilisiert?",
+          "erwartete_evidenz": ["Schulungsnachweis Tipping-Off", "Prozessanweisung", "IT-Kontrollmechanismus"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Nachweisliche Sensibilisierung und technische/organisatorische Kontrollen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Maßnahmen zur Einhaltung des Tipping-Off-Verbots sind nicht ausreichend."
+        }
+      ]
+    },
+
+    {
+      "id": "S06",
+      "titel": "Schulung & Awareness (§6 Abs.2 Nr.6 GwG)",
+      "rechtsgrundlagen": ["§6 Abs.2 Nr.6 GwG", "§25h Abs.3 KWG"],
+      "prueffelder": [
+        {
+          "id": "S06-01",
+          "frage": "Werden alle relevanten Mitarbeiter regelmäßig zu GwG-Themen geschult?",
+          "erwartete_evidenz": ["Schulungsplan", "Teilnehmerlisten", "Schulungsinhalte", "Abschlussquoten"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Jährliche Pflichtschulung für alle relevanten Mitarbeiter, Nachweisführung",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "GwG-Schulungen werden nicht ausreichend oder nicht nachweislich durchgeführt."
+        },
+        {
+          "id": "S06-02",
+          "frage": "Sind Schulungsinhalte aktuell und decken neue Bedrohungsszenarien und Rechtsänderungen ab?",
+          "erwartete_evidenz": ["Letzte Inhaltsrevision", "Typologien in Schulung", "Aktualitätsdatum"],
+          "input_typen": ["pdf"],
+          "bewertungskriterien": "Schulungsinhalte dürfen nicht älter als 18 Monate sein ohne nachgewiesene Überprüfung",
+          "schweregrad": "gering",
+          "mangel_template": "Schulungsinhalte sind nicht aktuell und decken aktuelle Typologien nicht ab."
+        }
+      ]
+    },
+
+    {
+      "id": "S07",
+      "titel": "Aufzeichnungs- und Aufbewahrungspflichten (§8 GwG)",
+      "rechtsgrundlagen": ["§8 GwG"],
+      "prueffelder": [
+        {
+          "id": "S07-01",
+          "frage": "Werden alle nach §8 GwG geforderten Unterlagen vollständig und revisionssicher aufbewahrt?",
+          "erwartete_evidenz": ["Archivierungskonzept", "Systembeschreibung", "Löschkonzept"],
+          "input_typen": ["pdf", "screenshot"],
+          "bewertungskriterien": "5-Jahres-Aufbewahrungsfrist, revisionssichere Archivierung nachweisbar",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Aufzeichnungs- und Aufbewahrungspflichten nach §8 GwG werden nicht vollständig erfüllt."
+        },
+        {
+          "id": "S07-02",
+          "frage": "Können Unterlagen auf Anforderung der BaFin zeitnah bereitgestellt werden?",
+          "erwartete_evidenz": ["Retrievalprozess-Dokumentation", "SLA für BaFin-Anfragen", "Testberichte"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Retrievalfähigkeit innerhalb üblicher BaFin-Fristen (i.d.R. 2-5 Werktage)",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die zeitnahe Bereitstellung von Unterlagen für Behördenanfragen ist nicht sichergestellt."
+        }
+      ]
+    },
+
+    {
+      "id": "S08",
+      "titel": "Interne Revision & Governance (§25h Abs.5 KWG, §4 Abs.3 GwG)",
+      "rechtsgrundlagen": ["§25h Abs.5 KWG", "§4 Abs.3 GwG", "MaRisk BT3.2"],
+      "prueffelder": [
+        {
+          "id": "S08-01",
+          "frage": "Prüft die Interne Revision das AML-Framework regelmäßig und risikobasiert?",
+          "erwartete_evidenz": ["Revisionsplan mit AML-Prüfungen", "Prüfberichte", "Maßnahmenverfolgung"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Mindestens jährliche IR-Prüfung des AML-Frameworks, Feststellungen und Maßnahmen dokumentiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Das AML-Framework wird nicht regelmäßig durch die Interne Revision geprüft."
+        },
+        {
+          "id": "S08-02",
+          "frage": "Werden Mängel aus Prüfungen zeitnah und vollständig behoben (Maßnahmentracking)?",
+          "erwartete_evidenz": ["Maßnahmen-Tracker", "Eskalationsverfahren bei Fristüberschreitung", "Closure-Dokumentation"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Keine wesentlichen offenen Feststellungen ohne begründete Fristverlängerung",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Festgestellte Mängel werden nicht zeitnah behoben; systematisches Maßnahmentracking fehlt."
+        }
+      ]
+    }
+  ]
+}

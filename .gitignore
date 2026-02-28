@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# API Keys – niemals committen!
+.env
+*.env
+secrets.yaml
+
+# Prüfungsdokumente (vertraulich)
+ingestion/pdfs/*.pdf
+ingestion/excel/*.xlsx
+ingestion/excel/*.csv
+ingestion/screenshots/*.png
+ingestion/screenshots/*.jpg
+ingestion/logs/
+
+# Generierte Berichte (optional: einkommentieren wenn Berichte nicht versioniert werden sollen)
+# reports/output/
+
+# Vektorindex-Daten
+chroma_db/
+.chroma/
+*.faiss
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store

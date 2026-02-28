@@ -1,0 +1,23 @@
+# GwG Audit Pipeline – Dependencies
+
+# LlamaIndex Core
+llama-index-core>=0.11.0
+llama-index-readers-file>=0.2.0
+llama-index-embeddings-openai>=0.2.0
+llama-index-llms-anthropic>=0.4.0
+
+# LangChain (für Agenten-Prompting)
+langchain>=0.3.0
+langchain-anthropic>=0.3.0
+langchain-core>=0.3.0
+
+# Dokumenten-Verarbeitung
+pypdf>=4.0.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+pillow>=10.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0
+tqdm>=4.66.0

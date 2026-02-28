@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "institut": "Beispielbank AG",
+    "interviewer": "Prüfer KI",
+    "datum": "2025-02-01",
+    "thema": "GwG-Sonderprüfung – Befragung GwB und Compliance"
+  },
+  "fragen_antworten": [
+    {
+      "id": "I-01",
+      "prueffeld_referenz": "S04-01",
+      "frage": "Seit wann sind Sie als Geldwäschebeauftragter bestellt und wann wurde die Bestellung der BaFin gemeldet?",
+      "antwort": "Ich bin seit dem 15. März 2022 als GwB bestellt. Die Meldung an die BaFin erfolgte am 20. März 2022 per Formular. Der Stellvertreter wurde gleichzeitig gemeldet.",
+      "kommentar": "Bestellungsbeschluss liegt vor, wurde vom Prüfer gesichtet."
+    },
+    {
+      "id": "I-02",
+      "prueffeld_referenz": "S04-02",
+      "frage": "Berichten Sie direkt an den Vorstand? Wie viele Mitarbeiter stehen Ihnen im AML-Team zur Verfügung?",
+      "antwort": "Ja, ich berichte direkt an den Vorstandsvorsitzenden. Das AML-Team besteht aus mir plus 3 Analysten und 1 Teilzeit-Sachbearbeiter. Für ein Institut unserer Größe (ca. 50.000 Kunden) halte ich das für ausreichend, auch wenn wir gelegentlich Spitzen nicht sofort abarbeiten können.",
+      "kommentar": "Organigramm bestätigt Direktberichtsweg."
+    },
+    {
+      "id": "I-03",
+      "prueffeld_referenz": "S03-03",
+      "frage": "Wie ist der aktuelle Stand der TM-Alert-Bearbeitung? Gibt es einen Rückstau?",
+      "antwort": "Wir haben derzeit einen Rückstau von ca. 340 unbearbeiteten Alerts, davon ca. 80 älter als 30 Tage. Das ist auf die Urlaubszeit zurückzuführen. Wir haben intern priorisiert und arbeiten den Rückstau ab.",
+      "kommentar": "ACHTUNG: Rückstau von 80 Alerts über 30 Tage ist kritisch. Excel-Export angefordert."
+    },
+    {
+      "id": "I-04",
+      "prueffeld_referenz": "S05-01",
+      "frage": "Beschreiben Sie Ihren SAR-Meldeprozess. Wie ist die FIU goAML-Anbindung gestaltet?",
+      "antwort": "Verdachtsmeldungen werden intern per Eskalationsformular an mich weitergeleitet. Ich prüfe, ob eine Meldepflicht besteht, und gebe die Meldung über goAML direkt ein. Eine technische System-zu-System-Anbindung haben wir nicht, wir nutzen das goAML-Webportal manuell.",
+      "kommentar": null
+    },
+    {
+      "id": "I-05",
+      "prueffeld_referenz": "S01-04",
+      "frage": "Wurde die Risikoanalyse zuletzt vom Vorstand genehmigt? Können Sie den Beschluss vorweisen?",
+      "antwort": "Die letzte Risikoanalyse wurde im Vorstand besprochen, aber ich muss ehrlich sagen, ich finde gerade keinen schriftlichen Vorstandsbeschluss dazu. Das war eher eine mündliche Abnahme in der Vorstandssitzung vom Oktober 2024.",
+      "kommentar": "MANGEL: Kein schriftlicher GL-Genehmigungsnachweis. Vorstandsprotokoll angefordert, noch nicht erhalten."
+    },
+    {
+      "id": "I-06",
+      "prueffeld_referenz": "S06-01",
+      "frage": "Wann fanden die letzten GwG-Pflichtschulungen statt? Wer wurde geschult?",
+      "antwort": "Die letzte allgemeine GwG-Pflichtschulung war im April 2024 als E-Learning-Pflichtmodul für alle Mitarbeiter. Die Abschlussquote lag bei 92%. Für Mitarbeiter im Frontoffice gab es zusätzlich eine Präsenzschulung im September 2024 zu PEP und Sanktionen.",
+      "kommentar": "Schulungsnachweis-Excel liegt vor."
+    },
+    {
+      "id": "I-07",
+      "prueffeld_referenz": "S02-02",
+      "frage": "Wie ermitteln Sie den wirtschaftlich Berechtigten bei komplexen Konzernstrukturen?",
+      "antwort": "Bei juristischen Personen fragen wir immer das Transparenzregister ab und nehmen einen Eigentümerstruktur-Selbstauskunftsbogen ab. Bei komplexen Strukturen schalten wir externe Datenbankdienste (Orbis/Bureau van Dijk) ein. Es gibt Fälle, wo die Ermittlung offen bleibt und wir als wB die Geschäftsführung eintragen – das ist aber dokumentiert.",
+      "kommentar": null
+    }
+  ]
+}
