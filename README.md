@@ -31,9 +31,9 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 | Regulatorik | Status | Prüffelder | Rechtsgrundlage |
 |---|---|---|---|
 | **GwG / AML** | ✅ Verfügbar | 34 | GwG, §25h KWG, BaFin AuA |
-| **MaRisk** | 🚧 In Entwicklung | ~ | MaRisk AT/BT Module |
-| **DORA** | 🗓️ Geplant | ~ | DORA Art. 17ff., RTS |
-| **WpHG / MaComp** | 🗓️ Geplant | ~ | MaComp |
+| **MaRisk** | ✅ Verfügbar | 22 | MaRisk AT/BT, §25a KWG |
+| **DORA** | ✅ Verfügbar | 18 | DORA Art. 5-46, RTS |
+| **WpHG / MaComp** | ✅ Verfügbar | 20 | WpHG, MaComp, MAR, MiFID II |
 
 ---
 
@@ -113,8 +113,8 @@ meine_dokumente/
 ### 4. Prüfung starten
 
 ```bash
-# Vollständige GwG-Sonderprüfung
-python pipeline.py --input ./meine_dokumente --institution "Musterbank AG"
+# GwG-Sonderprüfung (AML)
+python pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
 
 # Nur bestimmte Sektionen (Schnellprüfung)
 python pipeline.py --input ./docs --sektionen S01 S02 S05
@@ -269,3 +269,28 @@ integrieren, solange der Copyright-Vermerk erhalten bleibt.
 <div align="center">
   <sub>Gebaut mit LlamaIndex · LangChain · Claude · ❤️</sub>
 </div>
+
+---
+
+## 🗂️ Alle Prüfkataloge im Überblick
+
+| Regulatorik | Sektionen | Prüffelder | Schwerpunkte |
+|---|---|---|---|
+| **GwG** | 8 | 34 | Risikoanalyse, KYC, TM, GwB, SAR, Schulung |
+| **DORA** | 5 | 18 | IKT-Risiko, Incident Reporting, TLPT, Drittparteien |
+| **MaRisk** | 8 | 22 | Strategie, IKS, RTF, Kredit, Handel, IR, Compliance |
+| **WpHG** | 7 | 20 | Compliance, Interessenkonflikte, Geeignetheit, MAR, Best Execution |
+
+```bash
+# GwG Sonderprüfung
+python pipeline.py --input ./docs --regulatorik gwg
+
+# DORA Prüfung (nur Drittparteienrisiko)
+python pipeline.py --input ./docs --regulatorik dora --sektionen D04
+
+# MaRisk Vollprüfung
+python pipeline.py --input ./docs --regulatorik marisk --institution "Musterbank AG"
+
+# WpHG / MaComp
+python pipeline.py --input ./docs --regulatorik wphg --sektionen W02 W03 W04
+```

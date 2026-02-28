@@ -1,13 +1,16 @@
 """
-GwG Audit Pipeline – Hauptorchestrator
-Führt die gesamte Prüfung durch: Ingest → Index → Prüfen → Bericht
+FinRegAgents – Multi-Regulatorik Audit-Pipeline
+Unterstützte Regulatorik: GwG, DORA, MaRisk, WpHG/MaComp
 
-Verwendung:
-    python pipeline.py --input ./meine_dokumente --institution "Musterbank AG"
+Verwendung CLI:
+    python pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
+    python pipeline.py --input ./docs --regulatorik dora
+    python pipeline.py --input ./docs --regulatorik marisk --sektionen M01 M06
+    python pipeline.py --input ./docs --regulatorik wphg
 
 Oder als Python-Modul:
-    from pipeline import GwGAuditPipeline
-    pipeline = GwGAuditPipeline(input_dir="./docs", institution="Musterbank AG")
+    from pipeline import AuditPipeline
+    pipeline = AuditPipeline(input_dir="./docs", institution="Musterbank AG", regulatorik="dora")
     report_paths = pipeline.run()
 """
 
@@ -15,7 +18,6 @@ import argparse
 import json
 import time
 from pathlib import Path
-from datetime import datetime
 
 from llama_index.core import VectorStoreIndex, Settings
 from llama_index.embeddings.openai import OpenAIEmbedding
@@ -26,53 +28,80 @@ from agents.pruef_agent import GwGPrueferAgent, SektionsergebniS
 from reports.bericht_generator import GwGBerichtGenerator
 
 
-class GwGAuditPipeline:
-    """
-    Vollständige GwG-Sonderprüfungs-Pipeline.
+# ------------------------------------------------------------------ #
+# Katalog-Registry
+# ------------------------------------------------------------------ #
+KATALOG_REGISTRY = {
+    "gwg":    "catalog/gwg_catalog.json",
+    "dora":   "catalog/dora_catalog.json",
+    "marisk": "catalog/marisk_catalog.json",
+    "wphg":   "catalog/wphg_catalog.json",
+}
 
-    Pipeline-Schritte:
-    1. Dokumenten-Ingestion (PDF, Excel, Interview, Screenshot, Log)
-    2. Vektorindex aufbauen (LlamaIndex)
-    3. Prüfkatalog laden
-    4. Für jedes Prüffeld: RAG → LLM-Bewertung → Befund
-    5. Prüfbericht generieren (JSON + MD + HTML)
+KATALOG_LABELS = {
+    "gwg":    "GwG-Sonderprüfung (AML/CFT)",
+    "dora":   "DORA – Digital Operational Resilience Act",
+    "marisk": "MaRisk-Prüfung",
+    "wphg":   "WpHG / MaComp-Prüfung",
+}
+
+
+# ------------------------------------------------------------------ #
+# Pipeline
+# ------------------------------------------------------------------ #
+class AuditPipeline:
+    """
+    Multi-Regulatorik Audit-Pipeline.
+    Unterstützt: GwG, DORA, MaRisk, WpHG/MaComp
     """
 
     def __init__(
         self,
         input_dir: str,
         institution: str = "Prüfinstitut",
+        regulatorik: str = "gwg",
         catalog_path: str = None,
         output_dir: str = "./reports/output",
         model: str = "claude-opus-4-5",
         embedding_model: str = "text-embedding-3-small",
-        sektionen_filter: list[str] = None,
+        sektionen_filter: list = None,
         top_k: int = 8,
         verbose: bool = True,
     ):
         self.input_dir = input_dir
         self.institution = institution
+        self.regulatorik = regulatorik
         self.output_dir = output_dir
         self.model = model
-        self.sektionen_filter = sektionen_filter  # z.B. ["S01", "S02"] für Teilprüfung
+        self.sektionen_filter = sektionen_filter
         self.top_k = top_k
         self.verbose = verbose
 
-        # Katalogpfad
-        if catalog_path is None:
-            catalog_path = Path(__file__).parent / "catalog" / "gwg_catalog.json"
-        self.catalog_path = catalog_path
+        # Katalogpfad auflösen
+        base = Path(__file__).parent
+        if catalog_path:
+            self.catalog_path = Path(catalog_path)
+        elif regulatorik in KATALOG_REGISTRY:
+            self.catalog_path = base / KATALOG_REGISTRY[regulatorik]
+        else:
+            raise ValueError(
+                f"Unbekannte Regulatorik: '{regulatorik}'. "
+                f"Verfügbar: {list(KATALOG_REGISTRY.keys())}"
+            )
 
         # LlamaIndex-Einstellungen
         Settings.embed_model = OpenAIEmbedding(model=embedding_model)
         Settings.llm = AnthropicLLM(model=model)
 
-    def run(self) -> dict[str, str]:
+    def run(self) -> dict:
         """Führt die komplette Pipeline aus. Gibt Pfade zu den Berichten zurück."""
         t_start = time.time()
-        self._log("🚀 GwG-Sonderprüfungs-Pipeline gestartet")
-        self._log(f"   Institut: {self.institution}")
-        self._log(f"   Eingabeverzeichnis: {self.input_dir}")
+        label = KATALOG_LABELS.get(self.regulatorik, self.regulatorik.upper())
+
+        self._log(f"🚀 FinRegAgents Pipeline gestartet")
+        self._log(f"   Regulatorik: {label}")
+        self._log(f"   Institut:    {self.institution}")
+        self._log(f"   Katalog:     {self.catalog_path}")
         self._log("")
 
         # ── Schritt 1: Ingestion ─────────────────────────────────────────
@@ -92,9 +121,9 @@ class GwGAuditPipeline:
         index = VectorStoreIndex.from_documents(documents, show_progress=self.verbose)
         self._log("   → Index fertig")
 
-        # ── Schritt 3: Prüfkatalog laden ─────────────────────────────────
-        self._log("\n📋 Schritt 3/4: Prüfkatalog laden & Prüfung durchführen")
-        katalog = json.loads(Path(self.catalog_path).read_text(encoding="utf-8"))
+        # ── Schritt 3: Prüfkatalog laden & Prüfung durchführen ──────────
+        self._log(f"\n📋 Schritt 3/4: Katalog laden & Prüfung durchführen [{label}]")
+        katalog = json.loads(self.catalog_path.read_text(encoding="utf-8"))
         agent = GwGPrueferAgent(index=index, model=self.model, top_k=self.top_k)
 
         sektionsergebnisse = []
@@ -102,7 +131,6 @@ class GwGAuditPipeline:
         gepruefte_felder = 0
 
         for sektion in katalog["pruefsektionen"]:
-            # Optionaler Filter für Teilprüfungen
             if self.sektionen_filter and sektion["id"] not in self.sektionen_filter:
                 continue
 
@@ -110,7 +138,6 @@ class GwGAuditPipeline:
             ergebnis = SektionsergebniS(sektion_id=sektion["id"], titel=sektion["titel"])
 
             for prueffeld in sektion["prueffelder"]:
-                # Rechtsgrundlagen in Prueffeld einbetten (für den Agent)
                 prueffeld["rechtsgrundlagen"] = sektion.get("rechtsgrundlagen", [])
                 total_felder += 1
 
@@ -134,7 +161,7 @@ class GwGAuditPipeline:
         self._log(f"\n📝 Schritt 4/4: Prüfberichte generieren")
         generator = GwGBerichtGenerator(
             institution=self.institution,
-            pruefer="GwG KI-Prüfungssystem v1.0"
+            pruefer=f"FinRegAgents v1.0 – {label}"
         )
         report_paths = generator.generiere_alle_berichte(
             sektionsergebnisse=sektionsergebnisse,
@@ -145,7 +172,8 @@ class GwGAuditPipeline:
         t_total = time.time() - t_start
         self._log(f"\n{'='*60}")
         self._log(f"✅ Prüfung abgeschlossen in {t_total:.0f}s")
-        self._log(f"   Prüffelder gesamt: {gepruefte_felder}/{total_felder}")
+        self._log(f"   Regulatorik: {label}")
+        self._log(f"   Prüffelder:  {gepruefte_felder}/{total_felder}")
         self._log(f"   Berichte:")
         for fmt, pth in report_paths.items():
             self._log(f"     {fmt.upper()}: {pth}")
@@ -157,37 +185,47 @@ class GwGAuditPipeline:
             print(msg)
 
 
+# Rückwärtskompatibilität
+GwGAuditPipeline = AuditPipeline
+
+
 # ------------------------------------------------------------------ #
-# CLI-Einstiegspunkt
+# CLI
 # ------------------------------------------------------------------ #
 def main():
     parser = argparse.ArgumentParser(
-        description="GwG-Sonderprüfungs-Pipeline (KI-gestützt)",
+        description="FinRegAgents – Multi-Regulatorik Audit-Pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Regulatorik-Optionen:
+  gwg     → GwG-Sonderprüfung (AML/CFT) – 34 Prüffelder
+  dora    → DORA – Digital Operational Resilience Act – 18 Prüffelder
+  marisk  → MaRisk-Prüfung – 22 Prüffelder
+  wphg    → WpHG / MaComp-Prüfung – 20 Prüffelder
+
 Beispiele:
-  # Vollständige Prüfung
-  python pipeline.py --input ./meine_dokumente --institution "Musterbank AG"
-
-  # Nur bestimmte Sektionen prüfen
-  python pipeline.py --input ./docs --sektionen S01 S02 S03
-
-  # Mit eigenem Katalog
-  python pipeline.py --input ./docs --catalog ./mein_katalog.json
+  python pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
+  python pipeline.py --input ./docs --regulatorik dora --sektionen D01 D04
+  python pipeline.py --input ./docs --regulatorik marisk
+  python pipeline.py --input ./docs --regulatorik wphg --output ./berichte
         """
     )
-    parser.add_argument("--input", required=True, help="Verzeichnis mit Prüfungsdokumenten")
-    parser.add_argument("--institution", default="Prüfinstitut", help="Name des Instituts")
-    parser.add_argument("--output", default="./reports/output", help="Ausgabeverzeichnis für Berichte")
-    parser.add_argument("--catalog", default=None, help="Pfad zum GwG-Katalog JSON")
-    parser.add_argument("--model", default="claude-opus-4-5", help="Anthropic-Modell")
-    parser.add_argument("--sektionen", nargs="*", help="Nur diese Sektionen prüfen (z.B. S01 S02)")
-    parser.add_argument("--top-k", type=int, default=8, help="Anzahl RAG-Chunks pro Prüffrage")
+    parser.add_argument("--input",        required=True,  help="Verzeichnis mit Prüfungsdokumenten")
+    parser.add_argument("--institution",  default="Prüfinstitut", help="Name des Instituts")
+    parser.add_argument("--regulatorik",  default="gwg",
+                        choices=list(KATALOG_REGISTRY.keys()),
+                        help="Zu prüfende Regulatorik")
+    parser.add_argument("--output",       default="./reports/output", help="Ausgabeverzeichnis")
+    parser.add_argument("--catalog",      default=None,   help="Eigener Katalog (überschreibt --regulatorik)")
+    parser.add_argument("--model",        default="claude-opus-4-5", help="Anthropic-Modell")
+    parser.add_argument("--sektionen",    nargs="*",      help="Nur diese Sektionen prüfen (z.B. S01 S02)")
+    parser.add_argument("--top-k",        type=int, default=8, help="RAG-Chunks pro Prüffrage")
     args = parser.parse_args()
 
-    pipeline = GwGAuditPipeline(
+    pipeline = AuditPipeline(
         input_dir=args.input,
         institution=args.institution,
+        regulatorik=args.regulatorik,
         catalog_path=args.catalog,
         output_dir=args.output,
         model=args.model,

@@ -1,0 +1,250 @@
+{
+  "katalog_version": "2025-02",
+  "basis": ["MaRisk BaFin Rundschreiben 06/2023", "KWG §25a", "CRR/CRD IV", "EBA Guidelines Internal Governance"],
+  "pruefsektionen": [
+
+    {
+      "id": "M01",
+      "titel": "Allgemeine Anforderungen – Gesamtverantwortung (AT 3, AT 4)",
+      "rechtsgrundlagen": ["MaRisk AT 3", "MaRisk AT 4.1", "MaRisk AT 4.2", "§25a KWG"],
+      "prueffelder": [
+        {
+          "id": "M01-01",
+          "frage": "Hat die Geschäftsleitung eine Risikostrategie und eine damit konsistente Geschäftsstrategie festgelegt und kommuniziert?",
+          "erwartete_evidenz": ["Geschäftsstrategie-Dokument", "Risikostrategie-Dokument", "GL-Genehmigung", "Kommunikationsnachweis an Mitarbeiter"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Beide Strategien vorhanden, konsistent, von GL genehmigt, aktuell (max. 1 Jahr alt) und an relevante Mitarbeiter kommuniziert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Geschäfts- und/oder Risikostrategie fehlen, sind inkonsistent oder nicht aktuell (MaRisk AT 4.2)."
+        },
+        {
+          "id": "M01-02",
+          "frage": "Verfügt das Institut über ein angemessenes internes Steuerungs- und Kontrollsystem (IKS)?",
+          "erwartete_evidenz": ["IKS-Konzept", "Aufbauorganisation", "Ablauforganisation", "Funktionstrennungen", "Vier-Augen-Prinzip-Nachweis"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Vollständiges IKS-Konzept; klare Funktionstrennung zwischen Markt und Marktfolge; Vier-Augen-Prinzip implementiert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das interne Steuerungs- und Kontrollsystem ist nicht angemessen oder nicht vollständig dokumentiert (MaRisk AT 4.3)."
+        },
+        {
+          "id": "M01-03",
+          "frage": "Wird die Risikotragfähigkeit regelmäßig berechnet und überwacht (ICAAP)?",
+          "erwartete_evidenz": ["RTF-Konzept", "Aktuelle RTF-Berechnung", "Stresstest-Ergebnisse", "GL-Berichte RTF"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Vollständiges RTF-Konzept; mindestens quartalsweise Berechnung; Stresstests dokumentiert; GL-Berichterstattung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Risikotragfähigkeit wird nicht regelmäßig, methodisch korrekt oder vollständig berechnet (MaRisk AT 4.1)."
+        },
+        {
+          "id": "M01-04",
+          "frage": "Ist das Risikoinventar vollständig und werden alle wesentlichen Risiken identifiziert?",
+          "erwartete_evidenz": ["Risikoinventar", "Wesentlichkeitsanalyse", "Neue Risikotypen berücksichtigt (ESG, Cyber)", "Aktualisierungsdatum"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Alle wesentlichen Risikotypen erfasst inkl. aktueller Risiken (ESG, Cyber, Konzentrationsrisiken); jährliche Aktualisierung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das Risikoinventar ist unvollständig oder nicht aktuell; wesentliche Risiken werden nicht erfasst (MaRisk AT 2.2)."
+        }
+      ]
+    },
+
+    {
+      "id": "M02",
+      "titel": "Aufbau- und Ablauforganisation (AT 4.3, AT 5)",
+      "rechtsgrundlagen": ["MaRisk AT 4.3", "MaRisk AT 5"],
+      "prueffelder": [
+        {
+          "id": "M02-01",
+          "frage": "Sind Aufgaben, Kompetenzen und Verantwortlichkeiten klar und schriftlich geregelt?",
+          "erwartete_evidenz": ["Geschäftsverteilungsplan", "Stellenbeschreibungen", "Kompetenzordnung", "Unterschriftenkatalog"],
+          "input_typen": ["pdf"],
+          "bewertungskriterien": "Vollständige, aktuelle Dokumentation aller Aufgaben und Verantwortlichkeiten; keine Lücken oder Doppelzuständigkeiten",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Aufgaben, Kompetenzen und Verantwortlichkeiten sind nicht vollständig oder nicht aktuell geregelt (MaRisk AT 5)."
+        },
+        {
+          "id": "M02-02",
+          "frage": "Ist die Funktionstrennung zwischen Markt und Marktfolge bis in die Geschäftsleiterebene gewährleistet?",
+          "erwartete_evidenz": ["Organigramm", "GL-Ressortverteilung", "Prozesshandbuch Kreditvergabe", "Nachweis Trennung"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Strikte Funktionstrennung Markt/Marktfolge; kein GL-Mitglied verantwortet beide Funktionen; schriftlich dokumentiert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die erforderliche Funktionstrennung zwischen Markt und Marktfolge ist nicht konsequent gewährleistet (MaRisk AT 4.3.1)."
+        }
+      ]
+    },
+
+    {
+      "id": "M03",
+      "titel": "Ressourcen, Notfallmanagement (AT 7, AT 7.3)",
+      "rechtsgrundlagen": ["MaRisk AT 7.1", "MaRisk AT 7.2", "MaRisk AT 7.3"],
+      "prueffelder": [
+        {
+          "id": "M03-01",
+          "frage": "Verfügt das Institut über ein angemessenes Notfallkonzept (Business Continuity Management)?",
+          "erwartete_evidenz": ["BCM-Konzept", "Business Impact Analyse", "Notfallhandbücher", "Testergebnisse BCM-Übungen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Vollständiges BCM-Konzept; BIA durchgeführt; Notfallhandbücher aktuell; regelmäßige Tests (mind. jährlich)",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das Notfallkonzept (BCM) ist nicht vollständig oder nicht ausreichend getestet (MaRisk AT 7.3)."
+        },
+        {
+          "id": "M03-02",
+          "frage": "Sind die IT-Systeme angemessen dimensioniert und werden regelmäßig getestet?",
+          "erwartete_evidenz": ["IT-Kapazitätsplanung", "Lasttests", "Verfügbarkeitsstatistiken", "SLA-Berichte"],
+          "input_typen": ["pdf", "excel", "screenshot"],
+          "bewertungskriterien": "IT-Systeme dimensioniert für normalen und Stressbetrieb; Kapazitätstests dokumentiert; Verfügbarkeit SLA eingehalten",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "IT-Systeme sind nicht ausreichend dimensioniert oder Kapazitätstests werden nicht durchgeführt (MaRisk AT 7.2)."
+        }
+      ]
+    },
+
+    {
+      "id": "M04",
+      "titel": "Kreditgeschäft (BT 1)",
+      "rechtsgrundlagen": ["MaRisk BT 1.2", "MaRisk BT 1.3", "MaRisk BT 1.4"],
+      "prueffelder": [
+        {
+          "id": "M04-01",
+          "frage": "Existieren vollständige Kreditvergabeprozesse mit Vier-Augen-Prinzip und dokumentierten Votierungsverfahren?",
+          "erwartete_evidenz": ["Kreditprozesshandbuch", "Votierungsbögen", "Genehmigungsmatrix", "Stichproben Kreditakten"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Vollständige Kreditprozesse; Vier-Augen-Prinzip durchgängig; Markt- und Marktfolgevoten vorhanden",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Kreditvergabeprozesse entsprechen nicht den MaRisk-Anforderungen; Vier-Augen-Prinzip nicht konsequent umgesetzt (MaRisk BT 1.2)."
+        },
+        {
+          "id": "M04-02",
+          "frage": "Werden Kreditnehmer regelmäßig und risikobasiert überwacht (laufende Kreditüberwachung)?",
+          "erwartete_evidenz": ["Kreditüberwachungskonzept", "Frühwarnindikatoren", "Watchlist-Reporting", "Jahresabschlussauswertungen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Risikobasierter Kreditüberwachungsprozess; Frühwarnsystem implementiert; Watchlist regelmäßig aktualisiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die laufende Kreditüberwachung ist nicht ausreichend risikobasiert oder systematisch (MaRisk BT 1.3)."
+        },
+        {
+          "id": "M04-03",
+          "frage": "Werden Problemkredite zeitnah identifiziert und im Intensivbetreuungs-/Sanierungs-/Abwicklungsprozess geführt?",
+          "erwartete_evidenz": ["Problemkreditprozess", "Intensivbetreuungs-Kriterien", "Fallbeispiele", "Risikovorsorge-Berechnungen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Klare Kriterien für Problemkredit-Klassifizierung; separater Bearbeitungsprozess; angemessene Risikovorsorge",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Problemkredite werden nicht zeitnah identifiziert oder nicht sachgerecht bearbeitet (MaRisk BT 1.4)."
+        }
+      ]
+    },
+
+    {
+      "id": "M05",
+      "titel": "Handelsgeschäfte (BT 2)",
+      "rechtsgrundlagen": ["MaRisk BT 2.1", "MaRisk BT 2.2", "MaRisk BT 2.3"],
+      "prueffelder": [
+        {
+          "id": "M05-01",
+          "frage": "Sind Handelslimite definiert, genehmigt und werden diese überwacht?",
+          "erwartete_evidenz": ["Limitstruktur-Dokumentation", "GL-Genehmigung Limite", "Tagesberichte Limitauslastung", "Limitüberschreitungs-Protokolle"],
+          "input_typen": ["pdf", "excel", "screenshot"],
+          "bewertungskriterien": "Vollständige Limitstruktur von GL genehmigt; tägliches Monitoring; Überschreitungen dokumentiert und zeitnah eskaliert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Handelslimite sind nicht vollständig definiert oder werden nicht konsequent überwacht (MaRisk BT 2.2)."
+        },
+        {
+          "id": "M05-02",
+          "frage": "Ist die Funktionstrennung im Handelsbereich (Front/Back/Middle Office) durchgehend gewährleistet?",
+          "erwartete_evidenz": ["Organigramm Handel", "Systemzugriffsrechte", "Prozesshandbuch Abwicklung", "Stichproben Handelsabschlüsse"],
+          "input_typen": ["pdf", "screenshot", "excel"],
+          "bewertungskriterien": "Strikte Trennung Front/Back/Middle Office; keine Doppelzuständigkeiten; IT-seitige Durchsetzung der Trennung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Funktionstrennung im Handelsbereich ist nicht ausreichend gewährleistet (MaRisk BT 2.1)."
+        }
+      ]
+    },
+
+    {
+      "id": "M06",
+      "titel": "Interne Revision (BT 3)",
+      "rechtsgrundlagen": ["MaRisk BT 3.1", "MaRisk BT 3.2", "MaRisk BT 3.3"],
+      "prueffelder": [
+        {
+          "id": "M06-01",
+          "frage": "Ist die Interne Revision unabhängig, ausreichend besetzt und berichtet direkt an die GL?",
+          "erwartete_evidenz": ["IR-Satzung/Geschäftsordnung", "Organigramm Direktberichtsweg GL", "Ressourcenplan IR", "Qualifikationsnachweise"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Organisatorische Unabhängigkeit; Direktberichtsweg zur GL; ausreichende Ressourcen; Qualifikation nachgewiesen",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Interne Revision ist nicht ausreichend unabhängig, besetzt oder hat keinen direkten Berichtsweg zur GL (MaRisk BT 3.1)."
+        },
+        {
+          "id": "M06-02",
+          "frage": "Erstellt die IR risikobasierte Prüfungspläne und prüft alle wesentlichen Bereiche im angemessenen Turnus?",
+          "erwartete_evidenz": ["Jahresprüfungsplan", "Risikobasierte Prüfungsplanung", "Nachweis vollständige Prüfabdeckung", "Prüfungsberichte"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Risikobasierter Jahresprüfungsplan; alle wesentlichen Bereiche im angemessenen Turnus geprüft (max. 3 Jahre)",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Interne Revision erstellt keinen risikobasierten Prüfungsplan oder prüft wesentliche Bereiche nicht im erforderlichen Turnus (MaRisk BT 3.2)."
+        },
+        {
+          "id": "M06-03",
+          "frage": "Werden Prüfungsfeststellungen vollständig, zeitnah und nachweislich abgestellt (Follow-up-Prozess)?",
+          "erwartete_evidenz": ["Maßnahmen-Tracking-System", "Follow-up-Berichte", "Eskalationen bei Fristüberschreitung", "GL-Berichte offene Feststellungen"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Vollständiges Follow-up-System; keine wesentlichen offenen Feststellungen ohne Fristbegründung; GL-Reporting",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Prüfungsfeststellungen werden nicht zeitnah oder vollständig abgestellt; Follow-up-Prozess ist unzureichend (MaRisk BT 3.3)."
+        }
+      ]
+    },
+
+    {
+      "id": "M07",
+      "titel": "Compliance (AT 4.4.2, BT 1.3.4 analog)",
+      "rechtsgrundlagen": ["MaRisk AT 4.4.2", "§25a Abs.1 KWG", "EBA Compliance Guidelines"],
+      "prueffelder": [
+        {
+          "id": "M07-01",
+          "frage": "Ist eine unabhängige Compliance-Funktion eingerichtet und ausreichend mit Ressourcen ausgestattet?",
+          "erwartete_evidenz": ["Compliance-Satzung", "Organigramm", "Ressourcenplan", "Qualifikationsnachweise CCO"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Unabhängige Compliance-Funktion; ausreichende Ressourcen; Direktberichtsweg GL; CCO-Qualifikation",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Compliance-Funktion ist nicht ausreichend unabhängig oder ressourciert (MaRisk AT 4.4.2)."
+        },
+        {
+          "id": "M07-02",
+          "frage": "Erstellt Compliance einen Jahresbericht an die GL und führt risikobasierte Compliance-Prüfungen durch?",
+          "erwartete_evidenz": ["Compliance-Jahresberichte", "Compliance-Prüfungsplan", "Compliance-Prüfungsberichte", "GL-Protokolle Compliance-Berichte"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Mindestens jährlicher Compliance-Bericht an GL; risikobasierter Compliance-Prüfplan vorhanden und umgesetzt",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Compliance berichtet nicht regelmäßig an die GL oder führt keine risikobasierten Compliance-Prüfungen durch."
+        }
+      ]
+    },
+
+    {
+      "id": "M08",
+      "titel": "Auslagerungen (AT 9)",
+      "rechtsgrundlagen": ["MaRisk AT 9", "§25b KWG", "EBA Outsourcing Guidelines"],
+      "prueffelder": [
+        {
+          "id": "M08-01",
+          "frage": "Werden Auslagerungsrisiken systematisch identifiziert, bewertet und wesentliche Auslagerungen der BaFin gemeldet?",
+          "erwartete_evidenz": ["Auslagerungs-Register", "Wesentlichkeitsbewertungen", "BaFin-Meldungen wesentliche Auslagerungen", "Risikoanalysen"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Vollständiges Auslagerungs-Register; Wesentlichkeitsbewertung aller Auslagerungen; BaFin-Meldung wesentlicher Auslagerungen",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das Auslagerungsmanagement entspricht nicht den Anforderungen; wesentliche Auslagerungen werden nicht vollständig gemeldet (MaRisk AT 9)."
+        },
+        {
+          "id": "M08-02",
+          "frage": "Werden ausgelagerte Dienstleister regelmäßig auf Qualität und Risiko überwacht?",
+          "erwartete_evidenz": ["Dienstleister-Monitoring-Konzept", "Monitoring-Berichte", "SLA-Auswertungen", "Jahresgespräche mit Dienstleistern"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Risikobasiertes, regelmäßiges Monitoring; SLA-Tracking; dokumentierte Jahresgespräche mit wesentlichen Dienstleistern",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Ausgelagerte Dienstleister werden nicht ausreichend risikobasiert überwacht (MaRisk AT 9)."
+        }
+      ]
+    }
+  ]
+}

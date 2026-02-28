@@ -1,0 +1,233 @@
+{
+  "katalog_version": "2025-02",
+  "basis": ["WpHG i.d.F. 2024", "MaComp BaFin Rundschreiben 05/2018 i.d.F. 2023", "MiFID II", "MiFIR", "MAR", "ESMA Leitlinien"],
+  "pruefsektionen": [
+
+    {
+      "id": "W01",
+      "titel": "Compliance-Funktion Wertpapiergeschäft (AT 4 MaComp, Art. 22 DelVO 2017/565)",
+      "rechtsgrundlagen": ["§80 WpHG", "AT 4 MaComp", "Art. 22 DelVO 2017/565"],
+      "prueffelder": [
+        {
+          "id": "W01-01",
+          "frage": "Ist eine eigenständige Wertpapier-Compliance-Funktion eingerichtet, unabhängig und mit ausreichenden Ressourcen ausgestattet?",
+          "erwartete_evidenz": ["Compliance-Satzung WpHG", "Organigramm Wertpapier-Compliance", "Ressourcenplan", "Qualifikationsnachweise CCO"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Eigenständige WpHG-Compliance; Unabhängigkeit von operativen Bereichen; ausreichende Personalausstattung; CCO direkt an GL",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Eine eigenständige, unabhängige Wertpapier-Compliance-Funktion gemäß §80 WpHG ist nicht eingerichtet oder nicht ausreichend besetzt."
+        },
+        {
+          "id": "W01-02",
+          "frage": "Erstellt Compliance einen risikobasierten Compliance-Plan und Jahresbericht an die GL (BT 1.3 MaComp)?",
+          "erwartete_evidenz": ["Compliance-Plan WpHG", "Compliance-Jahresberichte", "GL-Protokoll Kenntnisnahme"],
+          "input_typen": ["pdf"],
+          "bewertungskriterien": "Risikobasierter Compliance-Plan vorhanden; Jahresbericht an GL mind. jährlich; GL-Kenntnisnahme dokumentiert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Compliance erstellt keinen risikobasierten Compliance-Plan oder Jahresbericht an die GL (BT 1.3 MaComp)."
+        },
+        {
+          "id": "W01-03",
+          "frage": "Führt Compliance regelmäßige Prüfungen der WpHG-Prozesse durch und dokumentiert diese?",
+          "erwartete_evidenz": ["Compliance-Prüfungsberichte", "Prüfungsplan WpHG", "Feststellungen und Maßnahmen", "Follow-up-Nachweis"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Risikobasierter WpHG-Prüfplan; alle wesentlichen Bereiche im angemessenen Turnus; Feststellungen mit Follow-up",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Compliance-Prüfungen der WpHG-Prozesse werden nicht risikobasiert oder nicht vollständig durchgeführt."
+        }
+      ]
+    },
+
+    {
+      "id": "W02",
+      "titel": "Interessenkonflikte (BT 2 MaComp, §63 Abs.2 WpHG)",
+      "rechtsgrundlagen": ["§63 Abs.2 WpHG", "BT 2 MaComp", "Art. 34 DelVO 2017/565"],
+      "prueffelder": [
+        {
+          "id": "W02-01",
+          "frage": "Existiert ein vollständiges Interessenkonflikt-Management inkl. aktueller Interessenkonflikt-Analyse?",
+          "erwartete_evidenz": ["Interessenkonflikt-Analyse", "Interessenkonflikt-Richtlinie", "Maßnahmenkatalog zur Vermeidung", "Aktualisierungshistorie"],
+          "input_typen": ["pdf"],
+          "bewertungskriterien": "Vollständige, aktuelle Interessenkonflikt-Analyse; Richtlinie mit konkreten Maßnahmen; regelmäßige Überprüfung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das Interessenkonflikt-Management ist unvollständig oder die Interessenkonflikt-Analyse ist nicht aktuell (BT 2 MaComp)."
+        },
+        {
+          "id": "W02-02",
+          "frage": "Werden Mitarbeitergeschäfte (Personal Account Dealing) systematisch überwacht und genehmigt?",
+          "erwartete_evidenz": ["PA-Dealing-Richtlinie", "Genehmigungsprozess", "Überwachungsnachweise", "Liste meldepflichtiger Personen"],
+          "input_typen": ["pdf", "excel", "screenshot"],
+          "bewertungskriterien": "Vollständige PA-Dealing-Richtlinie; Pre-Clearance-Prozess implementiert; lückenlose Überwachung aller relevanten Personen",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Mitarbeitergeschäfte werden nicht ausreichend überwacht oder der Genehmigungsprozess ist nicht korrekt implementiert (BT 2.1 MaComp)."
+        },
+        {
+          "id": "W02-03",
+          "frage": "Werden Zuwendungen (Provisionen, Gebühren, Sachleistungen) korrekt erfasst, geprüft und offengelegt?",
+          "erwartete_evidenz": ["Zuwendungsregister", "Zulässigkeitsprüfung", "Offenlegungsbelege", "Qualitätsverbesserungsnachweis"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Vollständiges Zuwendungsregister; Zulässigkeitsprüfung aller Zuwendungen; Offenlegung gegenüber Kunden; Qualitätsverbesserung nachweisbar",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Zuwendungen werden nicht vollständig erfasst, geprüft oder gegenüber Kunden offengelegt (§70 WpHG, BT 2.2 MaComp)."
+        }
+      ]
+    },
+
+    {
+      "id": "W03",
+      "titel": "Anlageberatung und Geeignetheit (§64 WpHG, BT 6 MaComp)",
+      "rechtsgrundlagen": ["§64 WpHG", "BT 6 MaComp", "Art. 54 DelVO 2017/565"],
+      "prueffelder": [
+        {
+          "id": "W03-01",
+          "frage": "Werden vor der Anlageberatung Kenntnisse, Erfahrungen, finanzielle Verhältnisse und Anlageziele vollständig erhoben?",
+          "erwartete_evidenz": ["Geeignetheitsfragebogen", "Erhebungsprozess-Dokumentation", "Stichproben ausgefüllter Fragebögen", "Systemscreenshorts WGF"],
+          "input_typen": ["pdf", "excel", "screenshot"],
+          "bewertungskriterien": "Vollständige WGF-Erhebung (Kenntnisse, Erfahrungen, finanzielle Verhältnisse, Risikotoleranz, Anlageziele); keine Datenlücken",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Erhebung der Anlegerinformationen gemäß §64 WpHG ist nicht vollständig oder nicht systematisch."
+        },
+        {
+          "id": "W03-02",
+          "frage": "Werden Geeignetheitsprüfungen korrekt durchgeführt und Geeignetheitserklärungen ausgehändigt?",
+          "erwartete_evidenz": ["Geeignetheitsprüfungs-Logik", "Geeignetheitserklärungen (Samples)", "Systemdokumentation", "Negativprüfungs-Nachweise"],
+          "input_typen": ["pdf", "screenshot", "excel"],
+          "bewertungskriterien": "Automatisierte Geeignetheitsprüfung; Geeignetheitserklärung vor Abschluss ausgehändigt; Negativvoten dokumentiert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Geeignetheitsprüfungen werden nicht korrekt durchgeführt oder Geeignetheitserklärungen nicht ausgehändigt (§64 Abs.4 WpHG)."
+        },
+        {
+          "id": "W03-03",
+          "frage": "Werden Kundenprofile und Geeignetheitseinstufungen regelmäßig aktualisiert?",
+          "erwartete_evidenz": ["Re-KYC-Prozess WpHG", "Trigger-basierte Aktualisierungen", "Stichproben veralteter Profile", "Systemabzug Aktualisierungsquote"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Risikobasierter Aktualisierungsprozess; Trigger für wesentliche Änderungen; keine signifikante Quote veralteter Profile",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Kundenprofile und Geeignetheitseinstufungen werden nicht regelmäßig aktualisiert."
+        }
+      ]
+    },
+
+    {
+      "id": "W04",
+      "titel": "Marktmissbrauch und MAR-Compliance (§§ 26ff. WpHG, MAR)",
+      "rechtsgrundlagen": ["MAR (EU) 596/2014", "§26 WpHG", "§27 WpHG", "Art. 18 MAR", "ESMA MAR-Leitlinien"],
+      "prueffelder": [
+        {
+          "id": "W04-01",
+          "frage": "Existiert ein vollständiges Insiderverzeichnis und wird dieses aktuell gehalten (Art. 18 MAR)?",
+          "erwartete_evidenz": ["Insiderverzeichnis (aktuell)", "Aktualisierungsprozess", "Belehrungsnachweise Insider", "Aufnahmeprozess bei neuen Projekten"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Vollständiges, tagesaktuelles Insiderverzeichnis; Einzel-Insider-Verzeichnisse für jedes Projekt; schriftliche Belehrung aller Insider",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das Insiderverzeichnis ist nicht vollständig, nicht aktuell oder Insider werden nicht schriftlich belehrt (Art. 18 MAR)."
+        },
+        {
+          "id": "W04-02",
+          "frage": "Werden Ad-hoc-Meldungspflichten (Art. 17 MAR) korrekt und fristgerecht erfüllt?",
+          "erwartete_evidenz": ["Ad-hoc-Meldungsprozess", "Aufschubentscheidungen", "Meldungslog", "Zeitstempel der Meldungen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Sofortige Veröffentlichung wesentlicher Insider-Informationen; Aufschub nur unter strengen Voraussetzungen; BaFin-Benachrichtigung bei Aufschub",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Ad-hoc-Meldungspflichten werden nicht fristgerecht oder nicht vollständig erfüllt (Art. 17 MAR)."
+        },
+        {
+          "id": "W04-03",
+          "frage": "Werden Geschäfte von Führungspersonen (Directors' Dealings) korrekt gemeldet (Art. 19 MAR)?",
+          "erwartete_evidenz": ["Directors-Dealings-Prozess", "Meldungslog", "Meldeformulare", "Kontrollmechanismus"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Vollständiger DD-Meldeprozess; alle meldepflichtigen Personen identifiziert; Meldungen innerhalb 3 Werktage",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Directors' Dealings werden nicht vollständig oder nicht fristgerecht gemeldet (Art. 19 MAR)."
+        },
+        {
+          "id": "W04-04",
+          "frage": "Existiert ein Market Surveillance / Handelsüberwachungssystem zur Erkennung von Marktmissbrauch?",
+          "erwartete_evidenz": ["Handelsüberwachungssystem-Beschreibung", "Monitoring-Szenarien", "Alert-Statistiken", "Eskalationsprozess"],
+          "input_typen": ["pdf", "screenshot", "excel"],
+          "bewertungskriterien": "Automatisiertes Handelsüberwachungssystem; dokumentierte Szenarien; Alert-Bearbeitung und Eskalation bei Verdacht",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Ein ausreichendes Handelsüberwachungssystem zur Marktmissbrauchserkennung fehlt (§26 WpHG)."
+        }
+      ]
+    },
+
+    {
+      "id": "W05",
+      "titel": "Aufzeichnungs- und Dokumentationspflichten (§83 WpHG, BT 4 MaComp)",
+      "rechtsgrundlagen": ["§83 WpHG", "BT 4 MaComp", "Art. 76 DelVO 2017/565"],
+      "prueffelder": [
+        {
+          "id": "W05-01",
+          "frage": "Werden alle Telefongespräche und elektronischen Kommunikationen im Wertpapierbereich aufgezeichnet?",
+          "erwartete_evidenz": ["Taping-System-Dokumentation", "Abdeckung aller relevanten Leitungen", "Stichproben-Abruf", "Löschkonzept"],
+          "input_typen": ["pdf", "screenshot", "interview"],
+          "bewertungskriterien": "Vollständiges Taping aller relevanten Kanäle (Telefon, Chat, E-Mail für Handelsaufträge); 5-Jahres-Aufbewahrung; abrufbar",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Telefongespräche und elektronische Kommunikationen werden nicht vollständig aufgezeichnet oder aufbewahrt (§83 WpHG)."
+        },
+        {
+          "id": "W05-02",
+          "frage": "Werden Transaktionsberichte korrekt und vollständig an die Aufsicht gemeldet (§26 WpHG, MiFIR Art. 26)?",
+          "erwartete_evidenz": ["Transaktionsmeldeprozess", "Fehlerquoten-Reporting", "Reconciliation-Berichte", "ARM-Anbindung"],
+          "input_typen": ["pdf", "excel", "screenshot"],
+          "bewertungskriterien": "Vollständige, korrekte und zeitnahe Transaktionsmeldungen; Fehlerquote unter Schwellenwert; regelmäßige Reconciliation",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Transaktionsmeldungen werden nicht vollständig, nicht korrekt oder nicht zeitnah an die Aufsicht übermittelt (Art. 26 MiFIR)."
+        }
+      ]
+    },
+
+    {
+      "id": "W06",
+      "titel": "Bestes Ausführungsprinzip – Best Execution (§82 WpHG, BT 5 MaComp)",
+      "rechtsgrundlagen": ["§82 WpHG", "BT 5 MaComp", "Art. 64-66 DelVO 2017/565"],
+      "prueffelder": [
+        {
+          "id": "W06-01",
+          "frage": "Existiert eine vollständige, aktuelle Best-Execution-Richtlinie und wird diese regelmäßig überprüft?",
+          "erwartete_evidenz": ["Best-Execution-Richtlinie", "Ausführungsplätze-Liste", "Überprüfungsprotokoll", "Kundeninformation über BE"],
+          "input_typen": ["pdf"],
+          "bewertungskriterien": "Vollständige BE-Richtlinie; Liste der Ausführungsplätze; jährliche Überprüfung; Kundeninformation vorhanden",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Eine vollständige Best-Execution-Richtlinie fehlt oder wird nicht regelmäßig überprüft (§82 WpHG)."
+        },
+        {
+          "id": "W06-02",
+          "frage": "Wird die tatsächliche Ausführungsqualität regelmäßig analysiert und Best Execution nachgewiesen?",
+          "erwartete_evidenz": ["Ausführungsqualitäts-Analysen", "RTS 27/28 Veröffentlichungen", "Benchmarking-Berichte", "Verbesserungsmaßnahmen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Regelmäßige Ausführungsqualitätsanalyse; Veröffentlichung RTS 27/28; Handlungsbedarf bei Abweichungen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Ausführungsqualität wird nicht ausreichend analysiert oder Best Execution wird nicht nachgewiesen (BT 5 MaComp)."
+        }
+      ]
+    },
+
+    {
+      "id": "W07",
+      "titel": "Schulung und Sachkunde (BT 7 MaComp, §1 WpHGMaAnzV)",
+      "rechtsgrundlagen": ["BT 7 MaComp", "§1 WpHGMaAnzV", "§87 WpHG"],
+      "prueffelder": [
+        {
+          "id": "W07-01",
+          "frage": "Verfügen alle Anlageberater und Vertriebsmitarbeiter über die erforderliche Sachkunde?",
+          "erwartete_evidenz": ["Qualifikationsnachweise", "BaFin-Sachkunderegister-Auszug", "Schulungsplan", "Prüfungszertifikate"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Alle relevanten Mitarbeiter mit nachgewiesener Sachkunde; BaFin-Registrierung; regelmäßige Fortbildung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Nicht alle Anlageberater verfügen über die erforderliche Sachkunde oder BaFin-Registrierung (BT 7 MaComp)."
+        },
+        {
+          "id": "W07-02",
+          "frage": "Werden Mitarbeiter regelmäßig zu WpHG-relevanten Themen geschult (Compliance-Schulungen)?",
+          "erwartete_evidenz": ["Schulungsplan WpHG", "Teilnehmerlisten", "Schulungsinhalte", "Abschlussquoten"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Jährliche WpHG-Pflichtschulung; aktuelle Inhalte (MAR, MiFID II-Änderungen); vollständige Nachweisführung",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "WpHG-Compliance-Schulungen werden nicht ausreichend oder nicht nachweislich durchgeführt."
+        }
+      ]
+    }
+  ]
+}

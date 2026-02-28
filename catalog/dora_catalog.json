@@ -1,0 +1,217 @@
+{
+  "katalog_version": "2025-02",
+  "basis": ["DORA (EU) 2022/2554", "RTS DORA ICT Risk", "RTS DORA Incident Reporting", "EBA/ESAs Joint Guidelines", "TIBER-EU"],
+  "pruefsektionen": [
+
+    {
+      "id": "D01",
+      "titel": "IKT-Risikomanagement-Rahmen (Art. 5-16 DORA)",
+      "rechtsgrundlagen": ["Art. 5 DORA", "Art. 6 DORA", "Art. 7 DORA", "Art. 8 DORA"],
+      "prueffelder": [
+        {
+          "id": "D01-01",
+          "frage": "Hat das Leitungsorgan die Gesamtverantwortung für das IKT-Risikomanagement formal übernommen und dokumentiert?",
+          "erwartete_evidenz": ["Vorstandsbeschluss IKT-Risiko", "IKT-Risikorichtlinie mit GL-Genehmigung", "Organigramm Verantwortlichkeiten"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Formelle Übernahme der Verantwortung durch das Leitungsorgan gemäß Art. 5 Abs. 2 DORA, dokumentiert und nachweisbar",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das Leitungsorgan hat die Gesamtverantwortung für das IKT-Risikomanagement nicht formal und dokumentiert übernommen (Art. 5 DORA)."
+        },
+        {
+          "id": "D01-02",
+          "frage": "Existiert ein vollständiger, dokumentierter IKT-Risikomanagement-Rahmen gemäß Art. 6 DORA?",
+          "erwartete_evidenz": ["IKT-Risikomanagement-Framework-Dokument", "Risikoappetit-Statement IKT", "Aktualisierungshistorie"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Vollständiger Rahmen inkl. Strategien, Leitlinien, Verfahren und IKT-Protokolle; mindestens jährliche Überprüfung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Ein vollständiger IKT-Risikomanagement-Rahmen gemäß Art. 6 DORA fehlt oder ist nicht aktuell."
+        },
+        {
+          "id": "D01-03",
+          "frage": "Sind alle IKT-Assets vollständig inventarisiert und klassifiziert (Art. 8 DORA)?",
+          "erwartete_evidenz": ["IKT-Asset-Inventar", "Klassifizierungsschema", "Datum letzter Inventur", "Kritikalitätsbewertung"],
+          "input_typen": ["excel", "pdf", "screenshot"],
+          "bewertungskriterien": "Vollständiges, aktuelles IKT-Asset-Inventar mit Kritikalitätsbewertung; alle Abhängigkeiten dokumentiert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das IKT-Asset-Inventar ist unvollständig oder nicht aktuell (Art. 8 DORA)."
+        },
+        {
+          "id": "D01-04",
+          "frage": "Sind IKT-Schutzmaßnahmen implementiert und regelmäßig auf Wirksamkeit geprüft (Art. 9 DORA)?",
+          "erwartete_evidenz": ["Schutzmaßnahmen-Dokumentation", "Penetrationstest-Berichte", "Patch-Management-Nachweis", "Zugangskontrollen"],
+          "input_typen": ["pdf", "excel", "screenshot"],
+          "bewertungskriterien": "Technische und organisatorische Schutzmaßnahmen implementiert, dokumentiert und getestet",
+          "schweregrad": "wesentlich",
+          "mangel_template": "IKT-Schutzmaßnahmen sind nicht vollständig implementiert oder nicht auf Wirksamkeit geprüft (Art. 9 DORA)."
+        },
+        {
+          "id": "D01-05",
+          "frage": "Existiert ein IKT-Erkennungs- und Überwachungsprozess für Anomalien (Art. 10 DORA)?",
+          "erwartete_evidenz": ["SIEM-System-Dokumentation", "Monitoring-Konzept", "Alert-Management-Prozess", "SOC-Beschreibung"],
+          "input_typen": ["pdf", "screenshot", "interview"],
+          "bewertungskriterien": "Automatisiertes Monitoring-System mit definierten Erkennungsmechanismen für IKT-Anomalien",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Ein ausreichender IKT-Erkennungs- und Überwachungsprozess gemäß Art. 10 DORA ist nicht vorhanden."
+        },
+        {
+          "id": "D01-06",
+          "frage": "Sind IKT-Reaktions- und Wiederherstellungspläne dokumentiert und getestet (Art. 11 DORA)?",
+          "erwartete_evidenz": ["Business Continuity Plan IKT", "Disaster Recovery Plan", "Testergebnisse BCP/DRP", "RTO/RPO-Definitionen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Dokumentierte BCP/DRP mit definierten RTO/RPO; mindestens jährlicher Test nachweisbar",
+          "schweregrad": "wesentlich",
+          "mangel_template": "IKT-Reaktions- und Wiederherstellungspläne sind nicht vollständig oder nicht getestet (Art. 11 DORA)."
+        },
+        {
+          "id": "D01-07",
+          "frage": "Werden Lessons Learned aus IKT-Vorfällen systematisch in das Risikomanagement zurückgespielt (Art. 13 DORA)?",
+          "erwartete_evidenz": ["Post-Incident-Review-Berichte", "Maßnahmen-Tracker", "Aktualisierungen an Plänen/Prozessen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Dokumentierter Post-Incident-Review-Prozess; nachweisliche Integration der Erkenntnisse",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Ein systematischer Lessons-Learned-Prozess nach IKT-Vorfällen gemäß Art. 13 DORA fehlt."
+        }
+      ]
+    },
+
+    {
+      "id": "D02",
+      "titel": "IKT-Vorfallsmanagement und -meldung (Art. 17-23 DORA)",
+      "rechtsgrundlagen": ["Art. 17 DORA", "Art. 18 DORA", "Art. 19 DORA", "Art. 20 DORA", "RTS Incident Classification"],
+      "prueffelder": [
+        {
+          "id": "D02-01",
+          "frage": "Existiert ein dokumentierter IKT-Vorfallsmanagementprozess (Art. 17 DORA)?",
+          "erwartete_evidenz": ["Incident-Management-Prozessdokumentation", "Eskalationsmatrix", "Rollen und Verantwortlichkeiten", "Kommunikationsplan"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Vollständiger Incident-Management-Prozess inkl. Klassifizierung, Eskalation, Kommunikation und Abschluss",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Ein vollständiger IKT-Vorfallsmanagementprozess gemäß Art. 17 DORA ist nicht vorhanden."
+        },
+        {
+          "id": "D02-02",
+          "frage": "Werden IKT-Vorfälle gemäß Art. 18 DORA korrekt klassifiziert (wesentlich vs. nicht-wesentlich)?",
+          "erwartete_evidenz": ["Klassifizierungsschema/-matrix", "Beispielklassifizierungen aus Vorfallslog", "RTS-Kriterien implementiert"],
+          "input_typen": ["pdf", "excel", "screenshot"],
+          "bewertungskriterien": "Klassifizierungslogik entspricht den RTS-Kriterien (Auswirkung, Dauer, Betroffene Systeme, Datenverlust etc.)",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Klassifizierung von IKT-Vorfällen entspricht nicht den RTS-Anforderungen nach Art. 18 DORA."
+        },
+        {
+          "id": "D02-03",
+          "frage": "Werden wesentliche IKT-Vorfälle fristgerecht an die zuständige Behörde gemeldet (Art. 19 DORA)?",
+          "erwartete_evidenz": ["Meldelog wesentliche Vorfälle", "Frühwarnung (4h)", "Zwischenbericht (72h)", "Abschlussbericht (1 Monat)"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Dreistufige Meldepflicht eingehalten: Frühwarnung <4h, Zwischenbericht <72h, Abschlussbericht <1 Monat",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Wesentliche IKT-Vorfälle werden nicht fristgerecht oder vollständig an die Aufsichtsbehörde gemeldet (Art. 19 DORA)."
+        },
+        {
+          "id": "D02-04",
+          "frage": "Werden Kunden und Gegenparteien bei wesentlichen Vorfällen proaktiv informiert (Art. 19 Abs. 6 DORA)?",
+          "erwartete_evidenz": ["Kundenkommunikations-Prozess", "Kommunikationsvorlagen", "Nachweise vergangener Kundenmeldungen"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Dokumentierter Prozess für Kundenkommunikation bei wesentlichen Vorfällen vorhanden",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Ein Prozess zur Kundeninformation bei wesentlichen IKT-Vorfällen gemäß Art. 19 Abs. 6 DORA fehlt."
+        }
+      ]
+    },
+
+    {
+      "id": "D03",
+      "titel": "TLPT – Threat-Led Penetration Testing (Art. 24-27 DORA)",
+      "rechtsgrundlagen": ["Art. 24 DORA", "Art. 25 DORA", "Art. 26 DORA", "TIBER-EU Framework"],
+      "prueffelder": [
+        {
+          "id": "D03-01",
+          "frage": "Werden regelmäßige DORA-konforme TLPT-Tests durchgeführt (alle 3 Jahre, Art. 24)?",
+          "erwartete_evidenz": ["TLPT-Testberichte", "Zertifizierung durch zugelassenen Tester", "Behördliche Genehmigung"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Für betroffene Institute: TLPT mindestens alle 3 Jahre mit zugelassenem externen Tester; Behördenanzeige vor Test",
+          "schweregrad": "wesentlich",
+          "mangel_template": "TLPT-Tests werden nicht im geforderten Rhythmus oder nicht DORA-konform durchgeführt (Art. 24 DORA)."
+        },
+        {
+          "id": "D03-02",
+          "frage": "Werden identifizierte Schwachstellen aus TLPT systematisch behoben und dokumentiert?",
+          "erwartete_evidenz": ["Remediation-Plan nach TLPT", "Maßnahmen-Tracker", "Closure-Nachweise", "Re-Test-Ergebnisse"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Vollständiger Remediation-Plan mit nachweislicher Umsetzung; behördliche Bestätigung der Behebung",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Aus TLPT identifizierte Schwachstellen werden nicht systematisch und nachweislich behoben."
+        }
+      ]
+    },
+
+    {
+      "id": "D04",
+      "titel": "IKT-Drittparteienrisiko (Art. 28-44 DORA)",
+      "rechtsgrundlagen": ["Art. 28 DORA", "Art. 29 DORA", "Art. 30 DORA", "Art. 31 DORA", "RTS IKT-Drittparteien"],
+      "prueffelder": [
+        {
+          "id": "D04-01",
+          "frage": "Existiert eine vollständige Strategie für das IKT-Drittparteienrisiko (Art. 28 DORA)?",
+          "erwartete_evidenz": ["IKT-Drittparteienrisiko-Strategie", "Outsourcing-Register", "Kritikalitätsbewertung Drittparteien"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Dokumentierte Strategie inkl. risikobasierter Kategorisierung aller IKT-Drittparteien",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Eine vollständige Strategie für das IKT-Drittparteienrisiko gemäß Art. 28 DORA fehlt."
+        },
+        {
+          "id": "D04-02",
+          "frage": "Werden kritische IKT-Drittparteien (CTPP) identifiziert und besonders überwacht?",
+          "erwartete_evidenz": ["Liste kritischer IKT-Drittparteien", "Kritikalitätsbewertung", "Erweiterte Due-Diligence-Nachweise"],
+          "input_typen": ["excel", "pdf"],
+          "bewertungskriterien": "Kritische Drittparteien identifiziert; verstärkte Überwachung und erweiterte Vertragsrechte nachweisbar",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Kritische IKT-Drittparteien werden nicht identifiziert oder nicht angemessen überwacht (Art. 31 DORA)."
+        },
+        {
+          "id": "D04-03",
+          "frage": "Enthalten alle IKT-Drittparteienverträge die nach Art. 30 DORA geforderten Mindestklauseln?",
+          "erwartete_evidenz": ["Vertragsvorlagen/-checkliste", "Stichprobenprüfung bestehender Verträge", "Exit-Klauseln", "Auditrechte"],
+          "input_typen": ["pdf"],
+          "bewertungskriterien": "Alle geforderten Vertragsklauseln vorhanden: SLAs, Auditrechte, Exit-Strategie, Datenschutz, Subcontracting-Regelung",
+          "schweregrad": "wesentlich",
+          "mangel_template": "IKT-Drittparteienverträge enthalten nicht alle nach Art. 30 DORA geforderten Mindestklauseln."
+        },
+        {
+          "id": "D04-04",
+          "frage": "Werden IKT-Drittparteien regelmäßig auf Konformität und Performance überwacht?",
+          "erwartete_evidenz": ["Monitoring-Berichte Drittparteien", "SLA-Reporting", "Jahresprüfberichte", "Eskalationsverfahren"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Risikobasiertes, regelmäßiges Monitoring aller IKT-Drittparteien; dokumentierte Überprüfungen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "IKT-Drittparteien werden nicht ausreichend regelmäßig und risikobasiert überwacht."
+        },
+        {
+          "id": "D04-05",
+          "frage": "Gibt es dokumentierte Exit-Strategien für kritische IKT-Drittparteien?",
+          "erwartete_evidenz": ["Exit-Strategie-Dokumentation", "Alternativanbieter-Analyse", "Migrationspläne", "Testnachweise"],
+          "input_typen": ["pdf"],
+          "bewertungskriterien": "Vollständige Exit-Strategien für kritische Drittparteien; Migrationsplan realistisch und getestet",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Exit-Strategien für kritische IKT-Drittparteien fehlen oder sind nicht umsetzbar."
+        }
+      ]
+    },
+
+    {
+      "id": "D05",
+      "titel": "Informationsaustausch und Governance (Art. 45-46 DORA)",
+      "rechtsgrundlagen": ["Art. 45 DORA", "Art. 46 DORA"],
+      "prueffelder": [
+        {
+          "id": "D05-01",
+          "frage": "Nimmt das Institut an freiwilligem Informationsaustausch zu Cyberbedrohungen teil (Art. 45 DORA)?",
+          "erwartete_evidenz": ["Mitgliedschaft in ISAC/ISAOs", "Threat-Intelligence-Vereinbarungen", "Beiträge zu Informationsaustausch"],
+          "input_typen": ["pdf", "interview"],
+          "bewertungskriterien": "Teilnahme an mind. einem Informationsaustausch-Netzwerk dokumentiert (z.B. FS-ISAC, TIBER, BSI-Netzwerke)",
+          "schweregrad": "gering",
+          "mangel_template": "Das Institut nimmt nicht am freiwilligen Informationsaustausch zu Cyberbedrohungen teil (Art. 45 DORA)."
+        }
+      ]
+    }
+  ]
+}
