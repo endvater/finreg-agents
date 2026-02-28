@@ -1,13 +1,11 @@
-# FinRegAgents 🏦🤖
+# FinRegAgents v2 🏦🤖
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)](https://python.org)
-[![LlamaIndex](https://img.shields.io/badge/LlamaIndex-0.11%2B-ff6b35)](https://llamaindex.ai)
-[![LangChain](https://img.shields.io/badge/LangChain-0.3%2B-1c3c3c)](https://langchain.com)
-[![Claude](https://img.shields.io/badge/Powered_by-Claude_3-d97706)](https://anthropic.com)
-[![Status](https://img.shields.io/badge/Status-Alpha-orange)]()
+[![Claude](https://img.shields.io/badge/Powered_by-Claude-d97706)](https://anthropic.com)
+[![Status](https://img.shields.io/badge/Status-Alpha-orange)](#)
 
-> **AI agent framework for financial regulatory audits** – GwG, MaRisk, DORA and beyond.
+> **AI Agent Framework für regulatorische Prüfungen** – GwG, MaRisk, DORA, WpHG/MaComp.
 
 FinRegAgents simuliert behördliche Sonderprüfungen durch spezialisierte KI-Agenten.
 Jeder Agent arbeitet einen regulatorischen Prüfkatalog gegen deine Dokumente ab und
@@ -15,29 +13,35 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 
 ---
 
-## ✨ Features
+## Was ist neu in v2?
 
-- 🔍 **RAG-basiertes Retrieval** – Jede Prüffrage holt sich präzise die relevanten Dokumentenstellen
-- 📄 **Multi-Modal Ingestion** – PDF, Excel, Interview-Fragebögen, Screenshots, Systemlogs
-- 🧑‍⚖️ **BaFin-kalibrierter Prüfer-Agent** – System-Prompt nach echten Prüfungsstandards
-- 📊 **Formeller Prüfbericht** – JSON + Markdown + druckfähiges HTML mit Mängelkatalog
-- 🔌 **Erweiterbar** – Eigene Kataloge für jede Regulatorik einsteckbar
-- ⚡ **Teilprüfungen** – Einzelne Sektionen isoliert prüfen
+Version 2 ist eine vollständige Überarbeitung basierend auf einem Code-Review, das fünf kritische Architektur-Schwächen adressiert:
+
+| Problem in v1 | Lösung in v2 |
+|---|---|
+| Keine Verifikationsschicht – Halluzinationen landen ungeprüft im Bericht | **Retrieval-Quality-Gate** + **Strukturelle Validierung** + **Confidence-Scoring** |
+| System-Prompt ist GwG-hardcoded – DORA wird von einem "GwG-Prüfer" bewertet | **Regulatorik-spezifische System-Prompts** für jede der 4 Regulatoriken |
+| `nicht_prüfbar` wird ignoriert – 80% nicht prüfbar = "KONFORM" | **Evidenz-Warnungen**: Ab 30% nicht prüfbar wird die Gesamtbewertung eingeschränkt |
+| XSS im HTML-Report – Befund-Texte ungefiltert eingebettet | **html.escape()** für alle dynamischen Inhalte |
+| Kein Audit-Trail, kein Checkpoint | **Audit-Trail** (Modell, Katalog-Version) + **Checkpoint** nach jeder Sektion |
+
+### Weitere Verbesserungen
+
+- **Confidence-Score** (0.0–1.0) pro Befund aus vier Signalen: Retrieval-Score, Evidenz-Coverage, Type-Match, LLM-Self-Assessment
+- **Review-Markierung**: Befunde unter dem Confidence-Threshold werden als "Review erforderlich" markiert
+- **Sektions-Eskalation**: Wenn >30% der Befunde einer Sektion Review erfordern → Warnung
+- **Interview-Parsing**: Unterstützt jetzt beide JSON-Formate (Array und Dict mit `fragen_antworten`)
+- **Screenshot-Memory-Fix**: base64-Daten werden nicht mehr in den Index geladen
+- **Chunk-Size**: Von 512 auf 1024 Tokens erhöht (besser für regulatorische Texte)
+- **Deduplizierung**: Identische Dateien in verschiedenen Ordnern werden nur einmal indexiert
+- **YAML-Support**: Interview-Fragebögen in YAML werden korrekt geparst
+- **Model-Default**: Sonnet statt Opus (kosteneffizient, Opus optional per `--model`)
+- **Test-Suite**: Pytest-Tests für Confidence, Validierung, JSON-Parsing, Katalog-Struktur
+- **Keine globale LlamaIndex-State-Mutation** mehr
 
 ---
 
-## 🗺️ Unterstützte Regulatorik
-
-| Regulatorik | Status | Prüffelder | Rechtsgrundlage |
-|---|---|---|---|
-| **GwG / AML** | ✅ Verfügbar | 34 | GwG, §25h KWG, BaFin AuA |
-| **MaRisk** | ✅ Verfügbar | 22 | MaRisk AT/BT, §25a KWG |
-| **DORA** | ✅ Verfügbar | 18 | DORA Art. 5-46, RTS |
-| **WpHG / MaComp** | ✅ Verfügbar | 20 | WpHG, MaComp, MAR, MiFID II |
-
----
-
-## 🏗️ Architektur
+## Architektur
 
 ```
 finreg-agents/
@@ -45,17 +49,23 @@ finreg-agents/
 ├── pipeline.py              ← Hauptorchestrator (CLI + Python API)
 │
 ├── catalog/
-│   └── gwg_catalog.json     ← GwG-Prüfkatalog (34 Prüffelder, 8 Sektionen)
+│   ├── gwg_catalog.json     ← GwG-Prüfkatalog (34 Prüffelder, 8 Sektionen)
+│   ├── dora_catalog.json    ← DORA-Katalog (18 Prüffelder, 5 Sektionen)
+│   ├── marisk_catalog.json  ← MaRisk-Katalog (22 Prüffelder, 8 Sektionen)
+│   └── wphg_catalog.json    ← WpHG/MaComp-Katalog (20 Prüffelder, 7 Sektionen)
 │
 ├── ingestion/
-│   └── ingestor.py          ← Multi-Modal Document Ingestor
+│   ├── ingestor.py          ← Multi-Modal Document Ingestor
 │   └── interviews/          ← Beispiel-Fragebögen
 │
 ├── agents/
-│   └── pruef_agent.py       ← RAG + LLM Prüfer-Agent
+│   └── pruef_agent.py       ← RAG + LLM Prüfer-Agent + Validierung + Confidence
 │
-└── reports/
-    └── bericht_generator.py ← Prüfbericht (JSON / MD / HTML)
+├── reports/
+│   └── bericht_generator.py ← Prüfbericht (JSON / MD / HTML) mit Audit-Trail
+│
+└── tests/
+    └── test_core.py         ← Pytest-Tests für Kernkomponenten
 ```
 
 ### Datenfluss
@@ -64,30 +74,53 @@ finreg-agents/
 Dokumente (PDF, Excel, Interview, Screenshot, Log)
         │
         ▼
-  [GwGIngestor]          Multi-Modal Ingestion & Chunking
+  [GwGIngestor]              Multi-Modal Ingestion, Chunking, Dedup
         │
         ▼
-  [VectorStoreIndex]     LlamaIndex + OpenAI Embeddings
+  [VectorStoreIndex]         LlamaIndex + OpenAI Embeddings
         │
         ▼
-  [Prüfkatalog]          34 Prüffelder in 8 Sektionen
+  [Prüfkatalog]              94 Prüffelder in 4 Regulatoriken
         │
         │   für jedes Prüffeld:
         ▼
-  [GwGPrueferAgent]      RAG-Retrieval → Claude-Bewertung → Befund
+  [PrueferAgent]
+   ├─ RAG-Retrieval          → Top-k relevante Chunks holen
+   ├─ Quality-Gate       NEU → Score < Threshold? → nicht_prüfbar (kein LLM-Call)
+   ├─ LLM-Bewertung          → Regulatorik-spezifischer Prompt → Claude
+   ├─ Strukturelle Valid. NEU → Quellen-Cross-Check, Platzhalter, Konsistenz
+   └─ Confidence-Score   NEU → 4 Signale → Score + Review-Markierung
         │
         ▼
-  [BerichtGenerator]     Mängelkatalog + Prüfbericht (JSON / MD / HTML)
+  [Checkpoint]           NEU → Zwischenergebnis nach jeder Sektion
+        │
+        ▼
+  [BerichtGenerator]
+   ├─ JSON + Markdown + HTML
+   ├─ Confidence-Bars    NEU → Visuelle Confidence-Indikatoren
+   ├─ Evidenz-Warnungen  NEU → Warnung bei hohem nicht_prüfbar-Anteil
+   └─ Audit-Trail        NEU → Modell, Katalog-Version, Zeitstempel
 ```
 
 ---
 
-## 🚀 Quickstart
+## Unterstützte Regulatorik
+
+| Regulatorik | Sektionen | Prüffelder | Rechtsgrundlage |
+|---|---|---|---|
+| **GwG / AML** | 8 | 34 | GwG, §25h KWG, BaFin AuA |
+| **DORA** | 5 | 18 | DORA Art. 5-46, RTS |
+| **MaRisk** | 8 | 22 | MaRisk AT/BT, §25a KWG |
+| **WpHG / MaComp** | 7 | 20 | WpHG, MaComp, MAR, MiFID II |
+
+---
+
+## Quickstart
 
 ### 1. Installation
 
 ```bash
-git clone https://github.com/deinname/finreg-agents.git
+git clone https://github.com/endvater/finreg-agents.git
 cd finreg-agents
 pip install -r requirements.txt
 ```
@@ -105,7 +138,7 @@ export OPENAI_API_KEY="sk-..."        # für Embeddings (text-embedding-3-small)
 meine_dokumente/
   pdfs/           → Policies, Verfahrensanweisungen, Prüfberichte (*.pdf)
   excel/          → Alert-Statistiken, Schulungsnachweise (*.xlsx, *.csv)
-  interviews/     → Befragungsbögen (*.json)
+  interviews/     → Befragungsbögen (*.json, *.yaml)
   screenshots/    → TM-System, goAML, KYC-Oberfläche (*.png, *.jpg)
   logs/           → Systemlogs, Auditlogs (*.txt, *.log)
 ```
@@ -113,51 +146,79 @@ meine_dokumente/
 ### 4. Prüfung starten
 
 ```bash
-# GwG-Sonderprüfung (AML)
+# GwG-Sonderprüfung (AML) – Default: Sonnet (kosteneffizient)
 python pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
 
-# Nur bestimmte Sektionen (Schnellprüfung)
-python pipeline.py --input ./docs --sektionen S01 S02 S05
+# DORA-Prüfung (nur Drittparteienrisiko)
+python pipeline.py --input ./docs --regulatorik dora --sektionen D04
 
-# Ergebnis-Ordner festlegen
-python pipeline.py --input ./docs --institution "Bank XY" --output ./ergebnisse
+# MaRisk-Vollprüfung mit Opus (höchste Qualität)
+python pipeline.py --input ./docs --regulatorik marisk --model claude-opus-4-5
+
+# WpHG / MaComp
+python pipeline.py --input ./docs --regulatorik wphg --sektionen W02 W03 W04
 ```
 
 ### 5. Python API
 
 ```python
-from pipeline import GwGAuditPipeline
+from pipeline import AuditPipeline
 
-pipeline = GwGAuditPipeline(
+pipeline = AuditPipeline(
     input_dir="./meine_dokumente",
     institution="Musterbank AG",
-    sektionen_filter=["S01", "S02", "S03"],  # optional: Teilprüfung
+    regulatorik="dora",
+    sektionen_filter=["D01", "D02"],   # optional: Teilprüfung
+    model="claude-sonnet-4-5-20250514", # optional: Modellwahl
 )
 report_paths = pipeline.run()
-# → {"json": "./reports/output/gwg_pruefbericht_20250201.json",
-#    "markdown": "...", "html": "..."}
+# → {"json": "...", "markdown": "...", "html": "..."}
+```
+
+### 6. Tests ausführen
+
+```bash
+pytest tests/ -v
 ```
 
 ---
 
-## 📋 GwG-Prüfkatalog
+## Confidence-Scoring
 
-Angelehnt an den realen BaFin-Prüfungsprozess gemäß §44 KWG:
+Jeder Befund erhält einen Confidence-Score (0.0–1.0), der aus vier Signalen berechnet wird:
 
-| Sektion | Prüffelder | Rechtsgrundlagen |
+| Signal | Gewichtung | Beschreibung |
 |---|---|---|
-| S01 · Risikoanalyse | 4 | §5 GwG, §25h Abs.1 KWG |
-| S02 · Kundensorgfaltspflichten (KYC) | 6 | §§10–13 GwG |
-| S03 · Transaktionsmonitoring | 4 | §25h Abs.2 KWG, §10 Abs.1 Nr.5 GwG |
-| S04 · Geldwäschebeauftragter | 3 | §7 GwG, §25h Abs.7 KWG |
-| S05 · Verdachtsmeldewesen | 3 | §§43–44 GwG |
-| S06 · Schulung & Awareness | 2 | §6 Abs.2 Nr.6 GwG |
-| S07 · Aufzeichnungspflichten | 2 | §8 GwG |
-| S08 · Interne Revision & Governance | 2 | §25h Abs.5 KWG, MaRisk BT3.2 |
+| Retrieval-Score | 30% | Durchschnittliche Relevanz der gefundenen Chunks |
+| Evidenz-Coverage | 30% | Anteil der erwarteten Evidenz, die gefunden wurde |
+| Type-Match | 20% | Stimmen die Dokumenttypen (PDF, Excel, etc.) überein? |
+| LLM-Self-Assessment | 20% | Selbsteinschätzung des Modells |
+
+### Schwellenwerte
+
+| Confidence | Aktion |
+|---|---|
+| < 0.40 | Automatisch `nicht_prüfbar` – LLM-Bewertung wird überschrieben |
+| 0.40 – 0.70 | Befund markiert als **Review erforderlich** 🔍 |
+| > 0.70 | Befund geht in den Bericht |
+| >30% Review in einer Sektion | **Sektions-Eskalation** empfohlen |
 
 ---
 
-## 📊 Bewertungsskala
+## Strukturelle Validierung
+
+Vor der Aufnahme in den Bericht durchläuft jeder Befund automatische Checks:
+
+- **Quellen-Cross-Check**: Zitiert der Agent Quellen, die nicht im Retrieval waren? → Phantom-Quellen-Warnung
+- **Platzhalter-Check**: Unaufgelöste `{}`-Platzhalter in Begründungen oder Mangel-Texten
+- **Konsistenz-Check**: `konform` ohne Textstellen? `nicht_konform` ohne Mangel-Text?
+- **Bewertungs-Konsistenz**: Mangel-Text bei `konform`-Bewertung?
+
+Alle Warnungen werden im Befund gespeichert und im Bericht angezeigt.
+
+---
+
+## Bewertungsskala
 
 | Bewertung | Bedeutung |
 |---|---|
@@ -168,12 +229,22 @@ Angelehnt an den realen BaFin-Prüfungsprozess gemäß §44 KWG:
 
 **Schweregrade:** `wesentlich` (sofortiger Handlungsbedarf) · `bedeutsam` · `gering`
 
+### Gesamtbewertungslogik (v2)
+
+| Bedingung | Gesamtbewertung |
+|---|---|
+| Wesentliche Mängel vorhanden | **ERHEBLICHE MÄNGEL** |
+| ≥50% nicht prüfbar | **UNZUREICHENDE EVIDENZ – PRÜFUNG NICHT BELASTBAR** |
+| Mängel oder ≥3 teilkonform | **MÄNGEL FESTGESTELLT** |
+| ≥30% nicht prüfbar | **EINGESCHRÄNKT BELASTBAR** |
+| Teilkonforme Befunde vorhanden | **TEILKONFORM – NACHBESSERUNG ERFORDERLICH** |
+| Alles konform | **KONFORM** |
+
 ---
 
-## 🔧 Eigenen Katalog erstellen
+## Eigenen Katalog erstellen
 
-Jedes Prüffeld folgt diesem Schema – einfach in eine neue JSON-Datei schreiben
-und per `--catalog` übergeben:
+Jedes Prüffeld folgt diesem Schema:
 
 ```json
 {
@@ -201,17 +272,25 @@ und per `--catalog` übergeben:
 ```
 
 ```bash
-python pipeline.py --input ./docs --catalog ./catalog/marisk_catalog.json
+python pipeline.py --input ./docs --catalog ./mein_katalog.json
 ```
 
 ---
 
-## 🗂️ Interview-Fragebogen Format
+## Interview-Format
 
-Strukturierte Befragungsprotokolle werden direkt in den Index aufgenommen:
+Strukturierte Befragungsprotokolle werden direkt in den Index aufgenommen.
+Unterstützt werden zwei JSON-Formate:
+
+**Format A – Dict mit Metadaten (empfohlen):**
 
 ```json
 {
+  "meta": {
+    "institut": "Musterbank AG",
+    "datum": "2025-02-01",
+    "interviewer": "Prüfer KI"
+  },
   "fragen_antworten": [
     {
       "id": "I-01",
@@ -224,40 +303,88 @@ Strukturierte Befragungsprotokolle werden direkt in den Index aufgenommen:
 }
 ```
 
+**Format B – Einfaches Array:**
+
+```json
+[
+  {"frage": "...", "antwort": "...", "kommentar": "..."}
+]
+```
+
 ---
 
-## 🔮 Roadmap
+## Prüfbericht-Output
 
-- [ ] MaRisk-Katalog (AT + BT Module)
-- [ ] DORA-Katalog (ICT Risk, Incident Reporting)
+Jede Prüfung erzeugt drei Dateien:
+
+| Format | Verwendung |
+|---|---|
+| **JSON** | Maschinenlesbar, API-Integration, Weiterverarbeitung |
+| **Markdown** | Lesbar, Git-kompatibel, Review-Workflows |
+| **HTML** | Druckfähig, Präsentation, PDF-Konvertierung |
+
+Alle Berichte enthalten jetzt:
+- Confidence-Bars pro Befund
+- Review-Markierungen (🔍) für unsichere Bewertungen
+- Validierungshinweise (⚡) bei strukturellen Problemen
+- Evidenz-Warnungen bei hohem nicht_prüfbar-Anteil
+- Audit-Trail mit Modell, Katalog-Version und Zeitstempel
+
+---
+
+## Kosten-Einschätzung
+
+| Regulatorik | Prüffelder | Geschätzter Aufwand (Sonnet) | Geschätzter Aufwand (Opus) |
+|---|---|---|---|
+| GwG | 34 | ~$0.80–1.50 | ~$8–15 |
+| DORA | 18 | ~$0.40–0.80 | ~$4–8 |
+| MaRisk | 22 | ~$0.50–1.00 | ~$5–10 |
+| WpHG | 20 | ~$0.45–0.90 | ~$4.50–9 |
+
+Hinweis: Kosten hängen von Dokumentenmenge, Chunk-Anzahl und Antwortlänge ab. Durch das Retrieval-Quality-Gate in v2 werden unnötige LLM-Calls bei schlechtem Retrieval eingespart.
+
+---
+
+## Roadmap
+
+- [ ] Skeptiker-Agent: Adversariales LLM-Review als optionaler Post-Processing-Layer
+- [ ] Synthetische Kontroll-Prüffelder (Ground-Truth-Signal) zur Kalibrierung
 - [ ] Persistenter Vektorindex via ChromaDB / Weaviate
 - [ ] Claude Vision für Screenshot-Analyse (TM-Systeme, KYC-Oberflächen)
 - [ ] Delta-Prüfung – nur geänderte Dokumente neu einlesen
-- [ ] Streamlit-UI für interaktive Prüfung
+- [ ] Streamlit-UI für interaktive Prüfung mit Sampling-Audit
+- [ ] JSON-Schema für Custom-Kataloge mit Validierung beim Laden
 - [ ] Multi-Institut-Vergleich – Benchmarking über Institutsgrenzen
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 FinRegAgents ist ein **Simulations- und Vorbereitungstool**. Es ersetzt **keine
 offizielle BaFin-Prüfung** und begründet keine Rechtsberatung. Prüfungsergebnisse
 sind als interne Vorbereitung zu verstehen, nicht als behördliche Feststellung.
 
+Die Confidence-Scores und Review-Markierungen dienen dazu, die Belastbarkeit
+der einzelnen Befunde transparent zu machen. Befunde mit niedrigem Confidence
+oder Review-Markierung sollten stets manuell validiert werden.
+
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions willkommen – insbesondere:
-- Neue Prüfkataloge (MaRisk, DORA, WpHG)
-- Verbesserte Prüffragen und Bewertungskriterien
-- Neue Ingestion-Adapter für weitere Dokumenttypen
 
-Bitte fork → branch → PR mit Beschreibung welche Regulatorik erweitert wurde.
+- Neue Prüfkataloge für weitere Regulatoriken
+- Verbesserte Prüffragen und Bewertungskriterien
+- Skeptiker-Agent-Implementierung
+- Neue Ingestion-Adapter (z.B. .docx, Notion, Confluence)
+- Tests und Benchmarks
+
+Bitte fork → branch → PR mit Beschreibung welche Regulatorik / welches Feature erweitert wurde.
 
 ---
 
-## 📄 Lizenz
+## Lizenz
 
 Apache License 2.0 – siehe [LICENSE](LICENSE).
 
@@ -266,31 +393,4 @@ integrieren, solange der Copyright-Vermerk erhalten bleibt.
 
 ---
 
-<div align="center">
-  <sub>Gebaut mit LlamaIndex · LangChain · Claude · ❤️</sub>
-</div>
-
----
-
-## 🗂️ Alle Prüfkataloge im Überblick
-
-| Regulatorik | Sektionen | Prüffelder | Schwerpunkte |
-|---|---|---|---|
-| **GwG** | 8 | 34 | Risikoanalyse, KYC, TM, GwB, SAR, Schulung |
-| **DORA** | 5 | 18 | IKT-Risiko, Incident Reporting, TLPT, Drittparteien |
-| **MaRisk** | 8 | 22 | Strategie, IKS, RTF, Kredit, Handel, IR, Compliance |
-| **WpHG** | 7 | 20 | Compliance, Interessenkonflikte, Geeignetheit, MAR, Best Execution |
-
-```bash
-# GwG Sonderprüfung
-python pipeline.py --input ./docs --regulatorik gwg
-
-# DORA Prüfung (nur Drittparteienrisiko)
-python pipeline.py --input ./docs --regulatorik dora --sektionen D04
-
-# MaRisk Vollprüfung
-python pipeline.py --input ./docs --regulatorik marisk --institution "Musterbank AG"
-
-# WpHG / MaComp
-python pipeline.py --input ./docs --regulatorik wphg --sektionen W02 W03 W04
-```
+Gebaut mit LlamaIndex · LangChain · Claude · ❤️
