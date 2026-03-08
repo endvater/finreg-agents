@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "dokument_typ": "Prüfungsinterview",
+    "institut": "Musterbank AG",
+    "datum": "2025-02-12",
+    "uhrzeit": "14:00 – 15:30 Uhr",
+    "ort": "Hauptstelle Frankfurt, Konferenzraum 3B",
+    "interviewer": "BaFin-Prüfungsteam (anonym)",
+    "interviewter": "Sandra Becker, stellv. GwB und Compliance Officer"
+  },
+  "fragen_antworten": [
+    {
+      "id": "C-01",
+      "prueffeld_referenz": "S06-01",
+      "frage": "Wie hoch war die Schulungsquote für den GwG-Pflichtkurs 2024, und was sind die Gründe für Nicht-Teilnahmen?",
+      "antwort": "Wir sind auf 72% gekommen. Das ist schlechter als 2023, wo wir 94% hatten. Die Hauptgründe sind Langzeitkranke, Neuzugänge und leider auch eine Gruppe von 67 Mitarbeitern, für die wir keinen dokumentierten Grund haben. Ich habe im Januar 2025 persönlich nachgefasst und eine Frist bis Ende Februar gesetzt.",
+      "kommentar": "Schulungsquote 72% bestätigt. LMS-Export liegt vor."
+    },
+    {
+      "id": "C-02",
+      "prueffeld_referenz": "S06-02",
+      "frage": "Sind die Schulungsinhalte aktuell? Wurden neue regulatorische Entwicklungen berücksichtigt?",
+      "antwort": "Ja, das würde ich mit gutem Gewissen sagen. Wir haben den Kurs im April 2024 aktualisiert – AMLA, 6. AML-Paket, Kryptotypologien sind alle drin. Wir kaufen den Grundkurs bei ACAMS ein, die halten das automatisch aktuell.",
+      "kommentar": "Schulungsunterlagen wurden gesichtet. Inhalte aktuell."
+    },
+    {
+      "id": "C-03",
+      "prueffeld_referenz": "S05-01",
+      "frage": "Beschreiben Sie den internen Prozess, wenn ein Mitarbeiter einen Geldwäscheverdacht meldet.",
+      "antwort": "Der Mitarbeiter meldet entweder per verschlüsselter E-Mail an gwb@musterbank.de oder ruft direkt die GwB-Hotline an. Das GwB-Team nimmt den Sachverhalt innerhalb von zwei Werktagen auf, bewertet, ob der Verdacht hinreichend begründet ist, und entscheidet dann über die SAR-Erstellung in goAML. Wir haben eine Verfahrensanweisung dazu – MB-SAR-2024-001.",
+      "kommentar": "Prozess gut dokumentiert und beschrieben. SAR-Verfahrensanweisung liegt vor."
+    },
+    {
+      "id": "C-04",
+      "prueffeld_referenz": "S02-04",
+      "frage": "Wie funktioniert das Sanktionslisten-Screening in der Praxis?",
+      "antwort": "Das ist vollautomatisiert. Jede Transaktion wird in Echtzeit gegen die EU, UN und OFAC Listen gescreent. Die Listen werden täglich aktualisiert. Bei einem Treffer wird die Transaktion sofort gesperrt und ich sowie Dr. Müller bekommen eine automatische Benachrichtigung. 2024 hatten wir drei Treffer – alle als False Positive bestätigt, alle dokumentiert.",
+      "kommentar": "Sanktionsscreening automatisiert bestätigt. Drei FP-Treffer dokumentiert."
+    }
+  ]
+}

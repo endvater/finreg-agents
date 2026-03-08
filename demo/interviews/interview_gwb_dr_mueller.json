@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "dokument_typ": "Prüfungsinterview",
+    "institut": "Musterbank AG",
+    "datum": "2025-02-12",
+    "uhrzeit": "10:00 – 12:30 Uhr",
+    "ort": "Hauptstelle Frankfurt, Konferenzraum 3B",
+    "interviewer": "BaFin-Prüfungsteam (anonym)",
+    "interviewter": "Dr. Thomas Müller, Geldwäschebeauftragter",
+    "beisitzer": "Sandra Becker, stellv. GwB",
+    "protokollführer": "Compliance Assistenz"
+  },
+  "fragen_antworten": [
+    {
+      "id": "I-01",
+      "prueffeld_referenz": "S04-01",
+      "frage": "Seit wann sind Sie als GwB der Musterbank AG bestellt und wann erfolgte die BaFin-Meldung?",
+      "antwort": "Ich bin seit dem 15. März 2022 als GwB bestellt. Die BaFin-Meldung erfolgte am 16. März 2022 und wurde unter dem Aktenzeichen 2022/GWB/0471 bestätigt. Vor mir war Frau Klaudia Brandt GwB, die in Rente gegangen ist. Die Übergabe fand über 4 Wochen statt.",
+      "kommentar": "Bestellungsurkunde liegt vor. BaFin-Bestätigung wurde vorgelegt."
+    },
+    {
+      "id": "I-02",
+      "prueffeld_referenz": "S04-02",
+      "frage": "Wie viele Mitarbeiter stehen Ihnen im GwB-Team zur Verfügung? Empfinden Sie die Ressourcenausstattung als ausreichend?",
+      "antwort": "Derzeit arbeiten wir zu zweit: Ich und Frau Becker als Stellvertreterin. Das ist für 520 Mitarbeiter und 38.000 Kunden, ehrlich gesagt, sehr eng. In der zweiten Jahreshälfte 2024 hatte Frau Becker noch einen längeren Krankenstand, das hat uns erheblich unter Druck gesetzt. Ich habe den Vorstand mehrfach auf die Personalsituation hingewiesen, zuletzt im Jahresbericht 2024. Eine Aufstockung ist geplant, aber noch nicht konkretisiert.",
+      "kommentar": "Ressourcenproblem bestätigt. Kein formeller Stellenplan für GwB-Bereich vorgefunden."
+    },
+    {
+      "id": "I-03",
+      "prueffeld_referenz": "S01-02",
+      "frage": "Wann wurde die institutsspezifische Risikoanalyse zuletzt vollständig überarbeitet?",
+      "antwort": "Die aktuelle Version stammt aus Februar 2022. Ich weiß, das ist zu lang. Wir hatten für 2023 eine Überarbeitung geplant, aber das wurde immer wieder geschoben. Jetzt haben wir Q2 2025 als festes Datum gesetzt. Ich habe dafür auch externe Unterstützung beantragt.",
+      "kommentar": "Risikoanalyse von Feb 2022 liegt vor. Keine Aktualisierung in 36 Monaten. Kritischer Befund."
+    },
+    {
+      "id": "I-04",
+      "prueffeld_referenz": "S02-02",
+      "frage": "Wie stellt die Bank sicher, dass wirtschaftlich Berechtigte bei allen Kunden vollständig dokumentiert sind?",
+      "antwort": "Bei Neukunden läuft das hervorragend, da ist der Prozess ins Kernbankensystem integriert und kann gar nicht übersprungen werden. Das Problem sind die Bestandskunden, die vor 2020 eingerichtet wurden. Da fehlt bei etwa 18% der Firmenkonten eine aktuelle Transparenzregister-Abfrage. Wir haben Ende 2024 das Projekt BACKFILL gestartet, das soll bis Q3 2025 abgeschlossen sein.",
+      "kommentar": "wB-Lücke bei Bestandskunden bestätigt (ca. 1.350 Konten). Projekt gestartet, noch nicht abgeschlossen."
+    },
+    {
+      "id": "I-05",
+      "prueffeld_referenz": "S03-03",
+      "frage": "Wie hat sich die Alert-Bearbeitungszeit im Laufe des Jahres 2024 entwickelt?",
+      "antwort": "Das war unser größtes Problem 2024. Bis Juli lagen wir noch im Ziel – unter fünf Tagen. Dann ist Frau Becker ausgefallen und gleichzeitig ist das Alertvolumen gestiegen, weil wir neue TM-Szenarien aktiviert haben. Im Q4 lagen wir teilweise bei über drei Wochen Bearbeitungszeit. Das ist natürlich inakzeptabel. Wir haben im Oktober eine externe Zeitarbeitskraft eingesetzt, aber die war leider nicht einschlägig vorgebildet und musste erst eingearbeitet werden.",
+      "kommentar": "Rückstau mit Bearbeitungszeiten von bis zu 23 Tagen bestätigt. TM-Konzept dokumentiert ebenfalls."
+    },
+    {
+      "id": "I-06",
+      "prueffeld_referenz": "S08-01",
+      "frage": "Wann hat die Interne Revision das AML-Framework zuletzt geprüft?",
+      "antwort": "Die letzte vollständige AML-Prüfung war Oktober 2022. Die Prüfung für 2024 wurde auf 2025 verschoben – das war auch eine Kapazitätsentscheidung der Revision. Der Bericht 2022 liegt bei der Revision. Den kann ich Ihnen inhaltlich nicht vollständig referieren, weil ich ihn nicht in meinen Unterlagen habe.",
+      "kommentar": "IR-Bericht 2022 nicht als separates Dokument vorgefunden. Prüfungslücke von über 2 Jahren."
+    },
+    {
+      "id": "I-07",
+      "prueffeld_referenz": "S08-02",
+      "frage": "Wie werden Maßnahmen aus Prüfungen systematisch nachverfolgt?",
+      "antwort": "Wir haben dafür eine Excel-Tabelle, die von der Compliance geführt wird. Die ist leider seit März 2023 nicht mehr vollständig aktualisiert worden. Ich hatte das als einen der Punkte für das Q1 2025 auf dem Plan. Ein richtiges Workflow-Tool haben wir dafür nicht.",
+      "kommentar": "Kein systematisches Maßnahmentracking. Excel-Liste veraltet. Kritischer Befund."
+    }
+  ]
+}

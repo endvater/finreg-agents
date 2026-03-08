@@ -1,0 +1,838 @@
+# FircoSoft TM Suite v7.4 – System Audit Log
+# Musterbank AG | Exportiert: 2025-01-05 06:00:02
+# Zeitraum: 01.12.2024 – 31.12.2024
+
+2024-12-01 06:09:47 [INFO ] Batch-Verarbeitung abgeschlossen: 14021 Transaktionen geprüft
+2024-12-01 21:30:34 [ALERT] Neuer Alert generiert: ALT-525448 | Szenario: TM-03 | Konto: XXXX8026
+2024-12-01 20:02:40 [INFO ] Batch-Verarbeitung abgeschlossen: 15556 Transaktionen geprüft
+2024-12-01 14:53:14 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-01 07:48:13 [ALERT] Neuer Alert generiert: ALT-446337 | Szenario: TM-01 | Konto: XXXX2755
+2024-12-01 09:20:23 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-01 09:35:10 [INFO ] Alert ALT-767237 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-01 18:38:47 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-01 10:17:08 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-01 08:35:22 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-01 18:11:40 [INFO ] Batch-Verarbeitung abgeschlossen: 15804 Transaktionen geprüft
+2024-12-01 10:45:22 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-01 10:45:22
+2024-12-01 10:30:33 [INFO ] Batch-Verarbeitung abgeschlossen: 21289 Transaktionen geprüft
+2024-12-01 21:54:15 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-01 22:03:35 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-01 21:26:07 [ALERT] Neuer Alert generiert: ALT-315651 | Szenario: TM-06 | Konto: XXXX1460
+2024-12-01 20:14:30 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-02 08:05:27 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-02 04:27:09 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-02 22:23:03 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-02 22:23:03
+2024-12-02 00:32:28 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-02 16:58:50 [WARN ] Alert-Queue-Tiefe: 666 Einträge (Warnschwelle: 500)
+2024-12-02 16:43:32 [INFO ] Batch-Verarbeitung abgeschlossen: 21020 Transaktionen geprüft
+2024-12-02 03:33:38 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-02 02:30:58 [INFO ] Alert ALT-183382 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-02 17:09:51 [INFO ] Alert ALT-448818 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-02 01:04:36 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-02 19:25:46 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-02 00:49:08 [INFO ] Batch-Verarbeitung abgeschlossen: 18916 Transaktionen geprüft
+2024-12-02 19:54:20 [INFO ] Alert ALT-715690 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-02 21:22:54 [WARN ] Alert-Queue-Tiefe: 516 Einträge (Warnschwelle: 500)
+2024-12-02 12:33:35 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-02 07:42:01 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-02 10:13:15 [WARN ] Alert-Queue-Tiefe: 605 Einträge (Warnschwelle: 500)
+2024-12-02 16:04:35 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-02 22:19:19 [INFO ] Batch-Verarbeitung abgeschlossen: 21116 Transaktionen geprüft
+2024-12-02 11:18:20 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-02 04:24:19 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-02 12:33:51 [INFO ] Batch-Verarbeitung abgeschlossen: 23425 Transaktionen geprüft
+2024-12-02 08:25:07 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-02 08:25:07
+2024-12-02 06:46:22 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-02 09:22:33 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-02 18:45:17 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-02 09:24:52 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-02 14:02:29 [INFO ] Batch-Verarbeitung abgeschlossen: 23706 Transaktionen geprüft
+2024-12-02 07:07:23 [WARN ] Alert-Queue-Tiefe: 500 Einträge (Warnschwelle: 500)
+2024-12-03 10:33:44 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-03 10:33:44
+2024-12-03 11:19:06 [INFO ] Batch-Verarbeitung abgeschlossen: 16124 Transaktionen geprüft
+2024-12-03 18:21:46 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-03 11:40:52 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-03 20:47:25 [INFO ] Batch-Verarbeitung abgeschlossen: 24571 Transaktionen geprüft
+2024-12-03 11:31:52 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-03 17:15:05 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-03 17:15:05
+2024-12-03 08:00:11 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-03 12:32:13 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-03 08:13:37 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-03 03:14:11 [INFO ] Alert ALT-620774 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-03 02:50:13 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-03 06:02:53 [INFO ] Batch-Verarbeitung abgeschlossen: 24412 Transaktionen geprüft
+2024-12-03 14:22:42 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-03 05:26:02 [INFO ] Alert ALT-911186 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-03 17:43:31 [WARN ] Alert-Queue-Tiefe: 633 Einträge (Warnschwelle: 500)
+2024-12-03 21:04:05 [INFO ] Alert ALT-559203 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-03 13:06:44 [ALERT] Neuer Alert generiert: ALT-838632 | Szenario: TM-04 | Konto: XXXX3288
+2024-12-03 07:54:16 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-03 13:55:20 [INFO ] Batch-Verarbeitung abgeschlossen: 11422 Transaktionen geprüft
+2024-12-03 01:00:29 [ALERT] Neuer Alert generiert: ALT-463233 | Szenario: TM-04 | Konto: XXXX1083
+2024-12-03 16:35:54 [INFO ] Batch-Verarbeitung abgeschlossen: 15993 Transaktionen geprüft
+2024-12-03 00:54:48 [INFO ] Alert ALT-681481 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-03 07:45:34 [INFO ] Alert ALT-211212 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-03 15:32:12 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-03 03:44:53 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-03 21:46:46 [WARN ] Alert-Queue-Tiefe: 557 Einträge (Warnschwelle: 500)
+2024-12-03 13:57:16 [WARN ] Alert-Queue-Tiefe: 865 Einträge (Warnschwelle: 500)
+2024-12-03 06:10:19 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-03 05:56:50 [WARN ] Alert-Queue-Tiefe: 536 Einträge (Warnschwelle: 500)
+2024-12-03 01:17:12 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-03 01:17:12
+2024-12-03 06:43:14 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-03 02:25:44 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-03 23:35:31 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-03 23:35:31
+2024-12-03 01:33:23 [INFO ] Batch-Verarbeitung abgeschlossen: 10421 Transaktionen geprüft
+2024-12-03 04:03:06 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-03 06:16:59 [WARN ] Alert-Queue-Tiefe: 825 Einträge (Warnschwelle: 500)
+2024-12-03 05:15:24 [INFO ] Batch-Verarbeitung abgeschlossen: 20152 Transaktionen geprüft
+2024-12-04 11:12:50 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-04 11:12:50
+2024-12-04 13:07:39 [INFO ] Batch-Verarbeitung abgeschlossen: 9753 Transaktionen geprüft
+2024-12-04 06:37:34 [INFO ] Alert ALT-553563 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-04 05:58:42 [ALERT] Neuer Alert generiert: ALT-230436 | Szenario: TM-03 | Konto: XXXX4799
+2024-12-04 13:32:14 [INFO ] Alert ALT-982757 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-04 04:03:03 [INFO ] Alert ALT-650076 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-04 20:07:55 [WARN ] Alert-Queue-Tiefe: 799 Einträge (Warnschwelle: 500)
+2024-12-04 09:31:09 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-04 16:44:38 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-04 20:25:36 [ALERT] Neuer Alert generiert: ALT-223362 | Szenario: TM-06 | Konto: XXXX1868
+2024-12-04 17:30:33 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-04 23:23:48 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-04 06:30:02 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-04 01:20:23 [ALERT] Neuer Alert generiert: ALT-625273 | Szenario: TM-07 | Konto: XXXX2555
+2024-12-04 21:33:32 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-04 15:51:46 [WARN ] Alert-Queue-Tiefe: 866 Einträge (Warnschwelle: 500)
+2024-12-04 07:30:55 [ALERT] Neuer Alert generiert: ALT-156185 | Szenario: TM-06 | Konto: XXXX8351
+2024-12-04 06:51:26 [INFO ] Alert ALT-173366 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-04 21:18:46 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-04 16:31:21 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-04 18:06:08 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-04 12:42:15 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-04 09:29:37 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-04 23:53:13 [ALERT] Neuer Alert generiert: ALT-795267 | Szenario: TM-01 | Konto: XXXX6650
+2024-12-04 09:18:47 [INFO ] Batch-Verarbeitung abgeschlossen: 23769 Transaktionen geprüft
+2024-12-04 12:22:39 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-04 01:52:51 [WARN ] Alert-Queue-Tiefe: 787 Einträge (Warnschwelle: 500)
+2024-12-04 01:55:57 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-05 20:24:47 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-05 11:13:41 [ALERT] Neuer Alert generiert: ALT-648178 | Szenario: TM-01 | Konto: XXXX3060
+2024-12-05 21:11:13 [INFO ] Batch-Verarbeitung abgeschlossen: 16455 Transaktionen geprüft
+2024-12-05 22:55:32 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-05 19:24:31 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-05 01:56:39 [INFO ] Alert ALT-628429 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-05 08:41:27 [ALERT] Neuer Alert generiert: ALT-795549 | Szenario: TM-07 | Konto: XXXX4278
+2024-12-05 18:33:37 [WARN ] Alert-Queue-Tiefe: 499 Einträge (Warnschwelle: 500)
+2024-12-05 15:51:57 [INFO ] Alert ALT-108481 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-05 09:22:07 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-05 09:22:07
+2024-12-05 02:20:17 [ALERT] Neuer Alert generiert: ALT-999374 | Szenario: TM-03 | Konto: XXXX1652
+2024-12-05 11:01:18 [WARN ] Alert-Queue-Tiefe: 551 Einträge (Warnschwelle: 500)
+2024-12-05 19:17:52 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-05 12:10:18 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-05 20:38:05 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-05 13:11:41 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-05 03:35:41 [WARN ] Alert-Queue-Tiefe: 581 Einträge (Warnschwelle: 500)
+2024-12-05 23:57:13 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-05 11:49:44 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-05 11:49:44
+2024-12-05 02:25:42 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-05 20:23:43 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-05 04:13:01 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-05 14:25:23 [ALERT] Neuer Alert generiert: ALT-371443 | Szenario: TM-02 | Konto: XXXX8508
+2024-12-05 18:18:54 [INFO ] Batch-Verarbeitung abgeschlossen: 12954 Transaktionen geprüft
+2024-12-05 20:58:39 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-05 04:17:52 [INFO ] Batch-Verarbeitung abgeschlossen: 18014 Transaktionen geprüft
+2024-12-05 23:08:46 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-05 13:18:06 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-05 13:18:06
+2024-12-05 04:52:03 [WARN ] Alert-Queue-Tiefe: 456 Einträge (Warnschwelle: 500)
+2024-12-05 18:23:33 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-05 11:46:50 [ALERT] Neuer Alert generiert: ALT-473338 | Szenario: TM-02 | Konto: XXXX4601
+2024-12-05 01:32:42 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-05 23:53:29 [INFO ] Batch-Verarbeitung abgeschlossen: 21977 Transaktionen geprüft
+2024-12-06 16:57:32 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-06 12:41:42 [INFO ] Alert ALT-117097 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-06 19:02:14 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-06 18:50:57 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-06 15:41:41 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-06 22:30:51 [WARN ] Alert-Queue-Tiefe: 603 Einträge (Warnschwelle: 500)
+2024-12-06 10:11:50 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-06 22:20:53 [ALERT] Neuer Alert generiert: ALT-269886 | Szenario: TM-01 | Konto: XXXX8259
+2024-12-06 19:08:33 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-06 10:45:48 [WARN ] Alert-Queue-Tiefe: 877 Einträge (Warnschwelle: 500)
+2024-12-06 10:41:52 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-06 21:04:59 [INFO ] Alert ALT-347313 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-06 15:53:32 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-06 20:37:33 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-06 17:26:17 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-06 17:26:17
+2024-12-06 09:12:21 [INFO ] Alert ALT-653310 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-06 18:52:25 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-06 05:33:47 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-06 23:44:32 [ALERT] Neuer Alert generiert: ALT-473020 | Szenario: TM-06 | Konto: XXXX4887
+2024-12-06 14:40:27 [WARN ] Alert-Queue-Tiefe: 860 Einträge (Warnschwelle: 500)
+2024-12-06 14:16:07 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-06 14:16:07
+2024-12-06 07:17:22 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-06 15:37:36 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-06 21:36:06 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-06 08:43:44 [INFO ] Alert ALT-341166 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-06 23:16:56 [ALERT] Neuer Alert generiert: ALT-997089 | Szenario: TM-01 | Konto: XXXX3828
+2024-12-06 00:07:59 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-06 02:34:59 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-06 02:34:59
+2024-12-06 13:42:23 [INFO ] Batch-Verarbeitung abgeschlossen: 8797 Transaktionen geprüft
+2024-12-06 10:25:32 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-06 10:25:32
+2024-12-06 16:24:22 [WARN ] Alert-Queue-Tiefe: 417 Einträge (Warnschwelle: 500)
+2024-12-06 18:52:11 [INFO ] Batch-Verarbeitung abgeschlossen: 17680 Transaktionen geprüft
+2024-12-06 18:54:51 [INFO ] Alert ALT-776998 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-06 09:19:05 [INFO ] Alert ALT-922285 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-06 17:42:47 [INFO ] Batch-Verarbeitung abgeschlossen: 11808 Transaktionen geprüft
+2024-12-06 00:49:00 [WARN ] Alert-Queue-Tiefe: 692 Einträge (Warnschwelle: 500)
+2024-12-06 05:24:53 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-06 05:24:53
+2024-12-06 06:15:24 [ALERT] Neuer Alert generiert: ALT-366045 | Szenario: TM-04 | Konto: XXXX7314
+2024-12-06 19:40:21 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-06 23:37:43 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-07 16:26:45 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-07 08:12:33 [ALERT] Neuer Alert generiert: ALT-835877 | Szenario: TM-02 | Konto: XXXX5766
+2024-12-07 07:14:13 [WARN ] Alert-Queue-Tiefe: 622 Einträge (Warnschwelle: 500)
+2024-12-07 00:35:53 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-07 13:28:23 [INFO ] Alert ALT-799005 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-07 12:11:00 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-07 19:20:49 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-07 02:37:16 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-07 15:14:06 [INFO ] Batch-Verarbeitung abgeschlossen: 20380 Transaktionen geprüft
+2024-12-07 03:37:24 [WARN ] Alert-Queue-Tiefe: 467 Einträge (Warnschwelle: 500)
+2024-12-07 08:18:04 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-07 07:49:11 [INFO ] Alert ALT-912579 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-07 09:11:55 [ALERT] Neuer Alert generiert: ALT-511450 | Szenario: TM-06 | Konto: XXXX4334
+2024-12-07 14:27:57 [INFO ] Alert ALT-695204 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-07 19:35:21 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-07 08:54:24 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-07 20:45:44 [WARN ] Alert-Queue-Tiefe: 940 Einträge (Warnschwelle: 500)
+2024-12-07 10:54:46 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-07 10:54:46
+2024-12-07 11:11:06 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-07 20:05:56 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-07 20:05:56
+2024-12-07 03:31:58 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-07 15:12:54 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-07 13:36:11 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-07 13:22:54 [INFO ] Alert ALT-141636 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-08 23:48:20 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-08 20:39:36 [ALERT] Neuer Alert generiert: ALT-833336 | Szenario: TM-07 | Konto: XXXX9537
+2024-12-08 13:57:11 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-08 13:57:11
+2024-12-08 07:00:43 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-08 15:12:49 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-08 06:19:23 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-08 08:23:41 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-08 16:54:19 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-08 14:22:25 [WARN ] Alert-Queue-Tiefe: 543 Einträge (Warnschwelle: 500)
+2024-12-08 09:07:37 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-08 15:23:45 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-08 00:21:11 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-08 11:33:45 [INFO ] Alert ALT-184250 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-08 17:09:05 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-08 14:34:42 [ALERT] Neuer Alert generiert: ALT-476662 | Szenario: TM-01 | Konto: XXXX2724
+2024-12-08 16:15:42 [INFO ] Alert ALT-984213 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-08 05:26:46 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-08 05:26:46
+2024-12-08 03:39:18 [INFO ] Alert ALT-832767 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-08 05:35:31 [WARN ] Alert-Queue-Tiefe: 445 Einträge (Warnschwelle: 500)
+2024-12-08 22:14:36 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-08 23:37:24 [INFO ] Batch-Verarbeitung abgeschlossen: 14508 Transaktionen geprüft
+2024-12-08 00:39:44 [INFO ] Alert ALT-115127 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-08 17:05:04 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-08 05:48:47 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-08 18:05:59 [INFO ] Batch-Verarbeitung abgeschlossen: 16102 Transaktionen geprüft
+2024-12-08 08:17:36 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-09 16:57:06 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-09 20:38:38 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-09 09:15:46 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-09 01:41:52 [INFO ] Batch-Verarbeitung abgeschlossen: 16010 Transaktionen geprüft
+2024-12-09 21:24:30 [WARN ] Alert-Queue-Tiefe: 940 Einträge (Warnschwelle: 500)
+2024-12-09 18:42:42 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-09 14:27:06 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-09 07:58:53 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-09 16:38:49 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-09 03:46:16 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-09 10:11:09 [ALERT] Neuer Alert generiert: ALT-583902 | Szenario: TM-03 | Konto: XXXX9122
+2024-12-09 03:49:02 [INFO ] Batch-Verarbeitung abgeschlossen: 9213 Transaktionen geprüft
+2024-12-09 16:47:42 [WARN ] Alert-Queue-Tiefe: 756 Einträge (Warnschwelle: 500)
+2024-12-09 14:21:20 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-09 23:15:02 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-09 11:36:02 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-09 11:36:02
+2024-12-09 08:26:41 [INFO ] Batch-Verarbeitung abgeschlossen: 8074 Transaktionen geprüft
+2024-12-09 21:27:30 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-09 15:35:31 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-09 09:15:36 [INFO ] Alert ALT-258751 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-09 17:55:43 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-09 17:54:16 [INFO ] Alert ALT-449905 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-09 20:32:06 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-09 09:14:57 [WARN ] Alert-Queue-Tiefe: 669 Einträge (Warnschwelle: 500)
+2024-12-09 13:24:02 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-09 00:30:04 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-09 07:13:07 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-09 06:44:44 [ALERT] Neuer Alert generiert: ALT-388822 | Szenario: TM-02 | Konto: XXXX3403
+2024-12-09 19:28:09 [ALERT] Neuer Alert generiert: ALT-685574 | Szenario: TM-02 | Konto: XXXX9380
+2024-12-09 17:41:12 [INFO ] Batch-Verarbeitung abgeschlossen: 20513 Transaktionen geprüft
+2024-12-09 03:30:30 [WARN ] Alert-Queue-Tiefe: 624 Einträge (Warnschwelle: 500)
+2024-12-09 12:30:33 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-09 12:30:33
+2024-12-09 17:42:19 [INFO ] Batch-Verarbeitung abgeschlossen: 15433 Transaktionen geprüft
+2024-12-09 17:37:44 [ALERT] Neuer Alert generiert: ALT-887335 | Szenario: TM-03 | Konto: XXXX7645
+2024-12-09 10:19:23 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-10 17:34:18 [INFO ] Batch-Verarbeitung abgeschlossen: 16035 Transaktionen geprüft
+2024-12-10 17:33:08 [WARN ] Alert-Queue-Tiefe: 593 Einträge (Warnschwelle: 500)
+2024-12-10 03:40:13 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-10 06:26:52 [WARN ] Alert-Queue-Tiefe: 888 Einträge (Warnschwelle: 500)
+2024-12-10 12:24:31 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-10 12:24:31
+2024-12-10 16:38:30 [ALERT] Neuer Alert generiert: ALT-598199 | Szenario: TM-02 | Konto: XXXX4677
+2024-12-10 08:51:24 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-10 09:26:39 [ALERT] Neuer Alert generiert: ALT-211425 | Szenario: TM-04 | Konto: XXXX4579
+2024-12-10 13:45:49 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-10 18:19:00 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-10 18:38:30 [INFO ] Batch-Verarbeitung abgeschlossen: 12861 Transaktionen geprüft
+2024-12-10 13:56:16 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-10 07:32:48 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-10 07:32:48
+2024-12-10 06:49:44 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-10 02:03:28 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-10 10:29:16 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-10 16:51:45 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-10 06:59:26 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-10 13:53:37 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-10 00:49:30 [INFO ] Alert ALT-109275 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-10 06:10:07 [INFO ] Batch-Verarbeitung abgeschlossen: 24598 Transaktionen geprüft
+2024-12-10 22:44:17 [ALERT] Neuer Alert generiert: ALT-641268 | Szenario: TM-04 | Konto: XXXX1125
+2024-12-10 05:34:16 [WARN ] Alert-Queue-Tiefe: 713 Einträge (Warnschwelle: 500)
+2024-12-10 14:29:47 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-10 14:29:47
+2024-12-10 06:04:08 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-10 13:50:39 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-11 22:31:52 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-11 10:37:20 [WARN ] Alert-Queue-Tiefe: 872 Einträge (Warnschwelle: 500)
+2024-12-11 21:03:19 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-11 03:43:58 [ALERT] Neuer Alert generiert: ALT-357364 | Szenario: TM-02 | Konto: XXXX8161
+2024-12-11 17:41:49 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-11 17:41:49
+2024-12-11 02:51:56 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-11 04:11:59 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-11 14:22:58 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-11 21:35:10 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-11 21:25:24 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-11 18:15:37 [ALERT] Neuer Alert generiert: ALT-549648 | Szenario: TM-02 | Konto: XXXX1608
+2024-12-11 16:13:00 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-11 08:37:52 [ALERT] Neuer Alert generiert: ALT-922065 | Szenario: TM-04 | Konto: XXXX4363
+2024-12-11 02:48:11 [INFO ] Batch-Verarbeitung abgeschlossen: 16932 Transaktionen geprüft
+2024-12-11 14:39:27 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-11 10:30:16 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-11 19:34:30 [INFO ] Batch-Verarbeitung abgeschlossen: 13192 Transaktionen geprüft
+2024-12-11 19:41:36 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-11 19:41:36
+2024-12-11 09:50:22 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-11 09:00:51 [ALERT] Neuer Alert generiert: ALT-382079 | Szenario: TM-02 | Konto: XXXX6274
+2024-12-11 15:17:49 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-11 07:35:37 [ALERT] Neuer Alert generiert: ALT-767797 | Szenario: TM-04 | Konto: XXXX8070
+2024-12-11 22:22:48 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-11 21:29:57 [INFO ] Batch-Verarbeitung abgeschlossen: 18735 Transaktionen geprüft
+2024-12-12 10:04:51 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-12 03:33:26 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-12 11:46:52 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-12 10:13:14 [ALERT] Neuer Alert generiert: ALT-282556 | Szenario: TM-04 | Konto: XXXX3934
+2024-12-12 02:19:47 [INFO ] Batch-Verarbeitung abgeschlossen: 20050 Transaktionen geprüft
+2024-12-12 20:27:55 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-12 22:15:54 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-12 00:25:02 [WARN ] Alert-Queue-Tiefe: 533 Einträge (Warnschwelle: 500)
+2024-12-12 22:29:58 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-12 12:50:03 [INFO ] Batch-Verarbeitung abgeschlossen: 16310 Transaktionen geprüft
+2024-12-12 15:06:08 [INFO ] Alert ALT-369096 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-12 23:22:57 [ALERT] Neuer Alert generiert: ALT-193152 | Szenario: TM-03 | Konto: XXXX1258
+2024-12-12 14:33:22 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-12 16:54:42 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-12 18:08:35 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-12 03:36:05 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-12 11:04:13 [INFO ] Batch-Verarbeitung abgeschlossen: 18014 Transaktionen geprüft
+2024-12-13 08:30:42 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-13 07:38:02 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-13 07:38:02
+2024-12-13 04:41:38 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-13 04:42:54 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-13 07:08:15 [WARN ] Alert-Queue-Tiefe: 547 Einträge (Warnschwelle: 500)
+2024-12-13 00:23:47 [ALERT] Neuer Alert generiert: ALT-252623 | Szenario: TM-03 | Konto: XXXX9995
+2024-12-13 20:34:35 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-13 09:54:19 [INFO ] Alert ALT-776069 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-13 21:19:02 [INFO ] Alert ALT-635241 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-13 10:23:09 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-13 10:23:09
+2024-12-13 22:19:34 [ALERT] Neuer Alert generiert: ALT-336513 | Szenario: TM-03 | Konto: XXXX2916
+2024-12-13 01:54:07 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-13 13:09:46 [WARN ] Alert-Queue-Tiefe: 947 Einträge (Warnschwelle: 500)
+2024-12-13 13:38:17 [WARN ] Alert-Queue-Tiefe: 789 Einträge (Warnschwelle: 500)
+2024-12-13 06:15:10 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-13 17:05:23 [INFO ] Alert ALT-102898 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-13 02:48:18 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-13 08:48:09 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-13 20:16:51 [WARN ] Alert-Queue-Tiefe: 574 Einträge (Warnschwelle: 500)
+2024-12-13 18:36:30 [WARN ] Alert-Queue-Tiefe: 573 Einträge (Warnschwelle: 500)
+2024-12-13 12:45:30 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-13 12:45:30
+2024-12-13 11:03:01 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-13 09:58:13 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-13 10:14:20 [WARN ] Alert-Queue-Tiefe: 620 Einträge (Warnschwelle: 500)
+2024-12-13 10:03:35 [ALERT] Neuer Alert generiert: ALT-262497 | Szenario: TM-04 | Konto: XXXX6907
+2024-12-13 11:12:19 [INFO ] Alert ALT-192514 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-13 08:03:13 [INFO ] Batch-Verarbeitung abgeschlossen: 24833 Transaktionen geprüft
+2024-12-14 13:22:31 [ALERT] Neuer Alert generiert: ALT-981943 | Szenario: TM-06 | Konto: XXXX7098
+2024-12-14 18:21:30 [INFO ] Alert ALT-754188 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-14 04:43:25 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-14 11:40:53 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-14 00:50:27 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-14 22:23:04 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-14 14:44:11 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-14 17:31:54 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-14 17:31:54
+2024-12-14 03:31:20 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-14 03:24:44 [ALERT] Neuer Alert generiert: ALT-840517 | Szenario: TM-01 | Konto: XXXX6062
+2024-12-14 02:10:34 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-14 17:48:46 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-14 07:45:38 [ALERT] Neuer Alert generiert: ALT-281082 | Szenario: TM-01 | Konto: XXXX9794
+2024-12-14 08:32:43 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-14 10:31:54 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-14 10:31:54
+2024-12-14 03:47:23 [INFO ] Alert ALT-608860 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-14 17:56:58 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-14 09:01:49 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-14 15:54:33 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-14 18:14:55 [WARN ] Alert-Queue-Tiefe: 458 Einträge (Warnschwelle: 500)
+2024-12-14 10:53:27 [ALERT] Neuer Alert generiert: ALT-181394 | Szenario: TM-02 | Konto: XXXX7147
+2024-12-14 14:43:01 [WARN ] Alert-Queue-Tiefe: 748 Einträge (Warnschwelle: 500)
+2024-12-14 13:14:46 [INFO ] Alert ALT-959902 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-14 17:20:02 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-14 10:56:23 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-14 20:58:32 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-14 20:58:32
+2024-12-14 21:21:34 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-15 16:10:52 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-15 05:24:56 [WARN ] Alert-Queue-Tiefe: 911 Einträge (Warnschwelle: 500)
+2024-12-15 19:09:35 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-15 10:06:32 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-15 10:06:32
+2024-12-15 15:40:01 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-15 15:13:01 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-15 18:05:56 [ALERT] Neuer Alert generiert: ALT-576939 | Szenario: TM-02 | Konto: XXXX1452
+2024-12-15 12:17:30 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-15 23:21:55 [ALERT] Neuer Alert generiert: ALT-119035 | Szenario: TM-01 | Konto: XXXX5914
+2024-12-15 18:56:44 [INFO ] Batch-Verarbeitung abgeschlossen: 17428 Transaktionen geprüft
+2024-12-15 08:33:40 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-15 17:35:33 [INFO ] Alert ALT-517607 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-15 05:51:06 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-15 04:38:54 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-15 20:27:25 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-15 06:35:55 [ALERT] Neuer Alert generiert: ALT-399293 | Szenario: TM-03 | Konto: XXXX9076
+2024-12-15 14:44:09 [ALERT] Neuer Alert generiert: ALT-518133 | Szenario: TM-06 | Konto: XXXX4880
+2024-12-15 21:48:53 [INFO ] Alert ALT-422521 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-15 08:03:36 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-15 21:17:09 [ALERT] Neuer Alert generiert: ALT-627975 | Szenario: TM-02 | Konto: XXXX2413
+2024-12-15 21:06:09 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-15 21:06:09
+2024-12-15 11:14:39 [INFO ] Alert ALT-218592 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-15 23:58:02 [INFO ] Batch-Verarbeitung abgeschlossen: 20455 Transaktionen geprüft
+2024-12-15 19:22:00 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-15 11:19:56 [INFO ] Batch-Verarbeitung abgeschlossen: 11498 Transaktionen geprüft
+2024-12-15 09:54:25 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-15 21:38:18 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-15 07:02:33 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-15 19:47:52 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-15 19:47:52
+2024-12-15 07:49:11 [WARN ] Alert-Queue-Tiefe: 615 Einträge (Warnschwelle: 500)
+2024-12-15 07:15:46 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-15 07:15:46
+2024-12-15 19:54:47 [ALERT] Neuer Alert generiert: ALT-744509 | Szenario: TM-06 | Konto: XXXX3026
+2024-12-15 04:48:35 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-15 05:09:36 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-15 17:48:16 [ALERT] Neuer Alert generiert: ALT-754289 | Szenario: TM-01 | Konto: XXXX8617
+2024-12-16 04:20:50 [WARN ] Alert-Queue-Tiefe: 642 Einträge (Warnschwelle: 500)
+2024-12-16 03:47:18 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-16 17:13:44 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-16 19:35:18 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-16 05:43:37 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-16 05:43:37
+2024-12-16 14:47:13 [ALERT] Neuer Alert generiert: ALT-306596 | Szenario: TM-02 | Konto: XXXX1737
+2024-12-16 22:37:09 [INFO ] Batch-Verarbeitung abgeschlossen: 13898 Transaktionen geprüft
+2024-12-16 21:19:44 [ALERT] Neuer Alert generiert: ALT-235808 | Szenario: TM-03 | Konto: XXXX7638
+2024-12-16 08:02:54 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-16 21:41:53 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-16 09:12:48 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-16 19:43:05 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-16 15:51:02 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-16 15:51:02
+2024-12-16 01:33:04 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-16 02:11:15 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-16 21:23:12 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-16 17:28:04 [INFO ] Batch-Verarbeitung abgeschlossen: 10117 Transaktionen geprüft
+2024-12-16 14:14:31 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-16 18:11:24 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-16 16:00:12 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-16 10:29:05 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-16 10:29:05
+2024-12-16 05:27:22 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-16 08:06:32 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-16 01:51:18 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-16 01:51:18
+2024-12-16 02:00:26 [ALERT] Neuer Alert generiert: ALT-631946 | Szenario: TM-01 | Konto: XXXX9100
+2024-12-16 16:55:40 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-16 20:46:32 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-16 23:39:17 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-16 18:28:38 [INFO ] Batch-Verarbeitung abgeschlossen: 24792 Transaktionen geprüft
+2024-12-16 18:29:15 [ALERT] Neuer Alert generiert: ALT-735611 | Szenario: TM-02 | Konto: XXXX3023
+2024-12-17 20:56:12 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-17 00:59:14 [WARN ] Alert-Queue-Tiefe: 446 Einträge (Warnschwelle: 500)
+2024-12-17 12:17:14 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-17 00:03:33 [WARN ] Alert-Queue-Tiefe: 525 Einträge (Warnschwelle: 500)
+2024-12-17 21:01:06 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-17 00:31:06 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-17 02:33:55 [WARN ] Alert-Queue-Tiefe: 682 Einträge (Warnschwelle: 500)
+2024-12-17 15:01:48 [WARN ] Alert-Queue-Tiefe: 822 Einträge (Warnschwelle: 500)
+2024-12-17 13:32:20 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-17 22:39:23 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-17 22:39:23
+2024-12-17 10:33:59 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-17 15:30:54 [INFO ] Batch-Verarbeitung abgeschlossen: 16576 Transaktionen geprüft
+2024-12-17 14:00:16 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-17 06:07:41 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-17 06:07:41
+2024-12-17 13:37:24 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-17 09:50:47 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-17 11:07:57 [ALERT] Neuer Alert generiert: ALT-374031 | Szenario: TM-03 | Konto: XXXX3232
+2024-12-17 00:09:06 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-17 23:02:34 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-17 23:02:34
+2024-12-17 10:24:59 [INFO ] Batch-Verarbeitung abgeschlossen: 8281 Transaktionen geprüft
+2024-12-17 05:10:53 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-17 01:04:16 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-17 05:17:57 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-17 11:45:23 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-17 20:40:27 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-17 02:11:53 [WARN ] Alert-Queue-Tiefe: 822 Einträge (Warnschwelle: 500)
+2024-12-17 18:17:29 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-17 18:17:29
+2024-12-17 19:17:38 [INFO ] Batch-Verarbeitung abgeschlossen: 23946 Transaktionen geprüft
+2024-12-17 18:06:34 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-17 18:25:58 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-17 18:25:58
+2024-12-17 00:46:35 [WARN ] Alert-Queue-Tiefe: 801 Einträge (Warnschwelle: 500)
+2024-12-17 03:04:56 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-17 03:04:56
+2024-12-17 02:54:26 [WARN ] Alert-Queue-Tiefe: 742 Einträge (Warnschwelle: 500)
+2024-12-17 17:47:41 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-17 17:53:23 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-18 15:58:33 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-18 04:53:01 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-18 20:41:10 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-18 12:13:00 [INFO ] Alert ALT-304432 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-18 15:32:11 [INFO ] Alert ALT-306984 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-18 01:24:35 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-18 11:06:33 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-18 11:06:33
+2024-12-18 09:57:17 [INFO ] Alert ALT-220652 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-18 11:31:59 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-18 13:59:49 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-18 23:44:20 [WARN ] Alert-Queue-Tiefe: 472 Einträge (Warnschwelle: 500)
+2024-12-18 21:06:18 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-18 20:55:46 [INFO ] Batch-Verarbeitung abgeschlossen: 19046 Transaktionen geprüft
+2024-12-18 23:36:16 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-18 04:45:19 [INFO ] Alert ALT-785688 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-18 11:02:15 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-18 00:32:05 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-18 03:59:38 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-18 00:22:06 [INFO ] Alert ALT-109727 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-18 00:07:26 [ALERT] Neuer Alert generiert: ALT-390250 | Szenario: TM-03 | Konto: XXXX4756
+2024-12-18 08:25:16 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-18 21:38:59 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-18 20:10:56 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-18 21:11:01 [WARN ] Alert-Queue-Tiefe: 668 Einträge (Warnschwelle: 500)
+2024-12-18 21:19:44 [ALERT] Neuer Alert generiert: ALT-550488 | Szenario: TM-02 | Konto: XXXX9694
+2024-12-18 05:59:03 [INFO ] Alert ALT-256869 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-18 06:19:15 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-18 09:36:31 [INFO ] Alert ALT-648249 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-18 03:07:31 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-18 09:38:49 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-18 09:25:53 [WARN ] Alert-Queue-Tiefe: 409 Einträge (Warnschwelle: 500)
+2024-12-18 15:32:46 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-18 02:17:54 [ALERT] Neuer Alert generiert: ALT-411843 | Szenario: TM-04 | Konto: XXXX2586
+2024-12-18 07:15:59 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-18 19:16:03 [INFO ] Alert ALT-788511 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-18 19:17:41 [ALERT] Neuer Alert generiert: ALT-387749 | Szenario: TM-03 | Konto: XXXX1634
+2024-12-18 02:44:54 [INFO ] Batch-Verarbeitung abgeschlossen: 9393 Transaktionen geprüft
+2024-12-19 13:18:00 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-19 16:50:55 [INFO ] Batch-Verarbeitung abgeschlossen: 9127 Transaktionen geprüft
+2024-12-19 05:14:24 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-19 21:39:16 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-19 11:12:37 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-19 07:05:13 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-19 04:08:42 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-19 02:23:03 [INFO ] Alert ALT-776960 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-19 15:50:38 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-19 04:36:51 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-19 16:06:46 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-19 14:35:51 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-19 07:32:46 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-19 07:32:46
+2024-12-19 19:02:12 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-19 03:53:33 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-19 12:29:16 [ALERT] Neuer Alert generiert: ALT-778434 | Szenario: TM-03 | Konto: XXXX7864
+2024-12-19 13:33:13 [WARN ] Alert-Queue-Tiefe: 904 Einträge (Warnschwelle: 500)
+2024-12-19 16:07:02 [ALERT] Neuer Alert generiert: ALT-865927 | Szenario: TM-03 | Konto: XXXX7172
+2024-12-19 13:08:29 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-19 17:19:19 [ALERT] Neuer Alert generiert: ALT-712590 | Szenario: TM-02 | Konto: XXXX4443
+2024-12-19 04:58:41 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-19 04:58:41
+2024-12-19 16:31:40 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-19 09:21:22 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-19 09:20:36 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-19 06:49:18 [INFO ] Alert ALT-774936 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-20 03:19:10 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-20 18:14:56 [INFO ] Alert ALT-714605 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-20 05:03:14 [ALERT] Neuer Alert generiert: ALT-578917 | Szenario: TM-07 | Konto: XXXX6555
+2024-12-20 20:24:01 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-20 20:24:01
+2024-12-20 08:48:50 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-20 09:16:16 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-20 16:29:51 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-20 11:10:54 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-20 11:10:54
+2024-12-20 17:53:30 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-20 01:15:20 [ALERT] Neuer Alert generiert: ALT-629486 | Szenario: TM-02 | Konto: XXXX2672
+2024-12-20 03:32:06 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-20 06:59:32 [INFO ] Alert ALT-335999 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-20 09:55:28 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-20 11:50:32 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-20 00:21:14 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-20 14:35:36 [INFO ] Alert ALT-823372 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-20 10:10:29 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-21 01:46:22 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-21 06:00:14 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-21 08:07:07 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-21 18:26:57 [ALERT] Neuer Alert generiert: ALT-603037 | Szenario: TM-07 | Konto: XXXX4580
+2024-12-21 03:56:18 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-21 06:53:02 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-21 21:35:09 [INFO ] Batch-Verarbeitung abgeschlossen: 10075 Transaktionen geprüft
+2024-12-21 15:47:53 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-21 19:22:05 [ALERT] Neuer Alert generiert: ALT-662818 | Szenario: TM-04 | Konto: XXXX2121
+2024-12-21 17:37:40 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-21 21:31:55 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-21 06:17:51 [WARN ] Alert-Queue-Tiefe: 814 Einträge (Warnschwelle: 500)
+2024-12-21 19:15:00 [INFO ] Batch-Verarbeitung abgeschlossen: 16704 Transaktionen geprüft
+2024-12-21 23:17:12 [INFO ] Alert ALT-296635 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-21 14:59:44 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-22 09:58:33 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-22 09:27:32 [ALERT] Neuer Alert generiert: ALT-675702 | Szenario: TM-03 | Konto: XXXX6862
+2024-12-22 01:52:57 [INFO ] Batch-Verarbeitung abgeschlossen: 21308 Transaktionen geprüft
+2024-12-22 21:17:00 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-22 21:17:00
+2024-12-22 13:36:07 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-22 13:36:07
+2024-12-22 09:21:30 [WARN ] Alert-Queue-Tiefe: 709 Einträge (Warnschwelle: 500)
+2024-12-22 16:10:02 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-22 09:36:53 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-22 06:05:31 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-22 06:05:31
+2024-12-22 14:34:05 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-22 20:51:21 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-22 05:28:27 [INFO ] Batch-Verarbeitung abgeschlossen: 23344 Transaktionen geprüft
+2024-12-22 12:12:07 [ALERT] Neuer Alert generiert: ALT-798723 | Szenario: TM-01 | Konto: XXXX4222
+2024-12-22 14:53:18 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-22 01:35:50 [INFO ] Alert ALT-388927 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-22 04:35:21 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-22 05:20:43 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-22 19:46:36 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-22 08:19:53 [ALERT] Neuer Alert generiert: ALT-642528 | Szenario: TM-01 | Konto: XXXX3225
+2024-12-22 23:52:12 [WARN ] Alert-Queue-Tiefe: 877 Einträge (Warnschwelle: 500)
+2024-12-22 06:37:37 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-22 11:38:37 [ALERT] Neuer Alert generiert: ALT-138245 | Szenario: TM-04 | Konto: XXXX4797
+2024-12-22 06:59:13 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-22 14:09:50 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-22 14:09:50
+2024-12-22 17:20:22 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-22 20:29:26 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-22 08:51:14 [INFO ] Alert ALT-660587 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-22 22:00:50 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-22 19:49:04 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-22 08:27:59 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-22 07:29:33 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-22 07:29:33
+2024-12-22 08:47:44 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-22 06:33:41 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-22 11:11:53 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-22 11:00:38 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-22 04:59:01 [WARN ] Alert-Queue-Tiefe: 657 Einträge (Warnschwelle: 500)
+2024-12-23 15:45:23 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-23 15:38:20 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-23 23:46:42 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-23 23:46:42
+2024-12-23 22:19:15 [INFO ] Batch-Verarbeitung abgeschlossen: 22848 Transaktionen geprüft
+2024-12-23 18:06:57 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-23 19:19:17 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-23 13:37:48 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-23 05:38:59 [INFO ] Batch-Verarbeitung abgeschlossen: 11549 Transaktionen geprüft
+2024-12-23 17:56:34 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-23 15:15:49 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-23 15:15:49
+2024-12-23 13:10:46 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-23 07:57:58 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-23 02:43:00 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-23 20:41:09 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-23 04:56:08 [INFO ] Batch-Verarbeitung abgeschlossen: 23639 Transaktionen geprüft
+2024-12-23 14:27:31 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-23 11:13:25 [INFO ] Alert ALT-337966 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-23 19:22:16 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-23 07:34:26 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-23 18:05:15 [INFO ] Alert ALT-448795 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-23 00:41:18 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-23 19:14:51 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-23 02:56:07 [ALERT] Neuer Alert generiert: ALT-179810 | Szenario: TM-01 | Konto: XXXX6829
+2024-12-23 19:10:55 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-23 19:10:55
+2024-12-23 05:16:03 [WARN ] Alert-Queue-Tiefe: 700 Einträge (Warnschwelle: 500)
+2024-12-23 20:27:09 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-23 23:00:08 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-23 12:18:11 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-23 23:53:45 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-24 00:35:14 [INFO ] Alert ALT-794275 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-24 07:57:37 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-24 01:35:39 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-24 01:35:39
+2024-12-24 20:37:05 [WARN ] Alert-Queue-Tiefe: 917 Einträge (Warnschwelle: 500)
+2024-12-24 08:23:03 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-24 01:27:43 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-24 15:21:02 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-24 18:39:06 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-24 02:05:04 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-24 02:05:04
+2024-12-24 14:05:40 [ALERT] Neuer Alert generiert: ALT-647824 | Szenario: TM-07 | Konto: XXXX1776
+2024-12-24 05:01:49 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-24 08:27:11 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-24 09:04:18 [ALERT] Neuer Alert generiert: ALT-826850 | Szenario: TM-03 | Konto: XXXX3337
+2024-12-24 15:03:23 [INFO ] Alert ALT-335758 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-24 18:32:43 [INFO ] Alert ALT-265416 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-24 19:22:10 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-25 20:54:46 [ALERT] Neuer Alert generiert: ALT-412221 | Szenario: TM-06 | Konto: XXXX1945
+2024-12-25 12:56:02 [INFO ] Alert ALT-150965 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-25 07:23:05 [WARN ] Alert-Queue-Tiefe: 451 Einträge (Warnschwelle: 500)
+2024-12-25 15:50:09 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-25 19:17:13 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-25 01:40:15 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-25 21:07:34 [WARN ] Alert-Queue-Tiefe: 866 Einträge (Warnschwelle: 500)
+2024-12-25 14:04:59 [INFO ] Alert ALT-514861 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-25 16:19:30 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-25 07:08:19 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-25 00:01:02 [INFO ] Batch-Verarbeitung abgeschlossen: 13036 Transaktionen geprüft
+2024-12-25 02:02:06 [INFO ] Alert ALT-129749 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-25 05:39:35 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-25 05:17:51 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-25 07:28:45 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-25 09:24:47 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-25 09:29:47 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-25 23:07:58 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-25 15:46:58 [WARN ] Alert-Queue-Tiefe: 400 Einträge (Warnschwelle: 500)
+2024-12-25 01:18:52 [INFO ] Batch-Verarbeitung abgeschlossen: 9643 Transaktionen geprüft
+2024-12-25 00:17:31 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-25 12:49:49 [INFO ] Alert ALT-284187 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-25 13:55:18 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-25 13:55:18
+2024-12-25 07:22:48 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-25 07:25:05 [ALERT] Neuer Alert generiert: ALT-721996 | Szenario: TM-04 | Konto: XXXX2946
+2024-12-25 12:06:52 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-25 16:34:18 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-25 03:46:10 [INFO ] Alert ALT-522089 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-25 10:43:45 [WARN ] Alert-Queue-Tiefe: 783 Einträge (Warnschwelle: 500)
+2024-12-25 05:51:35 [INFO ] Batch-Verarbeitung abgeschlossen: 19506 Transaktionen geprüft
+2024-12-25 22:06:00 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-25 10:54:32 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-26 06:20:42 [WARN ] Alert-Queue-Tiefe: 813 Einträge (Warnschwelle: 500)
+2024-12-26 06:19:57 [INFO ] Alert ALT-776833 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-26 12:26:54 [INFO ] Batch-Verarbeitung abgeschlossen: 24251 Transaktionen geprüft
+2024-12-26 16:49:05 [WARN ] Alert-Queue-Tiefe: 750 Einträge (Warnschwelle: 500)
+2024-12-26 12:58:32 [INFO ] Batch-Verarbeitung abgeschlossen: 12711 Transaktionen geprüft
+2024-12-26 17:15:19 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-26 17:15:19
+2024-12-26 13:15:32 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-26 13:15:32
+2024-12-26 22:19:53 [INFO ] Batch-Verarbeitung abgeschlossen: 22379 Transaktionen geprüft
+2024-12-26 11:36:57 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-26 06:46:07 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-26 12:01:21 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-26 12:01:21
+2024-12-26 07:10:58 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-26 07:10:58
+2024-12-26 08:14:52 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-26 17:05:02 [INFO ] Batch-Verarbeitung abgeschlossen: 19978 Transaktionen geprüft
+2024-12-26 15:14:03 [WARN ] Alert-Queue-Tiefe: 521 Einträge (Warnschwelle: 500)
+2024-12-26 14:08:59 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-26 13:21:35 [INFO ] Alert ALT-150008 geschlossen: FALSE_POSITIVE | Bearbeiter: t.mueller
+2024-12-26 08:37:43 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-26 02:28:27 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-26 20:34:08 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-26 20:53:27 [ALERT] Neuer Alert generiert: ALT-797517 | Szenario: TM-03 | Konto: XXXX2401
+2024-12-26 20:31:32 [INFO ] Batch-Verarbeitung abgeschlossen: 11798 Transaktionen geprüft
+2024-12-26 13:08:45 [INFO ] Alert ALT-924371 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-26 00:14:41 [ALERT] Neuer Alert generiert: ALT-182681 | Szenario: TM-02 | Konto: XXXX6735
+2024-12-26 09:05:47 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-26 01:14:32 [INFO ] Batch-Verarbeitung abgeschlossen: 19191 Transaktionen geprüft
+2024-12-26 01:02:49 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-26 16:35:33 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-26 18:58:47 [INFO ] Batch-Verarbeitung abgeschlossen: 16730 Transaktionen geprüft
+2024-12-26 04:24:28 [ALERT] Neuer Alert generiert: ALT-622997 | Szenario: TM-06 | Konto: XXXX5987
+2024-12-26 23:55:54 [WARN ] Alert-Queue-Tiefe: 548 Einträge (Warnschwelle: 500)
+2024-12-26 07:57:21 [WARN ] Alert-Queue-Tiefe: 416 Einträge (Warnschwelle: 500)
+2024-12-27 14:58:41 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-27 20:02:43 [INFO ] Batch-Verarbeitung abgeschlossen: 17120 Transaktionen geprüft
+2024-12-27 09:21:57 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-27 20:43:35 [ALERT] Neuer Alert generiert: ALT-867127 | Szenario: TM-01 | Konto: XXXX8050
+2024-12-27 10:40:13 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-27 10:40:13
+2024-12-27 22:37:42 [ALERT] Neuer Alert generiert: ALT-816466 | Szenario: TM-07 | Konto: XXXX1724
+2024-12-27 21:08:11 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-27 11:35:15 [ALERT] Neuer Alert generiert: ALT-781022 | Szenario: TM-07 | Konto: XXXX5300
+2024-12-27 04:44:07 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-27 05:39:22 [INFO ] Alert ALT-351572 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-27 08:12:55 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-27 14:28:54 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-27 02:01:13 [INFO ] Batch-Verarbeitung abgeschlossen: 22200 Transaktionen geprüft
+2024-12-27 12:34:02 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-27 04:22:40 [INFO ] Batch-Verarbeitung abgeschlossen: 14467 Transaktionen geprüft
+2024-12-27 04:44:28 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-27 15:28:15 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-27 09:30:30 [INFO ] Batch-Verarbeitung abgeschlossen: 14747 Transaktionen geprüft
+2024-12-27 23:31:44 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-27 09:10:14 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-27 02:24:12 [WARN ] Alert-Queue-Tiefe: 942 Einträge (Warnschwelle: 500)
+2024-12-27 18:46:57 [ALERT] Neuer Alert generiert: ALT-856111 | Szenario: TM-04 | Konto: XXXX2696
+2024-12-27 23:34:09 [ALERT] Neuer Alert generiert: ALT-375701 | Szenario: TM-01 | Konto: XXXX3444
+2024-12-27 20:40:50 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-27 22:38:43 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-27 15:44:14 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-27 15:44:14
+2024-12-27 06:59:00 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-27 18:29:13 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-27 18:29:13
+2024-12-27 12:26:35 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-28 15:22:10 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-28 13:28:15 [INFO ] Batch-Verarbeitung abgeschlossen: 24644 Transaktionen geprüft
+2024-12-28 03:09:11 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-28 08:23:19 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-28 23:46:50 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-28 05:05:42 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-28 23:00:23 [ALERT] Neuer Alert generiert: ALT-572854 | Szenario: TM-06 | Konto: XXXX4102
+2024-12-28 15:29:15 [ALERT] Neuer Alert generiert: ALT-227602 | Szenario: TM-03 | Konto: XXXX6980
+2024-12-28 14:50:54 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-28 09:26:49 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-28 06:44:47 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-28 05:26:04 [WARN ] Alert-Queue-Tiefe: 498 Einträge (Warnschwelle: 500)
+2024-12-28 20:49:36 [WARN ] Alert-Queue-Tiefe: 913 Einträge (Warnschwelle: 500)
+2024-12-28 23:11:08 [INFO ] Batch-Verarbeitung abgeschlossen: 17573 Transaktionen geprüft
+2024-12-28 07:04:48 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-28 14:25:33 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-28 19:41:53 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-28 01:00:15 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-28 16:05:01 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-28 19:02:23 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-28 19:02:23
+2024-12-28 00:13:55 [WARN ] Alert-Queue-Tiefe: 733 Einträge (Warnschwelle: 500)
+2024-12-28 06:08:46 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-28 06:08:46
+2024-12-28 23:30:25 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-28 15:51:42 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-28 14:53:26 [ALERT] Neuer Alert generiert: ALT-207974 | Szenario: TM-01 | Konto: XXXX4004
+2024-12-29 14:12:05 [ALERT] Neuer Alert generiert: ALT-449539 | Szenario: TM-02 | Konto: XXXX2113
+2024-12-29 00:41:15 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-29 10:36:11 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-29 12:18:57 [ALERT] Neuer Alert generiert: ALT-475351 | Szenario: TM-04 | Konto: XXXX8321
+2024-12-29 18:07:53 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-29 01:33:15 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-29 01:33:15
+2024-12-29 06:38:48 [ALERT] Neuer Alert generiert: ALT-282472 | Szenario: TM-02 | Konto: XXXX6466
+2024-12-29 18:00:47 [ALERT] Neuer Alert generiert: ALT-549789 | Szenario: TM-04 | Konto: XXXX7154
+2024-12-29 05:12:05 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-29 05:12:05
+2024-12-29 08:59:57 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-29 10:17:53 [ALERT] Neuer Alert generiert: ALT-898551 | Szenario: TM-02 | Konto: XXXX8147
+2024-12-29 06:05:21 [WARN ] Alert-Queue-Tiefe: 753 Einträge (Warnschwelle: 500)
+2024-12-29 21:44:42 [INFO ] Batch-Verarbeitung abgeschlossen: 19634 Transaktionen geprüft
+2024-12-29 18:51:40 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-29 07:32:20 [WARN ] Alert-Queue-Tiefe: 778 Einträge (Warnschwelle: 500)
+2024-12-29 06:37:30 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-30 18:31:53 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-30 13:27:52 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-30 23:39:40 [INFO ] Alert ALT-400943 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-30 01:54:48 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-30 22:30:20 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-30 07:47:40 [INFO ] Alert ALT-160986 geschlossen: FALSE_POSITIVE | Bearbeiter: s.becker
+2024-12-30 06:29:58 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-30 06:29:58
+2024-12-30 09:00:19 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-30 05:33:30 [INFO ] Batch-Verarbeitung abgeschlossen: 16786 Transaktionen geprüft
+2024-12-30 11:47:37 [WARN ] Alert-Queue-Tiefe: 813 Einträge (Warnschwelle: 500)
+2024-12-30 13:06:21 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-30 14:23:13 [ALERT] Neuer Alert generiert: ALT-386168 | Szenario: TM-02 | Konto: XXXX4358
+2024-12-30 12:18:05 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-30 13:18:51 [INFO ] Datenbankverbindung: OK (response 3ms)
+2024-12-30 04:04:51 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-30 19:44:09 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-30 09:13:03 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-30 09:13:03
+2024-12-31 07:24:47 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-31 08:17:10 [INFO ] System Health Check: All 12 TM-Szenarien aktiv
+2024-12-31 02:03:18 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-31 04:53:48 [WARN ] Alert-Queue-Tiefe: 806 Einträge (Warnschwelle: 500)
+2024-12-31 20:11:09 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-31 12:51:52 [INFO ] Sanktionslisten-Update erfolgreich importiert
+2024-12-31 21:11:46 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-31 15:34:57 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-31 06:20:54 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-31 06:20:54
+2024-12-31 12:40:54 [ALERT] Neuer Alert generiert: ALT-860233 | Szenario: TM-04 | Konto: XXXX5023
+2024-12-31 14:22:11 [ALERT] Neuer Alert generiert: ALT-699498 | Szenario: TM-07 | Konto: XXXX4971
+2024-12-31 14:59:47 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-31 14:59:47
+2024-12-31 23:54:06 [INFO ] Alert ALT-928867 geschlossen: FALSE_POSITIVE | Bearbeiter: extern.zeitarbeit
+2024-12-31 09:44:26 [ERROR] Datenbankverbindung unterbrochen: Retry 1/3 | 2024-12-31 09:44:26
+2024-12-31 17:24:55 [INFO ] Datenbankverbindung wiederhergestellt
+2024-12-31 14:09:42 [INFO ] Regelwerk-Update: Keine Änderungen
+2024-12-31 09:04:40 [INFO ] Batch-Verarbeitung abgeschlossen: 10200 Transaktionen geprüft
