@@ -331,6 +331,22 @@ python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only
 
 > **Wichtig:** Wenn `--sektionen` keine gültige Sektion trifft, bricht die Pipeline mit `ValueError` ab (statt einen leeren "KONFORM"-Report zu erzeugen).
 
+### 5. Streamlit Web-UI
+
+FinRegAgents bietet eine interaktive **Streamlit Web-UI**, die es ermöglicht, Prüfungen vollständig über den Browser zu steuern, ohne die Kommandozeile (CLI) nutzen zu müssen. Streamlit ist ein Open-Source Python-Framework, mit dem sich schnell interaktive Web-Anwendungen für Machine Learning und Data Science bauen lassen.
+
+Die Benutzeroberfläche bietet folgende Funktionen:
+- **Konfiguration via GUI:** API-Keys, Regulatorik, Institut, LLM-Modell und Skeptiker-Modus können bequem über die Seitenleiste eingestellt werden.
+- **Dokumenten-Upload:** Laden Sie Prüfungsdokumente direkt im Browser via Drag & Drop hoch oder geben Sie einen lokalen Ordnerpfad an.
+- **Live-Logs:** Verfolgen Sie den Prüfungsfortschritt und die Bewertungen der KI-Agenten in Echtzeit im Browser.
+- **Ergebnis-Preview & Download:** Betrachten Sie die fertigen Prüfberichte direkt in der App und laden Sie diese als Markdown, HTML oder JSON herunter.
+
+**So starten Sie die Benutzeroberfläche:**
+```bash
+streamlit run app.py
+```
+Dies öffnet die App automatisch in Ihrem Standard-Browser (meist unter `http://localhost:8501`).
+
 ---
 
 ## Python API
