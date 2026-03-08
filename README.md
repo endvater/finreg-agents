@@ -64,7 +64,7 @@ Version 2 ist eine vollständige Überarbeitung, die fünf kritische Architektur
 
 ---
 
-## Bugfixes v2.1
+## Bugfixes v2.1 / v2.2
 
 Behebt Probleme, die durch ein nachgelagertes Code-Review identifiziert wurden:
 
@@ -84,6 +84,10 @@ Behebt Probleme, die durch ein nachgelagertes Code-Review identifiziert wurden:
 | **Skeptiker-Agent**: `import json` und `CONFIDENCE_REVIEW_THRESHOLD` ungenutzt (F401) | Entfernt |
 | **Skeptiker-Agent**: Kein Logging | `logging.getLogger(__name__)` ergänzt |
 | **Skeptiker-Agent**: Keine Retry-Logik in `_challenge()` | Exponentieller Backoff analog `PrueferAgent` |
+| **Input-Typ-Leak im Scoring**: unzulässige Typen konnten Confidence/Gate beeinflussen | Type-Scoping vor Retrieval-Gate und Confidence-Berechnung |
+| **Skeptiker-Typdrift**: String statt Liste bei `einwaende` verzerrte Confidence-Penalty | Robuste Typnormalisierung (Bool/List/String-Coercion) |
+| `--sektionen` ohne Treffer erzeugte leeren Report mit implizit "KONFORM" | Harte Validierung: Pipeline wirft `ValueError`, wenn 0 Prüffelder verarbeitet wurden |
+| Regulatorik-spezifische Paragraphen-Patterns waren deklariert, aber ungenutzt | Rechtszitat-Plausibilitätscheck je Regulatorik in der strukturellen Validierung aktiviert |
 
 ---
 
@@ -112,7 +116,7 @@ finreg-agents/
 │   └── bericht_generator.py  ← Prüfbericht (JSON / MD / HTML) mit Audit-Trail
 │
 ├── tests/
-│   └── test_core.py          ← Pytest-Tests (32 Tests)
+│   └── test_core.py          ← Pytest-Tests (36 Tests)
 │
 └── .github/workflows/
     └── ci.yml                ← CI: Tests (3.11/3.12) + Lint (ruff)
@@ -136,6 +140,7 @@ Dokumente (PDF, Excel, Interview, Screenshot, Log)
         ▼
   [PrueferAgent]
    ├─ RAG-Retrieval           → Top-k relevante Chunks holen
+   ├─ Type-Scoping            → Nur erlaubte input_typen bleiben im Bewertungs-Pfad
    ├─ Quality-Gate            → Score < Threshold? → nicht_prüfbar (kein LLM-Call)
    ├─ LLM-Bewertung           → Regulatorik-spezifischer Prompt → Claude
    │   └─ Retry (3×)          → Exponentieller Backoff bei API-Fehlern
@@ -147,6 +152,7 @@ Dokumente (PDF, Excel, Interview, Screenshot, Log)
   [SkeptikerAgent]            Adversariales LLM-Review (Advocatus Diaboli)
    ├─ Befund-Challenge        → System-Prompt: "Finde Schwächen"
    │   └─ Retry (3×)          → Exponentieller Backoff bei API-Fehlern
+   ├─ Output-Normalisierung   → JSON-Felder robust typisieren (bool/list/string)
    ├─ Einwände + Stärken      → Konkrete Kritikpunkte + mildernde Faktoren
    ├─ Bewertungsempfehlung     → Abweichende Empfehlung (wird nicht übernommen)
    ├─ Confidence-Penalty      → -0.15 pro Einwand auf adjustierten Score
@@ -323,6 +329,8 @@ python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only
 | `--skeptiker` | aus | Skeptiker-Agent aktivieren |
 | `--skeptiker-only-konform` | aus | Skeptiker nur für `konform`-Ratings |
 
+> **Wichtig:** Wenn `--sektionen` keine gültige Sektion trifft, bricht die Pipeline mit `ValueError` ab (statt einen leeren "KONFORM"-Report zu erzeugen).
+
 ---
 
 ## Python API
@@ -347,7 +355,7 @@ report_paths = pipeline.run()
 ### Tests & Linting
 
 ```bash
-# Tests (32 Tests)
+# Tests (36 Tests)
 pytest tests/ -v
 
 # Linting
@@ -400,6 +408,7 @@ Vor der Aufnahme in den Bericht durchläuft jeder Befund automatische Checks:
 - **Platzhalter-Check**: Unaufgelöste `{}`-Platzhalter in Begründungen oder Mangel-Texten
 - **Konsistenz-Check**: `konform` ohne Textstellen? `nicht_konform` ohne Mangel-Text?
 - **Bewertungs-Konsistenz**: Mangel-Text bei `konform`-Bewertung?
+- **Rechtszitat-Plausibilität**: Passen Paragraphen/Artikel sprachlich zur gewählten Regulatorik?
 
 Alle Warnungen werden im Befund als `validierungshinweise` gespeichert und im Bericht angezeigt.
 
