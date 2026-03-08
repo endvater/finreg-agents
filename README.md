@@ -562,7 +562,7 @@ Hinweise:
 - [ ] Persistenter Vektorindex via ChromaDB / Weaviate
 - [ ] Claude Vision für Screenshot-Analyse (TM-Systeme, KYC-Oberflächen)
 - [ ] Delta-Prüfung – nur geänderte Dokumente neu einlesen
-- [ ] Streamlit-UI für interaktive Prüfung mit Sampling-Audit
+- [x] ~~Streamlit-UI für interaktive Prüfung mit Sampling-Audit~~ ✅ *implementiert in app.py*
 - [ ] JSON-Schema für Custom-Kataloge mit Validierung beim Laden
 - [ ] Multi-Institut-Vergleich – Benchmarking über Institutsgrenzen
 
