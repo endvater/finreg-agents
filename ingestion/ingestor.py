@@ -13,10 +13,13 @@ Unterstützt: PDF, Excel/CSV, Interview-Fragebögen (JSON/YAML), Screenshots, Lo
 
 import json
 import hashlib
+import logging
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 from llama_index.core import Document
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.readers.file import PDFReader
@@ -67,12 +70,15 @@ class GwGIngestor:
         for folder_name, handler in folder_handlers.items():
             folder = base / folder_name
             if folder.exists():
-                print(f"  📂 Ingesting {folder_name}/ ...")
+                logger.info("Ingesting %s/ ...", folder_name)
                 docs = handler(folder)
                 all_docs.extend(docs)
-                print(f"     → {len(docs)} Dokument(e) / Chunks geladen")
+                logger.info("  → %d Dokument(e) / Chunks geladen", len(docs))
 
-        print(f"  📊 Gesamt: {len(all_docs)} Chunks | Deduplizierung: {len(self._seen_hashes)} unique Dateien")
+        logger.info(
+            "Gesamt: %d Chunks | %d unique Dateien (nach Deduplizierung)",
+            len(all_docs), len(self._seen_hashes),
+        )
         return all_docs
 
     # ------------------------------------------------------------------ #
@@ -88,7 +94,7 @@ class GwGIngestor:
         """Prüft ob eine Datei bereits ingested wurde (identischer Inhalt)."""
         fh = self._file_hash(path)
         if fh in self._seen_hashes:
-            print(f"     ⏭ Duplikat übersprungen: {path.name}")
+            logger.debug("Duplikat übersprungen: %s", path.name)
             return True
         self._seen_hashes.add(fh)
         return False
@@ -116,7 +122,7 @@ class GwGIngestor:
                         metadata=node.metadata,
                     ))
             except Exception as e:
-                print(f"     ⚠ Fehler bei {pdf_file.name}: {e}")
+                logger.warning("Fehler bei %s: %s", pdf_file.name, e)
         return docs
 
     # ------------------------------------------------------------------ #
@@ -131,7 +137,7 @@ class GwGIngestor:
                 continue
             try:
                 if f.suffix == ".csv":
-                    df = pd.read_csv(f)
+                    df = pd.read_csv(f, encoding="utf-8", encoding_errors="replace")
                 else:
                     df = pd.read_excel(f)
 
@@ -147,7 +153,7 @@ class GwGIngestor:
                     }
                 ))
             except Exception as e:
-                print(f"     ⚠ Fehler bei {f.name}: {e}")
+                logger.warning("Fehler bei %s: %s", f.name, e)
         return docs
 
     def _dataframe_to_text(self, df: pd.DataFrame, filename: str) -> str:
@@ -204,7 +210,7 @@ class GwGIngestor:
                         data = yaml.safe_load(f.read_text(encoding="utf-8"))
                         text = self._interview_data_to_text(data, f.name)
                     else:
-                        print(f"     ⚠ YAML-Support nicht verfügbar (pip install pyyaml)")
+                        logger.warning("YAML-Support nicht verfügbar – bitte 'pip install pyyaml'")
                         text = f.read_text(encoding="utf-8")
                 else:
                     text = f.read_text(encoding="utf-8")
@@ -218,7 +224,7 @@ class GwGIngestor:
                     }
                 ))
             except Exception as e:
-                print(f"     ⚠ Fehler bei {f.name}: {e}")
+                logger.warning("Fehler bei %s: %s", f.name, e)
         return docs
 
     def _interview_data_to_text(self, data: Any, filename: str) -> str:
@@ -304,7 +310,7 @@ class GwGIngestor:
                     }
                 ))
             except Exception as e:
-                print(f"     ⚠ Fehler bei {f.name}: {e}")
+                logger.warning("Fehler bei %s: %s", f.name, e)
         return docs
 
     # ------------------------------------------------------------------ #
@@ -319,7 +325,7 @@ class GwGIngestor:
                 continue
             try:
                 if f.suffix == ".csv":
-                    df = pd.read_csv(f)
+                    df = pd.read_csv(f, encoding="utf-8", encoding_errors="replace")
                     text = self._dataframe_to_text(df, f.name)
                 else:
                     text = f.read_text(encoding="utf-8", errors="replace")
@@ -331,5 +337,5 @@ class GwGIngestor:
                 for node in chunks:
                     docs.append(Document(text=node.get_content(), metadata=node.metadata))
             except Exception as e:
-                print(f"     ⚠ Fehler bei {f.name}: {e}")
+                logger.warning("Fehler bei %s: %s", f.name, e)
         return docs

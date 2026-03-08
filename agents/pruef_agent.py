@@ -15,13 +15,16 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 import json
+import logging
 import re
-import hashlib
+import time
 
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
+
+logger = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------ #
@@ -139,6 +142,13 @@ CONFIDENCE_AUTO_REJECT = 0.4        # Unter diesem Wert: automatisch nicht_prüf
 CONFIDENCE_REVIEW_THRESHOLD = 0.7   # Unter diesem Wert: manuelles Review markieren
 SEKTION_REVIEW_ESCALATION = 0.3     # Ab diesem Anteil: Sektion eskalieren
 
+# Retry-Konfiguration für API-Fehler
+LLM_MAX_RETRIES = 3
+LLM_RETRY_BASE_DELAY = 2.0  # Sekunden, verdoppelt sich je Versuch
+
+# Regex für präzises Token-Splitting bei Dateinamen (Fuzzy-Matching-Fix)
+_FILENAME_SEP_RE = re.compile(r"[\s._\-/]+")
+
 
 def compute_confidence(
     retrieval_scores: list[float],
@@ -165,10 +175,14 @@ def compute_confidence(
     # 2. Evidenz-Coverage: Wie viele der erwarteten Begriffe tauchen in Quellen auf?
     if erwartete_evidenz:
         matched = 0
-        quellen_lower = " ".join(gefundene_quellen).lower()
+        # Dateinamen auf Separator-Grenzen aufteilen, um False Positives zu vermeiden
+        # z.B. "log" soll NICHT "dialog.pdf" matchen
+        quellen_tokens: set[str] = set()
+        for q in gefundene_quellen:
+            quellen_tokens.update(t for t in _FILENAME_SEP_RE.split(q.lower()) if t)
         for ev in erwartete_evidenz:
-            # Fuzzy: Teilwort-Match in Quelldateinamen
-            if any(tok in quellen_lower for tok in ev.lower().split()):
+            ev_tokens = set(ev.lower().split())
+            if ev_tokens & quellen_tokens:
                 matched += 1
         coverage_signal = matched / len(erwartete_evidenz)
     else:
@@ -486,31 +500,47 @@ Bewerte dieses Prüffeld und antworte als JSON.
             HumanMessage(content=user_prompt),
         ]
 
-        try:
-            response = self.llm.invoke(messages)
-            return extract_json(response.content)
-        except json.JSONDecodeError as e:
-            return {
-                "bewertung": "nicht_prüfbar",
-                "begruendung": f"LLM-Antwort konnte nicht als JSON geparst werden: {e}",
-                "belegte_textstellen": [],
-                "mangel_text": None,
-                "empfehlungen": [],
-                "quellen": [],
-                "confidence_self": 0.0,
-            }
-        except Exception as e:
-            return {
-                "bewertung": "nicht_prüfbar",
-                "begruendung": f"Fehler bei der LLM-Bewertung: {type(e).__name__}: {e}",
-                "belegte_textstellen": [],
-                "mangel_text": None,
-                "empfehlungen": [],
-                "quellen": [],
-                "confidence_self": 0.0,
-            }
+        last_exc: Optional[Exception] = None
+        for attempt in range(LLM_MAX_RETRIES):
+            try:
+                response = self.llm.invoke(messages)
+                return extract_json(response.content)
+            except json.JSONDecodeError as e:
+                # Parse-Fehler: Retry hilft hier nicht
+                return {
+                    "bewertung": "nicht_prüfbar",
+                    "begruendung": f"LLM-Antwort konnte nicht als JSON geparst werden: {e}",
+                    "belegte_textstellen": [],
+                    "mangel_text": None,
+                    "empfehlungen": [],
+                    "quellen": [],
+                    "confidence_self": 0.0,
+                }
+            except Exception as e:
+                last_exc = e
+                if attempt < LLM_MAX_RETRIES - 1:
+                    delay = LLM_RETRY_BASE_DELAY * (2 ** attempt)
+                    logger.warning(
+                        "LLM-Aufruf für %s fehlgeschlagen (%s: %s) – Retry %d/%d in %.0fs",
+                        prueffeld["id"], type(e).__name__, e,
+                        attempt + 1, LLM_MAX_RETRIES - 1, delay,
+                    )
+                    time.sleep(delay)
+
+        return {
+            "bewertung": "nicht_prüfbar",
+            "begruendung": (
+                f"API-Fehler nach {LLM_MAX_RETRIES} Versuchen: "
+                f"{type(last_exc).__name__}: {last_exc}"
+            ),
+            "belegte_textstellen": [],
+            "mangel_text": None,
+            "empfehlungen": [],
+            "quellen": [],
+            "confidence_self": 0.0,
+        }
 
 
 # Rückwärtskompatibilität
 GwGPrueferAgent = PrueferAgent
-SektionsergebniS = Sektionsergebnis  # Typo-Alias
+Sektionsergebniss = Sektionsergebnis  # früherer Typo-Alias

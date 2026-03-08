@@ -24,11 +24,16 @@ Oder als Python-Modul:
 
 import argparse
 import json
+import logging
 import time
 from pathlib import Path
 
+from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings
 from llama_index.embeddings.openai import OpenAIEmbedding
+
+load_dotenv()
+logger = logging.getLogger(__name__)
 
 from ingestion.ingestor import GwGIngestor
 from agents.pruef_agent import PrueferAgent, Sektionsergebnis, SEKTION_REVIEW_ESCALATION
@@ -127,10 +132,15 @@ class AuditPipeline:
 
         # ── Schritt 2: Vektorindex ───────────────────────────────────────
         self._log("\n🔍 Schritt 2/4: Vektorindex aufbauen")
-        # Embedding-Modell pro Index konfigurieren (kein globaler State)
         embed_model = OpenAIEmbedding(model=self.embedding_model)
+        # Settings temporär setzen und danach wiederherstellen, damit kein
+        # dauerhafter globaler State entsteht (wichtig bei mehreren Pipeline-Instanzen)
+        _prev_embed = Settings.embed_model
         Settings.embed_model = embed_model
-        index = VectorStoreIndex.from_documents(documents, show_progress=self.verbose)
+        try:
+            index = VectorStoreIndex.from_documents(documents, show_progress=self.verbose)
+        finally:
+            Settings.embed_model = _prev_embed
         self._log("   → Index fertig")
 
         # ── Schritt 3: Prüfkatalog laden & Prüfung durchführen ──────────
@@ -271,8 +281,8 @@ class AuditPipeline:
                 })
             path = checkpoint_dir / "checkpoint_latest.json"
             path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-        except Exception:
-            pass  # Checkpoint-Fehler sollen die Pipeline nicht stoppen
+        except Exception as e:
+            logger.warning("Checkpoint-Fehler (Pipeline läuft weiter): %s", e)
 
     def _log(self, msg: str):
         if self.verbose:
@@ -287,6 +297,11 @@ GwGAuditPipeline = AuditPipeline
 # CLI
 # ------------------------------------------------------------------ #
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)-8s %(name)s – %(message)s",
+        datefmt="%H:%M:%S",
+    )
     parser = argparse.ArgumentParser(
         description="FinRegAgents v2 – Multi-Regulatorik Audit-Pipeline",
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -13,10 +13,13 @@ Output: JSON (maschinenlesbar) + Markdown (lesbar) + HTML (präsentierbar)
 
 import json
 import html
+import logging
 from datetime import datetime
 from pathlib import Path
 from collections import Counter
 from typing import TYPE_CHECKING, Optional
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from agents.pruef_agent import Befund, Bewertung
@@ -74,7 +77,12 @@ class BerichtGenerator:
         self.katalog_version = katalog_version
         self.pruefungsdatum = datetime.now().strftime("%d.%m.%Y")
 
-        labels = REGULATORIK_LABELS.get(regulatorik, REGULATORIK_LABELS["gwg"])
+        labels = REGULATORIK_LABELS.get(regulatorik)
+        if labels is None:
+            raise ValueError(
+                f"Unbekannte Regulatorik: '{regulatorik}'. "
+                f"Verfügbar: {list(REGULATORIK_LABELS.keys())}"
+            )
         self.report_title = labels[0]
         self.report_subtitle = labels[1]
         self.report_typ = labels[2]
@@ -214,7 +222,7 @@ class BerichtGenerator:
             ],
         }
         Path(path).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-        print(f"  📄 JSON-Bericht: {path}")
+        logger.info("JSON-Bericht: %s", path)
 
     # ------------------------------------------------------------------ #
     # Markdown-Report
@@ -325,7 +333,7 @@ class BerichtGenerator:
         ]
 
         Path(path).write_text("\n".join(lines), encoding="utf-8")
-        print(f"  📄 Markdown-Bericht: {path}")
+        logger.info("Markdown-Bericht: %s", path)
 
     # ------------------------------------------------------------------ #
     # HTML-Report (druckfähig)
@@ -344,7 +352,7 @@ class BerichtGenerator:
         parts.append(self._html_audit_trail(z))
         parts.append(self._html_footer())
         Path(path).write_text("".join(parts), encoding="utf-8")
-        print(f"  📄 HTML-Bericht: {path}")
+        logger.info("HTML-Bericht: %s", path)
 
     # ------------------------------------------------------------------ #
     # HTML Building Blocks

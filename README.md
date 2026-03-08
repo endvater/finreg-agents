@@ -1,5 +1,6 @@
 # FinRegAgents v2 🏦🤖
 
+[![CI](https://github.com/endvater/finreg-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/endvater/finreg-agents/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)](https://python.org)
 [![Claude](https://img.shields.io/badge/Powered_by-Claude-d97706)](https://anthropic.com)
@@ -13,9 +14,32 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 
 ---
 
+## Inhaltsverzeichnis
+
+1. [Was ist neu in v2?](#was-ist-neu-in-v2)
+2. [Bugfixes v2.1](#bugfixes-v21)
+3. [Architektur](#architektur)
+4. [Skeptiker-Agent](#skeptiker-agent)
+5. [Unterstützte Regulatorik](#unterstützte-regulatorik)
+6. [Quickstart](#quickstart)
+7. [Python API](#python-api)
+8. [Confidence-Scoring](#confidence-scoring)
+9. [Strukturelle Validierung](#strukturelle-validierung)
+10. [Bewertungsskala](#bewertungsskala)
+11. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
+12. [Interview-Format](#interview-format)
+13. [Prüfbericht-Output](#prüfbericht-output)
+14. [Kosten-Einschätzung](#kosten-einschätzung)
+15. [Roadmap](#roadmap)
+16. [Disclaimer](#disclaimer)
+17. [Contributing](#contributing)
+18. [Lizenz](#lizenz)
+
+---
+
 ## Was ist neu in v2?
 
-Version 2 ist eine vollständige Überarbeitung basierend auf einem Code-Review, das fünf kritische Architektur-Schwächen adressiert:
+Version 2 ist eine vollständige Überarbeitung, die fünf kritische Architektur-Schwächen aus v1 adressiert:
 
 | Problem in v1 | Lösung in v2 |
 |---|---|
@@ -25,19 +49,41 @@ Version 2 ist eine vollständige Überarbeitung basierend auf einem Code-Review,
 | XSS im HTML-Report – Befund-Texte ungefiltert eingebettet | **html.escape()** für alle dynamischen Inhalte |
 | Kein Audit-Trail, kein Checkpoint | **Audit-Trail** (Modell, Katalog-Version) + **Checkpoint** nach jeder Sektion |
 
-### Weitere Verbesserungen
+### Weitere Verbesserungen in v2
 
 - **Confidence-Score** (0.0–1.0) pro Befund aus vier Signalen: Retrieval-Score, Evidenz-Coverage, Type-Match, LLM-Self-Assessment
 - **Review-Markierung**: Befunde unter dem Confidence-Threshold werden als "Review erforderlich" markiert
 - **Sektions-Eskalation**: Wenn >30% der Befunde einer Sektion Review erfordern → Warnung
-- **Interview-Parsing**: Unterstützt jetzt beide JSON-Formate (Array und Dict mit `fragen_antworten`)
+- **Interview-Parsing**: Unterstützt beide JSON-Formate (Array und Dict mit `fragen_antworten`)
 - **Screenshot-Memory-Fix**: base64-Daten werden nicht mehr in den Index geladen
 - **Chunk-Size**: Von 512 auf 1024 Tokens erhöht (besser für regulatorische Texte)
 - **Deduplizierung**: Identische Dateien in verschiedenen Ordnern werden nur einmal indexiert
 - **YAML-Support**: Interview-Fragebögen in YAML werden korrekt geparst
 - **Model-Default**: Sonnet statt Opus (kosteneffizient, Opus optional per `--model`)
 - **Test-Suite**: Pytest-Tests für Confidence, Validierung, JSON-Parsing, Katalog-Struktur
-- **Keine globale LlamaIndex-State-Mutation** mehr
+
+---
+
+## Bugfixes v2.1
+
+Behebt Probleme, die durch ein nachgelagertes Code-Review identifiziert wurden:
+
+| Problem | Fix |
+|---|---|
+| `Settings.embed_model` wurde permanent mutiert – Race Condition bei parallelen Instanzen | Save/Restore-Pattern: State wird nach dem Index-Aufbau wiederhergestellt |
+| Keine Retry-Logik – ein einzelner API-Fehler (429/503) beendet die Pipeline | Exponentieller Backoff: 3 Versuche mit 2s / 4s Wartezeit; JSON-ParseErrors werden sofort durchgereicht |
+| Checkpoint-Exception wurde lautlos geschluckt – Fehler unsichtbar | `logger.warning()` statt leerem `except` |
+| `.env`-Dateien wurden nicht geladen trotz `python-dotenv`-Dependency | `load_dotenv()` wird beim Start aufgerufen |
+| Fuzzy-Matching: `"log"` matchte `"dialog.pdf"` → falscher Confidence-Anstieg | Token-Splitting auf Separator-Grenzen (`._-/`) statt Substring-Match |
+| Unbekannte Regulatorik im `BerichtGenerator` fiel lautlos auf GwG-Labels zurück | Wirft jetzt `ValueError` mit klarer Fehlermeldung |
+| CSV-Dateien ohne Encoding-Angabe – Windows-1252-Logs aus Bankensystemen schlugen fehl | `encoding="utf-8", encoding_errors="replace"` explizit gesetzt |
+| `import hashlib` in `pruef_agent.py` war ungenutzt | Entfernt |
+| Typo-Alias `SektionsergebniS` (großes S am Ende) in der Public API | Korrigiert |
+| Kein Logging – `print()` überall, kein Log-Level, keine Filterbarkeit | `logging.getLogger(__name__)` in allen Modulen; `basicConfig` in `main()` |
+| Kein CI | GitHub Actions: Test-Job (Python 3.11 + 3.12) + Lint-Job (ruff) |
+| **Skeptiker-Agent**: `import json` und `CONFIDENCE_REVIEW_THRESHOLD` ungenutzt (F401) | Entfernt |
+| **Skeptiker-Agent**: Kein Logging | `logging.getLogger(__name__)` ergänzt |
+| **Skeptiker-Agent**: Keine Retry-Logik in `_challenge()` | Exponentieller Backoff analog `PrueferAgent` |
 
 ---
 
@@ -46,26 +92,30 @@ Version 2 ist eine vollständige Überarbeitung basierend auf einem Code-Review,
 ```
 finreg-agents/
 │
-├── pipeline.py              ← Hauptorchestrator (CLI + Python API)
+├── pipeline.py               ← Hauptorchestrator (CLI + Python API)
 │
 ├── catalog/
-│   ├── gwg_catalog.json     ← GwG-Prüfkatalog (34 Prüffelder, 8 Sektionen)
-│   ├── dora_catalog.json    ← DORA-Katalog (18 Prüffelder, 5 Sektionen)
-│   ├── marisk_catalog.json  ← MaRisk-Katalog (22 Prüffelder, 8 Sektionen)
-│   └── wphg_catalog.json    ← WpHG/MaComp-Katalog (20 Prüffelder, 7 Sektionen)
+│   ├── gwg_catalog.json      ← GwG-Prüfkatalog   (34 Prüffelder, 8 Sektionen)
+│   ├── dora_catalog.json     ← DORA-Katalog       (18 Prüffelder, 5 Sektionen)
+│   ├── marisk_catalog.json   ← MaRisk-Katalog     (22 Prüffelder, 8 Sektionen)
+│   └── wphg_catalog.json     ← WpHG/MaComp-Katalog (20 Prüffelder, 7 Sektionen)
 │
 ├── ingestion/
-│   ├── ingestor.py          ← Multi-Modal Document Ingestor
-│   └── interviews/          ← Beispiel-Fragebögen
+│   ├── ingestor.py           ← Multi-Modal Document Ingestor
+│   └── interviews/           ← Beispiel-Fragebögen
 │
 ├── agents/
-│   └── pruef_agent.py       ← RAG + LLM Prüfer-Agent + Validierung + Confidence
+│   ├── pruef_agent.py        ← RAG + LLM Prüfer-Agent + Validierung + Confidence
+│   └── skeptiker_agent.py    ← Adversarialer Post-Processing-Agent
 │
 ├── reports/
-│   └── bericht_generator.py ← Prüfbericht (JSON / MD / HTML) mit Audit-Trail
+│   └── bericht_generator.py  ← Prüfbericht (JSON / MD / HTML) mit Audit-Trail
 │
-└── tests/
-    └── test_core.py         ← Pytest-Tests für Kernkomponenten
+├── tests/
+│   └── test_core.py          ← Pytest-Tests (32 Tests)
+│
+└── .github/workflows/
+    └── ci.yml                ← CI: Tests (3.11/3.12) + Lint (ruff)
 ```
 
 ### Datenfluss
@@ -77,7 +127,7 @@ Dokumente (PDF, Excel, Interview, Screenshot, Log)
   [GwGIngestor]              Multi-Modal Ingestion, Chunking, Dedup
         │
         ▼
-  [VectorStoreIndex]         LlamaIndex + OpenAI Embeddings
+  [VectorStoreIndex]         LlamaIndex + OpenAI Embeddings (Settings save/restore)
         │
         ▼
   [Prüfkatalog]              94 Prüffelder in 4 Regulatoriken
@@ -85,22 +135,110 @@ Dokumente (PDF, Excel, Interview, Screenshot, Log)
         │   für jedes Prüffeld:
         ▼
   [PrueferAgent]
-   ├─ RAG-Retrieval          → Top-k relevante Chunks holen
-   ├─ Quality-Gate       NEU → Score < Threshold? → nicht_prüfbar (kein LLM-Call)
-   ├─ LLM-Bewertung          → Regulatorik-spezifischer Prompt → Claude
-   ├─ Strukturelle Valid. NEU → Quellen-Cross-Check, Platzhalter, Konsistenz
-   └─ Confidence-Score   NEU → 4 Signale → Score + Review-Markierung
+   ├─ RAG-Retrieval           → Top-k relevante Chunks holen
+   ├─ Quality-Gate            → Score < Threshold? → nicht_prüfbar (kein LLM-Call)
+   ├─ LLM-Bewertung           → Regulatorik-spezifischer Prompt → Claude
+   │   └─ Retry (3×)          → Exponentieller Backoff bei API-Fehlern
+   ├─ Strukturelle Valid.     → Quellen-Cross-Check, Platzhalter, Konsistenz
+   └─ Confidence-Score        → 4 Signale → Score + Review-Markierung
+        │
+        │   [optional, per --skeptiker]
+        ▼
+  [SkeptikerAgent]            Adversariales LLM-Review (Advocatus Diaboli)
+   ├─ Befund-Challenge        → System-Prompt: "Finde Schwächen"
+   │   └─ Retry (3×)          → Exponentieller Backoff bei API-Fehlern
+   ├─ Einwände + Stärken      → Konkrete Kritikpunkte + mildernde Faktoren
+   ├─ Bewertungsempfehlung     → Abweichende Empfehlung (wird nicht übernommen)
+   ├─ Confidence-Penalty      → -0.15 pro Einwand auf adjustierten Score
+   └─ merge_befund_skeptiker() → Hinweise in Validierungshinweise
         │
         ▼
-  [Checkpoint]           NEU → Zwischenergebnis nach jeder Sektion
+  [Checkpoint]                → Zwischenergebnis nach jeder Sektion
         │
         ▼
   [BerichtGenerator]
    ├─ JSON + Markdown + HTML
-   ├─ Confidence-Bars    NEU → Visuelle Confidence-Indikatoren
-   ├─ Evidenz-Warnungen  NEU → Warnung bei hohem nicht_prüfbar-Anteil
-   └─ Audit-Trail        NEU → Modell, Katalog-Version, Zeitstempel
+   ├─ Confidence-Bars         → Visuelle Confidence-Indikatoren
+   ├─ Evidenz-Warnungen       → Warnung bei hohem nicht_prüfbar-Anteil
+   └─ Audit-Trail             → Modell, Katalog-Version, Zeitstempel
 ```
+
+---
+
+## Skeptiker-Agent
+
+Der `SkeptikerAgent` ist ein optionaler adversarialer Post-Processing-Layer, der die Befunde des `PrueferAgent` aktiv herausfordert. Er ist nach dem Prinzip des **Advocatus Diaboli** designed: ein zweiter, unabhängiger LLM-Aufruf, der gezielt Schwachstellen in der Erstbewertung sucht.
+
+### Was der Skeptiker tut
+
+- **Bei `konform`-Ratings** hinterfragt er: Ist die Evidenz wirklich belastbar, oder nur eine formale Hülle ohne Substanz? Gibt es "Papierkonformität" ohne echte Umsetzung? Sind die Textstellen ausreichend spezifisch? Fehlen kritische Dokumenttypen?
+- **Bei `nicht_konform`/`teilkonform`-Ratings** prüft er: Wurden mildernde Faktoren berücksichtigt? Ist die Schwere verhältnismäßig? Gibt es kompensatorische Kontrollen?
+
+### Ausgabe des Skeptikers
+
+Der Skeptiker liefert pro Befund:
+
+| Feld | Beschreibung |
+|---|---|
+| `akzeptiert` | Hat der Skeptiker die Originalbewertung akzeptiert? |
+| `bewertung_empfehlung` | Abweichende Empfehlung (Originalbewertung bleibt im Bericht erhalten!) |
+| `einwaende` | Liste konkreter Kritikpunkte |
+| `staerken` | Stärken der Originalbewertung |
+| `fehlende_evidenz` | Dokumenttypen / Nachweise, die fehlen |
+| `schweregrad_erhoehen` | Empfehlung, Schweregrad hochzustufen |
+| `nachforderung_empfohlen` | Fehlende Dokumente nachfordern |
+
+> **Hinweis:** Der Skeptiker ändert die Bewertung im Bericht **nicht** – er ergänzt Einwände als `validierungshinweise` und passt den Confidence-Score an. Die finale Einschätzung bleibt beim menschlichen Prüfer.
+
+### Confidence-Anpassung
+
+```
+adjustierter_confidence = original_confidence - (0.15 × Anzahl_Einwände)
+                          (mindestens 0.0)
+```
+
+Ab 2 Einwänden (`EINWAND_ESKALATION_THRESHOLD`) wird automatisch `review_erforderlich = True` gesetzt.
+
+### Skip-Bedingungen
+
+Der Skeptiker überspringt Befunde wenn:
+- Bewertung ist `nicht_prüfbar` (keine Evidenz vorhanden – kein sinnvolles Review möglich)
+- `confidence < 0.5` (Befund bereits als Review-Fall markiert)
+- `--skeptiker-only-konform` gesetzt und Bewertung ist nicht `konform`
+
+### CLI-Flags
+
+```bash
+# Skeptiker für alle Befunde aktivieren
+python pipeline.py --input ./docs --regulatorik gwg --skeptiker
+
+# Skeptiker nur für konform-Ratings (kostensparender)
+python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only-konform
+```
+
+### Python API
+
+```python
+pipeline = AuditPipeline(
+    input_dir="./docs",
+    regulatorik="gwg",
+    skeptiker=True,               # Skeptiker aktivieren
+    skeptiker_only_konform=True,  # Optional: nur konform-Ratings challengen
+)
+```
+
+### Wann den Skeptiker einsetzen?
+
+| Szenario | Empfehlung |
+|---|---|
+| Vollständige Prüfung mit maximalem QA-Anspruch | `--skeptiker` |
+| Nur konform-Ratings sind risikokritisch | `--skeptiker --skeptiker-only-konform` |
+| Schnell-Scan / Kosten-sensitiv | Ohne Skeptiker |
+| Prüfung mit externer Prüfbericht-Verwendung | `--skeptiker` empfohlen |
+
+### Kostenauswirkung
+
+Der Skeptiker verdoppelt die LLM-Aufrufe ungefähr (+1 Aufruf pro aktivem Prüffeld). Mit `--skeptiker-only-konform` reduziert sich der Overhead auf typischerweise 40–60% der Prüffelder.
 
 ---
 
@@ -109,7 +247,7 @@ Dokumente (PDF, Excel, Interview, Screenshot, Log)
 | Regulatorik | Sektionen | Prüffelder | Rechtsgrundlage |
 |---|---|---|---|
 | **GwG / AML** | 8 | 34 | GwG, §25h KWG, BaFin AuA |
-| **DORA** | 5 | 18 | DORA Art. 5-46, RTS |
+| **DORA** | 5 | 18 | DORA Art. 5–46, RTS |
 | **MaRisk** | 8 | 22 | MaRisk AT/BT, §25a KWG |
 | **WpHG / MaComp** | 7 | 20 | WpHG, MaComp, MAR, MiFID II |
 
@@ -127,39 +265,67 @@ pip install -r requirements.txt
 
 ### 2. API-Keys setzen
 
+**Option A – Umgebungsvariablen:**
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
 export OPENAI_API_KEY="sk-..."        # für Embeddings (text-embedding-3-small)
+```
+
+**Option B – `.env`-Datei** (wird beim Start automatisch geladen):
+```
+# .env
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
 ```
 
 ### 3. Dokumente ablegen
 
 ```
 meine_dokumente/
-  pdfs/           → Policies, Verfahrensanweisungen, Prüfberichte (*.pdf)
-  excel/          → Alert-Statistiken, Schulungsnachweise (*.xlsx, *.csv)
-  interviews/     → Befragungsbögen (*.json, *.yaml)
-  screenshots/    → TM-System, goAML, KYC-Oberfläche (*.png, *.jpg)
-  logs/           → Systemlogs, Auditlogs (*.txt, *.log)
+  pdfs/        → Policies, Verfahrensanweisungen, Prüfberichte (*.pdf)
+  excel/       → Alert-Statistiken, Schulungsnachweise (*.xlsx, *.csv)
+  interviews/  → Befragungsbögen (*.json, *.yaml)
+  screenshots/ → TM-System, goAML, KYC-Oberfläche (*.png, *.jpg)
+  logs/        → Systemlogs, Auditlogs (*.txt, *.log)
 ```
 
 ### 4. Prüfung starten
 
 ```bash
-# GwG-Sonderprüfung (AML) – Default: Sonnet (kosteneffizient)
+# GwG-Sonderprüfung (AML) – Standard: Sonnet (kosteneffizient)
 python pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
 
-# DORA-Prüfung (nur Drittparteienrisiko)
+# DORA-Prüfung (nur Drittparteienrisiko-Sektion)
 python pipeline.py --input ./docs --regulatorik dora --sektionen D04
 
 # MaRisk-Vollprüfung mit Opus (höchste Qualität)
 python pipeline.py --input ./docs --regulatorik marisk --model claude-opus-4-5
 
-# WpHG / MaComp
-python pipeline.py --input ./docs --regulatorik wphg --sektionen W02 W03 W04
+# WpHG / MaComp mit Skeptiker-Review
+python pipeline.py --input ./docs --regulatorik wphg --skeptiker
+
+# Nur konform-Ratings skeptisch hinterfragen (kostensparender)
+python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only-konform
 ```
 
-### 5. Python API
+**Alle CLI-Parameter:**
+
+| Parameter | Default | Beschreibung |
+|---|---|---|
+| `--input` | — | Verzeichnis mit Prüfungsdokumenten (Pflicht) |
+| `--institution` | `"Prüfinstitut"` | Name des zu prüfenden Instituts |
+| `--regulatorik` | `gwg` | `gwg` / `dora` / `marisk` / `wphg` |
+| `--output` | `./reports/output` | Ausgabeverzeichnis für Berichte |
+| `--catalog` | — | Eigener Katalog (überschreibt `--regulatorik`) |
+| `--model` | `claude-sonnet-4-5-20250514` | Anthropic-Modell |
+| `--sektionen` | alle | Nur diese Sektionen prüfen (z.B. `S01 S02`) |
+| `--top-k` | `8` | RAG-Chunks pro Prüffrage |
+| `--skeptiker` | aus | Skeptiker-Agent aktivieren |
+| `--skeptiker-only-konform` | aus | Skeptiker nur für `konform`-Ratings |
+
+---
+
+## Python API
 
 ```python
 from pipeline import AuditPipeline
@@ -168,17 +334,25 @@ pipeline = AuditPipeline(
     input_dir="./meine_dokumente",
     institution="Musterbank AG",
     regulatorik="dora",
-    sektionen_filter=["D01", "D02"],   # optional: Teilprüfung
-    model="claude-sonnet-4-5-20250514", # optional: Modellwahl
+    sektionen_filter=["D01", "D02"],       # optional: Teilprüfung
+    model="claude-sonnet-4-5-20250514",    # optional: Modellwahl
+    skeptiker=True,                         # optional: Skeptiker-Agent
+    skeptiker_only_konform=False,           # optional: nur konform challengen
+    top_k=8,                                # optional: RAG-Chunks pro Frage
 )
 report_paths = pipeline.run()
-# → {"json": "...", "markdown": "...", "html": "..."}
+# → {"json": "./reports/output/...", "markdown": "...", "html": "..."}
 ```
 
-### 6. Tests ausführen
+### Tests & Linting
 
 ```bash
+# Tests (32 Tests)
 pytest tests/ -v
+
+# Linting
+ruff check .
+ruff format --check .
 ```
 
 ---
@@ -194,14 +368,27 @@ Jeder Befund erhält einen Confidence-Score (0.0–1.0), der aus vier Signalen b
 | Type-Match | 20% | Stimmen die Dokumenttypen (PDF, Excel, etc.) überein? |
 | LLM-Self-Assessment | 20% | Selbsteinschätzung des Modells |
 
-### Schwellenwerte
+> **Hinweis:** LLMs kalibrieren ihre eigene Unsicherheit schlecht. Der Anteil von 20% ist bewusst niedrig gehalten; die drei retrieval-seitigen Signale (80%) liefern stabilere Schätzungen.
+
+### Schwellenwerte nach PrueferAgent
 
 | Confidence | Aktion |
 |---|---|
 | < 0.40 | Automatisch `nicht_prüfbar` – LLM-Bewertung wird überschrieben |
 | 0.40 – 0.70 | Befund markiert als **Review erforderlich** 🔍 |
 | > 0.70 | Befund geht in den Bericht |
-| >30% Review in einer Sektion | **Sektions-Eskalation** empfohlen |
+| > 30% Review in einer Sektion | **Sektions-Eskalation** empfohlen |
+
+### Confidence-Anpassung durch SkeptikerAgent
+
+Wenn `--skeptiker` aktiv, wird der Score zusätzlich angepasst:
+
+| Skeptiker-Ergebnis | Confidence-Änderung |
+|---|---|
+| Akzeptiert, keine Einwände | ±0 |
+| Akzeptiert, 1 Einwand | −0.15 |
+| Nicht akzeptiert, 2 Einwände | −0.30 → `review_erforderlich = True` |
+| Nicht akzeptiert, 3+ Einwände | −0.45+ (minimum 0.0) |
 
 ---
 
@@ -214,7 +401,7 @@ Vor der Aufnahme in den Bericht durchläuft jeder Befund automatische Checks:
 - **Konsistenz-Check**: `konform` ohne Textstellen? `nicht_konform` ohne Mangel-Text?
 - **Bewertungs-Konsistenz**: Mangel-Text bei `konform`-Bewertung?
 
-Alle Warnungen werden im Befund gespeichert und im Bericht angezeigt.
+Alle Warnungen werden im Befund als `validierungshinweise` gespeichert und im Bericht angezeigt.
 
 ---
 
@@ -229,14 +416,14 @@ Alle Warnungen werden im Befund gespeichert und im Bericht angezeigt.
 
 **Schweregrade:** `wesentlich` (sofortiger Handlungsbedarf) · `bedeutsam` · `gering`
 
-### Gesamtbewertungslogik (v2)
+### Gesamtbewertungslogik
 
 | Bedingung | Gesamtbewertung |
 |---|---|
 | Wesentliche Mängel vorhanden | **ERHEBLICHE MÄNGEL** |
-| ≥50% nicht prüfbar | **UNZUREICHENDE EVIDENZ – PRÜFUNG NICHT BELASTBAR** |
-| Mängel oder ≥3 teilkonform | **MÄNGEL FESTGESTELLT** |
-| ≥30% nicht prüfbar | **EINGESCHRÄNKT BELASTBAR** |
+| ≥ 50% nicht prüfbar | **UNZUREICHENDE EVIDENZ – PRÜFUNG NICHT BELASTBAR** |
+| Mängel oder ≥ 3 teilkonform | **MÄNGEL FESTGESTELLT** |
+| ≥ 30% nicht prüfbar | **EINGESCHRÄNKT BELASTBAR** |
 | Teilkonforme Befunde vorhanden | **TEILKONFORM – NACHBESSERUNG ERFORDERLICH** |
 | Alles konform | **KONFORM** |
 
@@ -272,15 +459,17 @@ Jedes Prüffeld folgt diesem Schema:
 ```
 
 ```bash
-python pipeline.py --input ./docs --catalog ./mein_katalog.json
+python pipeline.py --input ./docs --catalog ./mein_katalog.json --regulatorik marisk
 ```
+
+> **Hinweis:** Bei Custom-Katalogen muss `--regulatorik` einen der vier bekannten Schlüssel (`gwg`, `dora`, `marisk`, `wphg`) erhalten, da der `BerichtGenerator` regulatorik-spezifische Labels verwendet. Unbekannte Werte werfen einen `ValueError`.
 
 ---
 
 ## Interview-Format
 
 Strukturierte Befragungsprotokolle werden direkt in den Index aufgenommen.
-Unterstützt werden zwei JSON-Formate:
+Unterstützt werden zwei JSON-Formate sowie YAML:
 
 **Format A – Dict mit Metadaten (empfohlen):**
 
@@ -315,7 +504,7 @@ Unterstützt werden zwei JSON-Formate:
 
 ## Prüfbericht-Output
 
-Jede Prüfung erzeugt drei Dateien:
+Jede Prüfung erzeugt drei Dateien im Ausgabeverzeichnis:
 
 | Format | Verwendung |
 |---|---|
@@ -323,31 +512,43 @@ Jede Prüfung erzeugt drei Dateien:
 | **Markdown** | Lesbar, Git-kompatibel, Review-Workflows |
 | **HTML** | Druckfähig, Präsentation, PDF-Konvertierung |
 
-Alle Berichte enthalten jetzt:
-- Confidence-Bars pro Befund
+Alle Berichte enthalten:
+
+- Confidence-Bars pro Befund (visuelle Indikatoren)
 - Review-Markierungen (🔍) für unsichere Bewertungen
 - Validierungshinweise (⚡) bei strukturellen Problemen
-- Evidenz-Warnungen bei hohem nicht_prüfbar-Anteil
+- Skeptiker-Einwände (⚔️) wenn Skeptiker aktiv war
+- Fehlende-Evidenz-Hinweise (📄) aus Skeptiker-Review
+- Evidenz-Warnungen bei hohem `nicht_prüfbar`-Anteil
 - Audit-Trail mit Modell, Katalog-Version und Zeitstempel
+
+Zwischenergebnisse werden nach jeder Sektion als Checkpoint gesichert:
+```
+<output_dir>/.checkpoints/checkpoint_latest.json
+```
 
 ---
 
 ## Kosten-Einschätzung
 
-| Regulatorik | Prüffelder | Geschätzter Aufwand (Sonnet) | Geschätzter Aufwand (Opus) |
-|---|---|---|---|
-| GwG | 34 | ~$0.80–1.50 | ~$8–15 |
-| DORA | 18 | ~$0.40–0.80 | ~$4–8 |
-| MaRisk | 22 | ~$0.50–1.00 | ~$5–10 |
-| WpHG | 20 | ~$0.45–0.90 | ~$4.50–9 |
+| Regulatorik | Prüffelder | Sonnet (ohne Skeptiker) | Sonnet (mit Skeptiker) | Opus (ohne Skeptiker) |
+|---|---|---|---|---|
+| GwG | 34 | ~$0.80–1.50 | ~$1.60–3.00 | ~$8–15 |
+| DORA | 18 | ~$0.40–0.80 | ~$0.80–1.60 | ~$4–8 |
+| MaRisk | 22 | ~$0.50–1.00 | ~$1.00–2.00 | ~$5–10 |
+| WpHG | 20 | ~$0.45–0.90 | ~$0.90–1.80 | ~$4.50–9 |
 
-Hinweis: Kosten hängen von Dokumentenmenge, Chunk-Anzahl und Antwortlänge ab. Durch das Retrieval-Quality-Gate in v2 werden unnötige LLM-Calls bei schlechtem Retrieval eingespart.
+Hinweise:
+- Kosten hängen von Dokumentenmenge, Chunk-Anzahl und Antwortlänge ab.
+- Das Retrieval-Quality-Gate spart unnötige LLM-Calls bei schlechtem Retrieval.
+- Transiente API-Fehler werden automatisch bis zu 3× wiederholt, ohne die Pipeline zu unterbrechen.
+- Mit `--skeptiker-only-konform` reduziert sich der Skeptiker-Overhead auf typischerweise 40–60%.
 
 ---
 
 ## Roadmap
 
-- [ ] Skeptiker-Agent: Adversariales LLM-Review als optionaler Post-Processing-Layer
+- [x] ~~Skeptiker-Agent: Adversariales LLM-Review als optionaler Post-Processing-Layer~~ ✅ *implementiert in v2.1*
 - [ ] Synthetische Kontroll-Prüffelder (Ground-Truth-Signal) zur Kalibrierung
 - [ ] Persistenter Vektorindex via ChromaDB / Weaviate
 - [ ] Claude Vision für Screenshot-Analyse (TM-Systeme, KYC-Oberflächen)
@@ -364,9 +565,10 @@ FinRegAgents ist ein **Simulations- und Vorbereitungstool**. Es ersetzt **keine
 offizielle BaFin-Prüfung** und begründet keine Rechtsberatung. Prüfungsergebnisse
 sind als interne Vorbereitung zu verstehen, nicht als behördliche Feststellung.
 
-Die Confidence-Scores und Review-Markierungen dienen dazu, die Belastbarkeit
-der einzelnen Befunde transparent zu machen. Befunde mit niedrigem Confidence
-oder Review-Markierung sollten stets manuell validiert werden.
+Die Confidence-Scores, Review-Markierungen und Skeptiker-Einwände dienen dazu,
+die Belastbarkeit der einzelnen Befunde transparent zu machen. Befunde mit niedrigem
+Confidence, Review-Markierung oder Skeptiker-Widerspruch sollten stets manuell
+validiert werden, bevor sie in offizielle Prüfunterlagen einfließen.
 
 ---
 
@@ -374,13 +576,13 @@ oder Review-Markierung sollten stets manuell validiert werden.
 
 Contributions willkommen – insbesondere:
 
-- Neue Prüfkataloge für weitere Regulatoriken
+- Neue Prüfkataloge für weitere Regulatoriken (z.B. DSGVO, CSRD, Basel IV)
 - Verbesserte Prüffragen und Bewertungskriterien
-- Skeptiker-Agent-Implementierung
-- Neue Ingestion-Adapter (z.B. .docx, Notion, Confluence)
+- Neue Ingestion-Adapter (z.B. `.docx`, Notion, Confluence)
 - Tests und Benchmarks
+- Kalibrierung des Confidence-Scorings gegen manuelle Prüfungen
 
-Bitte fork → branch → PR mit Beschreibung welche Regulatorik / welches Feature erweitert wurde.
+Bitte fork → branch → PR mit Beschreibung, welche Regulatorik / welches Feature erweitert wurde.
 
 ---
 
@@ -393,4 +595,4 @@ integrieren, solange der Copyright-Vermerk erhalten bleibt.
 
 ---
 
-Gebaut mit LlamaIndex · LangChain · Claude · ❤️
+Gebaut mit LlamaIndex · LangChain · Claude

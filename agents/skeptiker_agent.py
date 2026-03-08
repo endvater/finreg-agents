@@ -17,9 +17,10 @@ Integration:
     (niedrig-confidence Befunde sind bereits als 'Review erforderlich' markiert).
 """
 
+import logging
+import time
 from dataclasses import dataclass, field
 from typing import Optional
-import json
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -28,8 +29,9 @@ from agents.pruef_agent import (
     Befund,
     Bewertung,
     extract_json,
-    CONFIDENCE_REVIEW_THRESHOLD,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------ #
@@ -45,6 +47,10 @@ SKEPTIKER_CONFIDENCE_PENALTY = 0.15
 
 # Schwellenwert: Ab wievielen Einwänden wird eine Bewertungs-Eskalation empfohlen
 EINWAND_ESKALATION_THRESHOLD = 2
+
+# Retry-Konfiguration (analog PrueferAgent)
+SKEPTIKER_MAX_RETRIES = 3
+SKEPTIKER_RETRY_BASE_DELAY = 2.0
 
 
 # ------------------------------------------------------------------ #
@@ -231,20 +237,48 @@ Antworte als JSON.
             HumanMessage(content=user_prompt),
         ]
 
-        try:
-            response = self.llm.invoke(messages)
-            return extract_json(response.content)
-        except Exception as e:
-            return {
-                "akzeptiert": True,
-                "bewertung_empfehlung": None,
-                "einwaende": [f"Skeptiker-Review fehlgeschlagen: {type(e).__name__}: {e}"],
-                "staerken": [],
-                "schweregrad_erhoehen": False,
-                "nachforderung_empfohlen": False,
-                "fehlende_evidenz": [],
-                "begruendung": "Skeptiker-Review konnte nicht durchgeführt werden.",
-            }
+        import json as _json
+        last_exc: Optional[Exception] = None
+        for attempt in range(SKEPTIKER_MAX_RETRIES):
+            try:
+                response = self.llm.invoke(messages)
+                return extract_json(response.content)
+            except _json.JSONDecodeError as e:
+                # Parse-Fehler → kein Retry sinnvoll
+                logger.warning("Skeptiker JSON-Parse-Fehler für %s: %s", befund.prueffeld_id, e)
+                return {
+                    "akzeptiert": True,
+                    "bewertung_empfehlung": None,
+                    "einwaende": [f"Skeptiker-Review: JSON-Parse-Fehler ({e})"],
+                    "staerken": [],
+                    "schweregrad_erhoehen": False,
+                    "nachforderung_empfohlen": False,
+                    "fehlende_evidenz": [],
+                    "begruendung": "Skeptiker-Antwort konnte nicht geparst werden.",
+                }
+            except Exception as e:
+                last_exc = e
+                if attempt < SKEPTIKER_MAX_RETRIES - 1:
+                    delay = SKEPTIKER_RETRY_BASE_DELAY * (2 ** attempt)
+                    logger.warning(
+                        "Skeptiker-LLM-Aufruf für %s fehlgeschlagen (Versuch %d/%d), "
+                        "Retry in %.0fs: %s",
+                        befund.prueffeld_id, attempt + 1, SKEPTIKER_MAX_RETRIES, delay, e,
+                    )
+                    time.sleep(delay)
+
+        logger.error("Skeptiker-LLM für %s nach %d Versuchen fehlgeschlagen: %s",
+                     befund.prueffeld_id, SKEPTIKER_MAX_RETRIES, last_exc)
+        return {
+            "akzeptiert": True,
+            "bewertung_empfehlung": None,
+            "einwaende": [f"Skeptiker-Review fehlgeschlagen: {type(last_exc).__name__}: {last_exc}"],
+            "staerken": [],
+            "schweregrad_erhoehen": False,
+            "nachforderung_empfohlen": False,
+            "fehlende_evidenz": [],
+            "begruendung": "Skeptiker-Review konnte nicht durchgeführt werden.",
+        }
 
     def _build_skeptiker_befund(self, befund: Befund, result: dict) -> SkeptikerBefund:
         """Baut den SkeptikerBefund aus dem LLM-Ergebnis."""
