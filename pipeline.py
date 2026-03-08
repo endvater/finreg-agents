@@ -32,6 +32,7 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 
 from ingestion.ingestor import GwGIngestor
 from agents.pruef_agent import PrueferAgent, Sektionsergebnis, SEKTION_REVIEW_ESCALATION
+from agents.skeptiker_agent import SkeptikerAgent, merge_befund_skeptiker
 from reports.bericht_generator import BerichtGenerator
 
 
@@ -73,6 +74,8 @@ class AuditPipeline:
         sektionen_filter: list = None,
         top_k: int = 8,
         verbose: bool = True,
+        skeptiker: bool = False,
+        skeptiker_only_konform: bool = False,
     ):
         self.input_dir = input_dir
         self.institution = institution
@@ -83,6 +86,8 @@ class AuditPipeline:
         self.sektionen_filter = sektionen_filter
         self.top_k = top_k
         self.verbose = verbose
+        self.skeptiker = skeptiker
+        self.skeptiker_only_konform = skeptiker_only_konform
 
         # Katalogpfad auflösen
         base = Path(__file__).parent
@@ -140,6 +145,15 @@ class AuditPipeline:
             top_k=self.top_k,
         )
 
+        # Skeptiker-Agent optional initialisieren
+        skeptiker_agent = None
+        if self.skeptiker:
+            self._log("   → Skeptiker-Agent aktiviert ⚔️")
+            skeptiker_agent = SkeptikerAgent(
+                model=self.model,
+                only_konform=self.skeptiker_only_konform,
+            )
+
         sektionsergebnisse = []
         total_felder = 0
         gepruefte_felder = 0
@@ -178,6 +192,25 @@ class AuditPipeline:
                 if befund.validierungshinweise:
                     for hint in befund.validierungshinweise:
                         self._log(f"          ⚡ {hint}")
+
+                # Skeptiker-Review (optional)
+                if skeptiker_agent:
+                    t_sk = time.time()
+                    skeptiker_result = skeptiker_agent.reviewe(befund, feld)
+                    dauer_sk = time.time() - t_sk
+                    if not skeptiker_result.akzeptiert:
+                        empf = skeptiker_result.bewertung_empfehlung
+                        self._log(
+                            f"          ⚔️  Skeptiker widerspricht!"
+                            f" Empfehlung: {empf.value.upper() if empf else '?'}"
+                            f" ({len(skeptiker_result.einwaende)} Einwände, {dauer_sk:.1f}s)"
+                        )
+                    elif skeptiker_result.einwaende:
+                        self._log(
+                            f"          ⚔️  Skeptiker: akzeptiert, aber"
+                            f" {len(skeptiker_result.einwaende)} Hinweis(e) ({dauer_sk:.1f}s)"
+                        )
+                    befund = merge_befund_skeptiker(befund, skeptiker_result)
 
                 ergebnis.befunde.append(befund)
                 gepruefte_felder += 1
@@ -282,6 +315,10 @@ Beispiele:
                         help="Anthropic-Modell (Default: Sonnet für Kosteneffizienz)")
     parser.add_argument("--sektionen",    nargs="*",      help="Nur diese Sektionen prüfen (z.B. S01 S02)")
     parser.add_argument("--top-k",        type=int, default=8, help="RAG-Chunks pro Prüffrage")
+    parser.add_argument("--skeptiker",    action="store_true", default=False,
+                        help="Skeptiker-Agent aktivieren (adversariales Review)")
+    parser.add_argument("--skeptiker-only-konform", action="store_true", default=False,
+                        help="Skeptiker nur für 'konform'-Ratings aktivieren")
     args = parser.parse_args()
 
     pipeline = AuditPipeline(
@@ -293,6 +330,8 @@ Beispiele:
         model=args.model,
         sektionen_filter=args.sektionen,
         top_k=args.top_k,
+        skeptiker=args.skeptiker,
+        skeptiker_only_konform=args.skeptiker_only_konform,
     )
     pipeline.run()
 

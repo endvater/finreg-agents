@@ -267,6 +267,134 @@ class TestBerichtXSS:
 
 
 # ------------------------------------------------------------------ #
+# Test: Skeptiker-Agent
+# ------------------------------------------------------------------ #
+
+from agents.skeptiker_agent import (
+    SkeptikerAgent,
+    SkeptikerBefund,
+    merge_befund_skeptiker,
+    SKEPTIKER_MIN_CONFIDENCE,
+    SKEPTIKER_CONFIDENCE_PENALTY,
+)
+
+
+class TestSkeptikerAgent:
+
+    def _make_befund(self, bewertung=Bewertung.KONFORM, confidence=0.75, review=False):
+        return Befund(
+            prueffeld_id="S01-01",
+            frage="Ist ein IKS dokumentiert?",
+            bewertung=bewertung,
+            begruendung="Das IKS ist vollständig dokumentiert.",
+            belegte_textstellen=["IKS-Handbuch S.12: 'Kontrollrahmen ist definiert'"],
+            quellen=["iks_handbuch.pdf"],
+            confidence=confidence,
+            review_erforderlich=review,
+        )
+
+    def _make_prueffeld(self):
+        return {
+            "id": "S01-01",
+            "frage": "Ist ein IKS dokumentiert?",
+            "erwartete_evidenz": ["IKS-Dokumentation", "Prozesshandbuch"],
+            "input_typen": ["pdf"],
+            "bewertungskriterien": "Schriftliche IKS-Dokumentation muss vorliegen",
+            "rechtsgrundlagen": ["MaRisk AT 4.3"],
+            "schweregrad": "wesentlich",
+        }
+
+    def test_pass_through_nicht_pruefbar(self):
+        """Nicht-prüfbare Befunde werden nicht gesceptikert."""
+        agent = SkeptikerAgent()
+        befund = self._make_befund(bewertung=Bewertung.NICHT_PRUEFBAR, confidence=0.0)
+        result = agent.reviewe(befund, self._make_prueffeld())
+        assert result.akzeptiert is True
+        assert result.adjustierter_confidence == 0.0
+
+    def test_pass_through_low_confidence(self):
+        """Zu niedrig-confidence Befunde werden übersprungen."""
+        agent = SkeptikerAgent()
+        befund = self._make_befund(confidence=SKEPTIKER_MIN_CONFIDENCE - 0.1)
+        result = agent.reviewe(befund, self._make_prueffeld())
+        assert result.akzeptiert is True
+        assert result.adjustierter_confidence == befund.confidence
+
+    def test_only_konform_skips_nicht_konform(self):
+        """only_konform=True überspringt nicht_konform Befunde."""
+        agent = SkeptikerAgent(only_konform=True)
+        befund = self._make_befund(bewertung=Bewertung.NICHT_KONFORM, confidence=0.8)
+        result = agent.reviewe(befund, self._make_prueffeld())
+        assert result.akzeptiert is True
+
+    def test_confidence_penalty_applied(self):
+        """Confidence-Penalty wird bei Einwänden abgezogen."""
+        befund = self._make_befund(confidence=0.8)
+        skeptiker = SkeptikerBefund(
+            prueffeld_id="S01-01",
+            original_bewertung=Bewertung.KONFORM,
+            original_confidence=0.8,
+            akzeptiert=False,
+            bewertung_empfehlung=Bewertung.TEILKONFORM,
+            einwaende=["Evidenz zu vage", "Audit-Trail fehlt"],
+            adjustierter_confidence=max(0.0, 0.8 - 2 * SKEPTIKER_CONFIDENCE_PENALTY),
+        )
+        merged = merge_befund_skeptiker(befund, skeptiker)
+        assert merged.confidence < befund.confidence
+        assert merged.review_erforderlich is True
+
+    def test_merge_akzeptiert_keeps_original(self):
+        """Bei Akzeptanz bleibt originale Bewertung und Confidence."""
+        befund = self._make_befund(confidence=0.8)
+        skeptiker = SkeptikerBefund(
+            prueffeld_id="S01-01",
+            original_bewertung=Bewertung.KONFORM,
+            original_confidence=0.8,
+            akzeptiert=True,
+            bewertung_empfehlung=None,
+            einwaende=[],
+            adjustierter_confidence=0.8,
+        )
+        merged = merge_befund_skeptiker(befund, skeptiker)
+        assert merged.bewertung == Bewertung.KONFORM
+        assert merged.confidence == 0.8
+        assert merged.review_erforderlich is False
+
+    def test_merge_adds_einwand_hints(self):
+        """Einwände landen in validierungshinweisen."""
+        befund = self._make_befund()
+        skeptiker = SkeptikerBefund(
+            prueffeld_id="S01-01",
+            original_bewertung=Bewertung.KONFORM,
+            original_confidence=0.75,
+            akzeptiert=False,
+            bewertung_empfehlung=Bewertung.TEILKONFORM,
+            einwaende=["Prozessnachweis fehlt"],
+            fehlende_evidenz=["Audit-Trail"],
+            adjustierter_confidence=0.6,
+        )
+        merged = merge_befund_skeptiker(befund, skeptiker)
+        hints = " ".join(merged.validierungshinweise)
+        assert "Skeptiker widerspricht" in hints
+        assert "Prozessnachweis fehlt" in hints
+        assert "Audit-Trail" in hints
+
+    def test_skeptiker_befund_dataclass(self):
+        """SkeptikerBefund kann instanziiert werden."""
+        sb = SkeptikerBefund(
+            prueffeld_id="T01-01",
+            original_bewertung=Bewertung.KONFORM,
+            original_confidence=0.7,
+            akzeptiert=True,
+            bewertung_empfehlung=None,
+            adjustierter_confidence=0.7,
+        )
+        assert sb.akzeptiert is True
+        assert sb.einwaende == []
+        assert sb.fehlende_evidenz == []
+
+
+# ------------------------------------------------------------------ #
 # Test: Katalog-Validierung
 # ------------------------------------------------------------------ #
 
