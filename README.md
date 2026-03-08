@@ -17,23 +17,24 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 ## Inhaltsverzeichnis
 
 1. [Was ist neu in v2?](#was-ist-neu-in-v2)
-2. [Bugfixes v2.1](#bugfixes-v21)
+2. [Bugfixes v2.1](#bugfixes-v21--v22)
 3. [Architektur](#architektur)
 4. [Skeptiker-Agent](#skeptiker-agent)
 5. [Unterstützte Regulatorik](#unterstützte-regulatorik)
 6. [Quickstart](#quickstart)
-7. [Python API](#python-api)
-8. [Confidence-Scoring](#confidence-scoring)
-9. [Strukturelle Validierung](#strukturelle-validierung)
-10. [Bewertungsskala](#bewertungsskala)
-11. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
-12. [Interview-Format](#interview-format)
-13. [Prüfbericht-Output](#prüfbericht-output)
-14. [Kosten-Einschätzung](#kosten-einschätzung)
-15. [Roadmap](#roadmap)
-16. [Disclaimer](#disclaimer)
-17. [Contributing](#contributing)
-18. [Lizenz](#lizenz)
+7. [Streamlit Web-UI](#streamlit-web-ui)
+8. [Python API](#python-api)
+9. [Confidence-Scoring](#confidence-scoring)
+10. [Strukturelle Validierung](#strukturelle-validierung)
+11. [Bewertungsskala](#bewertungsskala)
+12. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
+13. [Interview-Format](#interview-format)
+14. [Prüfbericht-Output](#prüfbericht-output)
+15. [Kosten-Einschätzung](#kosten-einschätzung)
+16. [Roadmap](#roadmap)
+17. [Disclaimer](#disclaimer)
+18. [Contributing](#contributing)
+19. [Lizenz](#lizenz)
 
 ---
 
@@ -331,7 +332,11 @@ python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only
 
 > **Wichtig:** Wenn `--sektionen` keine gültige Sektion trifft, bricht die Pipeline mit `ValueError` ab (statt einen leeren "KONFORM"-Report zu erzeugen).
 
-### 5. Streamlit Web-UI
+## Streamlit Web-UI
+
+<div align="center">
+  <img src="assets/streamlit-ui.jpg" alt="Streamlit Web-UI" width="800">
+</div>
 
 FinRegAgents bietet eine interaktive **Streamlit Web-UI**, die es ermöglicht, Prüfungen vollständig über den Browser zu steuern, ohne die Kommandozeile (CLI) nutzen zu müssen. Streamlit ist ein Open-Source Python-Framework, mit dem sich schnell interaktive Web-Anwendungen für Machine Learning und Data Science bauen lassen.
 
