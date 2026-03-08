@@ -53,6 +53,37 @@ SKEPTIKER_MAX_RETRIES = 3
 SKEPTIKER_RETRY_BASE_DELAY = 2.0
 
 
+def _to_bool(value, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "ja"}:
+            return True
+        if normalized in {"false", "0", "no", "nein"}:
+            return False
+    return default
+
+
+def _to_str_list(value) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    if isinstance(value, (list, tuple, set)):
+        result = []
+        for item in value:
+            if item is None:
+                continue
+            text = str(item).strip()
+            if text:
+                result.append(text)
+        return result
+    text = str(value).strip()
+    return [text] if text else []
+
+
 # ------------------------------------------------------------------ #
 # Datenmodelle
 # ------------------------------------------------------------------ #
@@ -282,8 +313,12 @@ Antworte als JSON.
 
     def _build_skeptiker_befund(self, befund: Befund, result: dict) -> SkeptikerBefund:
         """Baut den SkeptikerBefund aus dem LLM-Ergebnis."""
-        akzeptiert = result.get("akzeptiert", True)
-        einwaende = result.get("einwaende", [])
+        akzeptiert = _to_bool(result.get("akzeptiert", True), True)
+        einwaende = _to_str_list(result.get("einwaende", []))
+        staerken = _to_str_list(result.get("staerken", []))
+        fehlende_evidenz = _to_str_list(result.get("fehlende_evidenz", []))
+        schweregrad_erhoehen = _to_bool(result.get("schweregrad_erhoehen", False), False)
+        nachforderung_empfohlen = _to_bool(result.get("nachforderung_empfohlen", False), False)
 
         # Bewertungsempfehlung nur wenn nicht akzeptiert
         empfehlung = None
@@ -291,7 +326,7 @@ Antworte als JSON.
             empf_str = result.get("bewertung_empfehlung")
             if empf_str and empf_str != "null":
                 try:
-                    empfehlung = Bewertung(empf_str)
+                    empfehlung = Bewertung(str(empf_str).strip().lower())
                 except ValueError:
                     pass
 
@@ -306,10 +341,10 @@ Antworte als JSON.
             akzeptiert=akzeptiert,
             bewertung_empfehlung=empfehlung,
             einwaende=einwaende,
-            staerken=result.get("staerken", []),
-            schweregrad_erhoehen=result.get("schweregrad_erhoehen", False),
-            nachforderung_empfohlen=result.get("nachforderung_empfohlen", False),
-            fehlende_evidenz=result.get("fehlende_evidenz", []),
+            staerken=staerken,
+            schweregrad_erhoehen=schweregrad_erhoehen,
+            nachforderung_empfohlen=nachforderung_empfohlen,
+            fehlende_evidenz=fehlende_evidenz,
             adjustierter_confidence=adjustierter_confidence,
             skeptiker_raw=result,
         )
