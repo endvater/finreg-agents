@@ -131,6 +131,82 @@ Antworte AUSSCHLIESSLICH als valides JSON mit dieser Struktur:
 }}
 """
 
+# ------------------------------------------------------------------ #
+# Adversarial Prompting Layer (Issue #4)
+# ------------------------------------------------------------------ #
+
+ADVERSARIAL_SYSTEM_PROMPTS = {
+    "gwg": """Du bist ein kritischer Gutachter, der Schwachstellen in Geldwäscheprüfungen aufdeckt.
+Deine Aufgabe: Finde alle Gründe, warum die geprüfte Compliance-Anforderung NICHT oder nur unzureichend erfüllt sein könnte.
+Prüfrahmen: GwG 2017 i.d.F. 2024, §25h KWG, BaFin AuA GwG, AMLA-Leitlinien.
+Du bist skeptisch gegenüber formalen Nachweisen ohne substanzielle Umsetzung.""",
+
+    "dora": """Du bist ein kritischer Gutachter, der Schwachstellen in DORA-Prüfungen aufdeckt.
+Deine Aufgabe: Finde alle Gründe, warum die geprüfte Resilienz-Anforderung NICHT oder nur unzureichend erfüllt sein könnte.
+Prüfrahmen: DORA (EU) 2022/2554, RTS ICT Risk, RTS Incident Reporting, TIBER-EU.
+Du bist skeptisch gegenüber formalen Dokumenten ohne nachgewiesene Wirksamkeit.""",
+
+    "marisk": """Du bist ein kritischer Gutachter, der Schwachstellen in MaRisk-Prüfungen aufdeckt.
+Deine Aufgabe: Finde alle Gründe, warum die geprüfte Risikomanagement-Anforderung NICHT oder nur unzureichend erfüllt sein könnte.
+Prüfrahmen: MaRisk 2023 (AT/BT), §25a KWG, EBA-Leitlinien.
+Du bist skeptisch gegenüber papierbasierten Kontrollen ohne operative Wirksamkeit.""",
+
+    "wphg": """Du bist ein kritischer Gutachter, der Schwachstellen in WpHG/MaComp-Prüfungen aufdeckt.
+Deine Aufgabe: Finde alle Gründe, warum die geprüfte Compliance-Anforderung NICHT oder nur unzureichend erfüllt sein könnte.
+Prüfrahmen: WpHG, MaComp, MAR (EU) Nr. 596/2014, MiFID II.
+Du bist skeptisch gegenüber Richtlinien ohne nachgewiesene Schulungen und Kontrollen.""",
+}
+
+ADVERSARIAL_PROMPT_TEMPLATE = """{regulatorik_kontext}
+
+Deine Aufgabe (adversarial):
+1. Analysiere dieselben Dokumentenausschnitte wie ein normaler Prüfer
+2. Beantworte die Prüffrage – aber aus der Perspektive eines kritischen Gegenspielers
+3. Bewerte gemäß: konform | teilkonform | nicht_konform | nicht_prüfbar
+4. Identifiziere aktiv Schwachstellen und Gegenargumente
+5. Benenne fehlende oder unzureichende Nachweise konkret
+6. Schätze deine Sicherheit ein (confidence_self: 0.0 bis 1.0)
+
+Wichtige Grundsätze (adversarial):
+- Bevorzuge strengere Bewertungen bei Ambiguität
+- Formale Dokumente ohne Prozessnachweis gelten als unzureichend
+- Fehlende Audit-Trails, Schulungsnachweise oder Tests sind Mängel
+- Zitiere NUR Quellen aus der bereitgestellten Evidenz – erfinde keine
+
+Antworte AUSSCHLIESSLICH als valides JSON mit dieser Struktur:
+{{
+  "bewertung": "konform|teilkonform|nicht_konform|nicht_prüfbar",
+  "begruendung": "Kritische Würdigung der Evidenz (3-5 Sätze)",
+  "schwachstellen": ["Schwachstelle 1", "Schwachstelle 2"],
+  "fehlende_nachweise": ["Fehlender Nachweis 1", "..."],
+  "quellen": ["datei.pdf"],
+  "confidence_self": 0.75
+}}
+"""
+
+# Numerischer Schweregrad je Bewertung (für Divergenzberechnung)
+BEWERTUNG_SEVERITY = {
+    "konform": 0,
+    "teilkonform": 1,
+    "nicht_konform": 2,
+    "nicht_prüfbar": 3,
+}
+
+# Confidence-Penalty je Divergenzstufe
+_ADVERSARIAL_PENALTY = {1: 0.05, 2: 0.15, 3: 0.20}
+
+
+@dataclass
+class AdversarialErgebnis:
+    """Ergebnis des adversarialen Prüf-Passes."""
+    prueffeld_id: str
+    adversarial_bewertung: Bewertung
+    schwachstellen: list[str] = field(default_factory=list)
+    fehlende_nachweise: list[str] = field(default_factory=list)
+    divergenz: int = 0            # severity_adversarial - severity_normal (>0 = strenger)
+    review_empfohlen: bool = False
+    confidence_delta: float = 0.0  # Negative Anpassung am Original-Score
+
 
 # ------------------------------------------------------------------ #
 # Confidence-Berechnung
@@ -323,15 +399,24 @@ class PrueferAgent:
         top_k: int = 8,
         temperature: float = 0.1,
         retrieval_score_min: float = RETRIEVAL_SCORE_MIN,
+        adversarial: bool = False,
     ):
         self.retriever = VectorIndexRetriever(index=index, similarity_top_k=top_k)
         self.llm = ChatAnthropic(model=model, temperature=temperature, max_tokens=2048)
         self.regulatorik = regulatorik
         self.retrieval_score_min = retrieval_score_min
+        self.adversarial = adversarial
 
         # System-Prompt für die gewählte Regulatorik
         kontext = SYSTEM_PROMPTS.get(regulatorik, SYSTEM_PROMPTS["gwg"])
         self.system_prompt = SYSTEM_PROMPT_TEMPLATE.format(regulatorik_kontext=kontext)
+
+        # Adversarial System-Prompt (optional)
+        if adversarial:
+            adv_kontext = ADVERSARIAL_SYSTEM_PROMPTS.get(regulatorik, ADVERSARIAL_SYSTEM_PROMPTS["gwg"])
+            self.adversarial_system_prompt = ADVERSARIAL_PROMPT_TEMPLATE.format(
+                regulatorik_kontext=adv_kontext
+            )
 
     def pruefe_feld(self, prueffeld: dict) -> Befund:
         """Hauptmethode: Prüft ein einzelnes Prüffeld und gibt einen Befund zurück."""
@@ -371,8 +456,13 @@ class PrueferAgent:
             (n.metadata or {}).get("input_type", "unbekannt") for n in good_nodes
         }
 
-        # 4. LLM-Bewertung
+        # 4. LLM-Bewertung (normal)
         llm_result = self._evaluate_with_llm(prueffeld, evidenz_text)
+
+        # 4b. Adversarial Pass (optional, gleiche Evidenz – umgekehrter System-Prompt)
+        adv_ergebnis: Optional[AdversarialErgebnis] = None
+        if self.adversarial:
+            adv_ergebnis = self._adversarial_evaluate(prueffeld, evidenz_text)
 
         # 5. Strukturelle Validierung
         val_warnings = validate_befund_structure(
@@ -411,7 +501,7 @@ class PrueferAgent:
         if val_warnings:
             review_erforderlich = True
 
-        return Befund(
+        befund = Befund(
             prueffeld_id=prueffeld["id"],
             frage=prueffeld["frage"],
             bewertung=Bewertung(bewertung_str),
@@ -425,6 +515,12 @@ class PrueferAgent:
             review_erforderlich=review_erforderlich,
             validierungshinweise=val_warnings,
         )
+
+        # Adversarial Merge
+        if adv_ergebnis is not None:
+            befund = _merge_adversarial(befund, adv_ergebnis)
+
+        return befund
 
     # ------------------------------------------------------------------ #
     # Retrieval
@@ -475,6 +571,67 @@ class PrueferAgent:
     # ------------------------------------------------------------------ #
     # LLM-Bewertung
     # ------------------------------------------------------------------ #
+
+    # ------------------------------------------------------------------ #
+    # Adversarial Pass
+    # ------------------------------------------------------------------ #
+
+    def _adversarial_evaluate(
+        self, prueffeld: dict, evidenz_text: str
+    ) -> AdversarialErgebnis:
+        """
+        Zweiter LLM-Pass mit umgekehrtem System-Prompt auf derselben Evidenz.
+        Gibt ein AdversarialErgebnis zurück ohne das Original zu verändern.
+        """
+        rg = prueffeld.get("rechtsgrundlagen", [])
+        rg_str = ", ".join(rg) if isinstance(rg, list) else str(rg)
+
+        user_prompt = f"""## PRÜFFELD (adversarial): {prueffeld['id']}
+**Frage:** {prueffeld['frage']}
+**Rechtsgrundlage:** {rg_str}
+**Erwartete Evidenz:** {', '.join(prueffeld.get('erwartete_evidenz', []))}
+**Schweregrad:** {prueffeld.get('schweregrad', 'unbekannt')}
+**Bewertungskriterien:** {prueffeld.get('bewertungskriterien', '')}
+
+{evidenz_text}
+
+Finde alle Schwachstellen. Antworte als JSON.
+"""
+        messages = [
+            SystemMessage(content=self.adversarial_system_prompt),
+            HumanMessage(content=user_prompt),
+        ]
+
+        try:
+            for attempt in range(LLM_MAX_RETRIES):
+                try:
+                    response = self.llm.invoke(messages)
+                    result = extract_json(response.content)
+                    break
+                except json.JSONDecodeError:
+                    result = {"bewertung": "nicht_prüfbar", "schwachstellen": [], "fehlende_nachweise": []}
+                    break
+                except Exception as e:
+                    if attempt < LLM_MAX_RETRIES - 1:
+                        time.sleep(LLM_RETRY_BASE_DELAY * (2 ** attempt))
+                    else:
+                        logger.warning("Adversarial-Pass für %s fehlgeschlagen: %s", prueffeld["id"], e)
+                        result = {"bewertung": "nicht_prüfbar", "schwachstellen": [], "fehlende_nachweise": []}
+        except Exception as e:
+            logger.warning("Adversarial-Pass für %s fehlgeschlagen: %s", prueffeld["id"], e)
+            result = {"bewertung": "nicht_prüfbar", "schwachstellen": [], "fehlende_nachweise": []}
+
+        try:
+            adv_bewertung = Bewertung(result.get("bewertung", "nicht_prüfbar"))
+        except ValueError:
+            adv_bewertung = Bewertung.NICHT_PRUEFBAR
+
+        return AdversarialErgebnis(
+            prueffeld_id=prueffeld["id"],
+            adversarial_bewertung=adv_bewertung,
+            schwachstellen=result.get("schwachstellen", []),
+            fehlende_nachweise=result.get("fehlende_nachweise", []),
+        )
 
     def _evaluate_with_llm(self, prueffeld: dict, evidenz_text: str) -> dict:
         """Sendet Prüffrage + Evidenz an das LLM und parst das JSON-Ergebnis."""
@@ -539,6 +696,72 @@ Bewerte dieses Prüffeld und antworte als JSON.
             "quellen": [],
             "confidence_self": 0.0,
         }
+
+
+# ------------------------------------------------------------------ #
+# Adversarial Merge
+# ------------------------------------------------------------------ #
+
+def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
+    """
+    Führt originalen Befund und adversariales Ergebnis zusammen.
+
+    Divergenz-Logik:
+      0   → Adversarial bestätigt → kein Eingriff
+      1   → Leicht strenger → kleine Confidence-Penalty + Hinweis
+      ≥2  → Wesentlich strenger → größere Penalty + Review erzwingen
+    """
+    sev_normal = BEWERTUNG_SEVERITY.get(befund.bewertung.value, 3)
+    sev_adv = BEWERTUNG_SEVERITY.get(adv.adversarial_bewertung.value, 3)
+    divergenz = sev_adv - sev_normal  # positiv = adversarial strenger
+
+    hinweise = list(befund.validierungshinweise)
+    confidence_delta = 0.0
+    review_erforderlich = befund.review_erforderlich
+
+    if divergenz <= 0:
+        hinweise.append(
+            f"⚔️ Adversarial Layer bestätigt Bewertung "
+            f"({adv.adversarial_bewertung.value})"
+        )
+    elif divergenz == 1:
+        confidence_delta = _ADVERSARIAL_PENALTY[1]
+        hinweise.append(
+            f"⚔️ Adversarial Layer schätzt strenger: "
+            f"{befund.bewertung.value} → {adv.adversarial_bewertung.value} "
+            f"(Divergenz: {divergenz})"
+        )
+        for sw in adv.schwachstellen:
+            hinweise.append(f"⚔️ Schwachstelle: {sw}")
+    else:
+        confidence_delta = _ADVERSARIAL_PENALTY.get(divergenz, _ADVERSARIAL_PENALTY[3])
+        review_erforderlich = True
+        hinweise.append(
+            f"⚔️ Adversarial Divergenz ({divergenz}): "
+            f"{befund.bewertung.value} → {adv.adversarial_bewertung.value} "
+            f"→ Review erzwungen"
+        )
+        for sw in adv.schwachstellen:
+            hinweise.append(f"⚔️ Schwachstelle: {sw}")
+        for fn in adv.fehlende_nachweise:
+            hinweise.append(f"📄 Fehlender Nachweis (adversarial): {fn}")
+
+    new_confidence = max(0.0, round(befund.confidence - confidence_delta, 3))
+
+    return Befund(
+        prueffeld_id=befund.prueffeld_id,
+        frage=befund.frage,
+        bewertung=befund.bewertung,          # Originalbewertung bleibt erhalten
+        begruendung=befund.begruendung,
+        belegte_textstellen=befund.belegte_textstellen,
+        empfehlungen=befund.empfehlungen,
+        mangel_text=befund.mangel_text,
+        schweregrad=befund.schweregrad,
+        quellen=befund.quellen,
+        confidence=new_confidence,
+        review_erforderlich=review_erforderlich,
+        validierungshinweise=hinweise,
+    )
 
 
 # Rückwärtskompatibilität
