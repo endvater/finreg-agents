@@ -2,6 +2,7 @@ import re
 from typing import List, Dict, Any
 
 from llama_index.core.schema import TextNode
+from llama_index.core.node_parser import SentenceSplitter
 
 
 class RegulatoryParser:
@@ -12,8 +13,6 @@ class RegulatoryParser:
     """
 
     def __init__(self, fallback_chunk_size: int = 1000, fallback_chunk_overlap: int = 100):
-        from llama_index.core.node_parser import SentenceSplitter
-        
         self.fallback_chunk_size = fallback_chunk_size
         self._fallback_splitter = SentenceSplitter(
             chunk_size=fallback_chunk_size, 
@@ -154,10 +153,19 @@ class RegulatoryParser:
                     
             # Set the reference string (critical for Issue #6)
             ref_parts = []
+            if context_state["chapter"]:
+                ref_parts.append(f"{context_state['chapter']}")
             if context_state["module"]:
                 ref_parts.append(f"Modul {context_state['module']}")
             if context_state["article"]:
-                ref_parts.append(f"Art. {context_state['article']}")
+                if "Recital" in str(context_state["article"]) or "Recital" in chunk_meta.get("structural_id", ""):
+                    # Depending on how the ID was set, prefer structural_id if it's a Recital
+                    if chunk_meta.get("structural_id", "").startswith("Recital"):
+                        ref_parts.append(f"{chunk_meta['structural_id']}")
+                    else:
+                        ref_parts.append(f"Recital {context_state['article']}")
+                else:
+                    ref_parts.append(f"Art. {context_state['article']}")
             if context_state["paragraph"]:
                 ref_parts.append(f"§ {context_state['paragraph']}")
             if context_state["margin_no"]:
