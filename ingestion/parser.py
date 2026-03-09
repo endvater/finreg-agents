@@ -11,8 +11,14 @@ class RegulatoryParser:
     instead of arbitrary sentences, and injects structural metadata into the nodes.
     """
 
-    def __init__(self, fallback_chunk_size: int = 1000):
+    def __init__(self, fallback_chunk_size: int = 1000, fallback_chunk_overlap: int = 100):
+        from llama_index.core.node_parser import SentenceSplitter
+        
         self.fallback_chunk_size = fallback_chunk_size
+        self._fallback_splitter = SentenceSplitter(
+            chunk_size=fallback_chunk_size, 
+            chunk_overlap=fallback_chunk_overlap
+        )
         
         # Regex patterns to detect structure boundaries.
         # This matches:
@@ -23,12 +29,12 @@ class RegulatoryParser:
         # - "(1)", "(2)" (Paragraphs/Absätze) - these are subclasses usually
         
         self.patterns = {
-            "chapter": re.compile(r"^(?:Kapitel|Teil|Abschnitt)\s+[IVX\w]+[:\.|\s]", re.MULTILINE | re.IGNORECASE),
-            "module": re.compile(r"^(?:Modul\s+)?(AT|BTR|BTO|BA)\s+\d+(.\d+)*\s*", re.MULTILINE),
-            "article": re.compile(r"^(?:Art\.|Artikel)\s+(\d+[a-z]*)", re.MULTILINE | re.IGNORECASE),
+            "chapter": re.compile(r"^(?:Kapitel|Teil|Abschnitt)\s+(?:[IVX]+|\d+)(?=\s*[:.\s])", re.MULTILINE | re.IGNORECASE),
+            "module": re.compile(r"^(?:Modul\s+)?(AT|BTR|BTO|BTK)\s+(\d+(?:\.\d+)*)\s*", re.MULTILINE),
+            "article": re.compile(r"^(?:Art\.|Artikel|Article|Recital)\s+(\d+[a-z]*)", re.MULTILINE | re.IGNORECASE),
             "paragraph": re.compile(r"^§\s*(\d+[a-z]*)", re.MULTILINE),
             "margin_no": re.compile(r"^(?:Tz\.|Textziffer)\s*(\d+)", re.MULTILINE | re.IGNORECASE),
-            "sub_paragraph": re.compile(r"^\s*\(\s*(\d+[a-z]*)\s*\)", re.MULTILINE)
+            "sub_paragraph": re.compile(r"^\s*\(\s*(\d+[a-z]*)\s*\)(?=\s+\w{3,})", re.MULTILINE)
         }
 
     def parse_text(self, text: str, base_metadata: Dict[str, Any] = None) -> List[TextNode]:
@@ -63,12 +69,19 @@ class RegulatoryParser:
         markers = []
         for level, pattern in self.patterns.items():
             for match in pattern.finditer(text):
-                # Avoid matching e.g., "(1)" in the middle of a continuous sentence unless it's a newline
-                # (The regex ^ constraint usually handles this, but multi-line logic protects it)
+                
+                # Handling multi-group extractions correctly (Bug 3)
+                if level == "module" and len(match.groups()) >= 2:
+                    extracted_id = f"{match.group(1)} {match.group(2)}"
+                elif len(match.groups()) > 0 and match.group(1) is not None:
+                    extracted_id = match.group(1)
+                else:
+                    extracted_id = match.group(0).strip()
+                    
                 markers.append({
                     "level": level,
                     "value": match.group(0).strip(),
-                    "extracted_id": match.group(1) if len(match.groups()) > 0 else match.group(0).strip(),
+                    "extracted_id": extracted_id,
                     "start": match.start(),
                     "end": match.end()
                 })
@@ -163,13 +176,10 @@ class RegulatoryParser:
 
     def _fallback_split(self, text: str, base_metadata: Dict) -> List[TextNode]:
         """Naive fallback for text segments that are too long without structural markers."""
-        from llama_index.core.node_parser import SentenceSplitter
-        splitter = SentenceSplitter(chunk_size=self.fallback_chunk_size, chunk_overlap=100)
-        
-        # We need to map Document -> Node since chunk text may just be a string
         from llama_index.core import Document
+        
         baseline_doc = [Document(text=text, metadata=base_metadata)]
-        nodes = splitter.get_nodes_from_documents(baseline_doc)
+        nodes = self._fallback_splitter.get_nodes_from_documents(baseline_doc)
         
         # Ensure we don't return bare IndexNodes instead of TextNodes 
         return [TextNode(text=n.get_content(), metadata=n.metadata) for n in nodes]

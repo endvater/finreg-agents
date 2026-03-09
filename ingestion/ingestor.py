@@ -128,6 +128,7 @@ class GwGIngestor:
                     "input_type": "pdf",
                     "source": pdf_file.name,
                     "file_path": str(pdf_file),
+                    "page_count": len(raw_documents),
                 }
                 
                 # 2. Use the new regulatory parser to intelligently chunk the concatenated text
