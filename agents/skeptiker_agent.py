@@ -88,20 +88,24 @@ def _to_str_list(value) -> list[str]:
 # Datenmodelle
 # ------------------------------------------------------------------ #
 
+
 @dataclass
 class SkeptikerBefund:
     """Ergebnis des Skeptiker-Reviews."""
+
     prueffeld_id: str
     original_bewertung: Bewertung
     original_confidence: float
 
     # Skeptiker-Einschätzung
-    akzeptiert: bool                          # Hat Skeptiker die orig. Bewertung akzeptiert?
-    bewertung_empfehlung: Optional[Bewertung]  # Empfehlung des Skeptikers (None = akzeptiert)
+    akzeptiert: bool  # Hat Skeptiker die orig. Bewertung akzeptiert?
+    bewertung_empfehlung: Optional[
+        Bewertung
+    ]  # Empfehlung des Skeptikers (None = akzeptiert)
     einwaende: list[str] = field(default_factory=list)
     staerken: list[str] = field(default_factory=list)
-    schweregrad_erhoehen: bool = False        # Sollte Schweregrad erhöht werden?
-    nachforderung_empfohlen: bool = False     # Fehlende Dokumente nachfordern?
+    schweregrad_erhoehen: bool = False  # Sollte Schweregrad erhöht werden?
+    nachforderung_empfohlen: bool = False  # Fehlende Dokumente nachfordern?
     fehlende_evidenz: list[str] = field(default_factory=list)
 
     # Angepasster Confidence-Score
@@ -160,6 +164,7 @@ Wenn du akzeptierst (akzeptiert=true), setze bewertung_empfehlung auf null.
 # Skeptiker-Agent
 # ------------------------------------------------------------------ #
 
+
 class SkeptikerAgent:
     """
     Adversarialer Post-Processing-Agent. Hinterfragt Befunde des PrueferAgent.
@@ -173,7 +178,7 @@ class SkeptikerAgent:
     def __init__(
         self,
         model: str = "claude-sonnet-4-5-20250514",
-        temperature: float = 0.3,   # Etwas höher als PrueferAgent für kreativere Einwände
+        temperature: float = 0.3,  # Etwas höher als PrueferAgent für kreativere Einwände
         only_konform: bool = False,  # Nur konform-Ratings challengen
     ):
         self.llm = ChatAnthropic(model=model, temperature=temperature, max_tokens=1500)
@@ -224,29 +229,29 @@ class SkeptikerAgent:
 **Prüffeld:** {befund.prueffeld_id} – {befund.frage}
 **Bewertung:** {befund.bewertung.value.upper()}
 **Confidence:** {befund.confidence:.0%}
-**Schweregrad:** {befund.schweregrad or 'nicht angegeben'}
+**Schweregrad:** {befund.schweregrad or "nicht angegeben"}
 
 **Begründung des Prüfers:**
 {befund.begruendung}
 
 **Belegte Textstellen:**
-{chr(10).join(f'- {t}' for t in befund.belegte_textstellen) if befund.belegte_textstellen else '(keine)'}
+{chr(10).join(f"- {t}" for t in befund.belegte_textstellen) if befund.belegte_textstellen else "(keine)"}
 
 **Mangel-Text:**
-{befund.mangel_text or '(kein Mangel formuliert)'}
+{befund.mangel_text or "(kein Mangel formuliert)"}
 
 **Quellen:**
-{', '.join(befund.quellen) if befund.quellen else '(keine angegeben)'}
+{", ".join(befund.quellen) if befund.quellen else "(keine angegeben)"}
 
 **Validierungshinweise (automatisch):**
-{chr(10).join(f'- {h}' for h in befund.validierungshinweise) if befund.validierungshinweise else '(keine)'}
+{chr(10).join(f"- {h}" for h in befund.validierungshinweise) if befund.validierungshinweise else "(keine)"}
 """
 
         katalog_kontext = f"""## PRÜFFELD-KONTEXT (aus Katalog)
-**Erwartete Evidenz:** {', '.join(prueffeld.get('erwartete_evidenz', []))}
-**Erlaubte Dokumenttypen:** {', '.join(prueffeld.get('input_typen', []))}
-**Bewertungskriterien:** {prueffeld.get('bewertungskriterien', 'nicht angegeben')}
-**Rechtsgrundlagen:** {', '.join(prueffeld.get('rechtsgrundlagen', []))}
+**Erwartete Evidenz:** {", ".join(prueffeld.get("erwartete_evidenz", []))}
+**Erlaubte Dokumenttypen:** {", ".join(prueffeld.get("input_typen", []))}
+**Bewertungskriterien:** {prueffeld.get("bewertungskriterien", "nicht angegeben")}
+**Rechtsgrundlagen:** {", ".join(prueffeld.get("rechtsgrundlagen", []))}
 """
 
         evidenz_kontext = ""
@@ -269,6 +274,7 @@ Antworte als JSON.
         ]
 
         import json as _json
+
         last_exc: Optional[Exception] = None
         for attempt in range(SKEPTIKER_MAX_RETRIES):
             try:
@@ -276,7 +282,9 @@ Antworte als JSON.
                 return extract_json(response.content)
             except _json.JSONDecodeError as e:
                 # Parse-Fehler → kein Retry sinnvoll
-                logger.warning("Skeptiker JSON-Parse-Fehler für %s: %s", befund.prueffeld_id, e)
+                logger.warning(
+                    "Skeptiker JSON-Parse-Fehler für %s: %s", befund.prueffeld_id, e
+                )
                 return {
                     "akzeptiert": True,
                     "bewertung_empfehlung": None,
@@ -290,20 +298,30 @@ Antworte als JSON.
             except Exception as e:
                 last_exc = e
                 if attempt < SKEPTIKER_MAX_RETRIES - 1:
-                    delay = SKEPTIKER_RETRY_BASE_DELAY * (2 ** attempt)
+                    delay = SKEPTIKER_RETRY_BASE_DELAY * (2**attempt)
                     logger.warning(
                         "Skeptiker-LLM-Aufruf für %s fehlgeschlagen (Versuch %d/%d), "
                         "Retry in %.0fs: %s",
-                        befund.prueffeld_id, attempt + 1, SKEPTIKER_MAX_RETRIES, delay, e,
+                        befund.prueffeld_id,
+                        attempt + 1,
+                        SKEPTIKER_MAX_RETRIES,
+                        delay,
+                        e,
                     )
                     time.sleep(delay)
 
-        logger.error("Skeptiker-LLM für %s nach %d Versuchen fehlgeschlagen: %s",
-                     befund.prueffeld_id, SKEPTIKER_MAX_RETRIES, last_exc)
+        logger.error(
+            "Skeptiker-LLM für %s nach %d Versuchen fehlgeschlagen: %s",
+            befund.prueffeld_id,
+            SKEPTIKER_MAX_RETRIES,
+            last_exc,
+        )
         return {
             "akzeptiert": True,
             "bewertung_empfehlung": None,
-            "einwaende": [f"Skeptiker-Review fehlgeschlagen: {type(last_exc).__name__}: {last_exc}"],
+            "einwaende": [
+                f"Skeptiker-Review fehlgeschlagen: {type(last_exc).__name__}: {last_exc}"
+            ],
             "staerken": [],
             "schweregrad_erhoehen": False,
             "nachforderung_empfohlen": False,
@@ -317,8 +335,12 @@ Antworte als JSON.
         einwaende = _to_str_list(result.get("einwaende", []))
         staerken = _to_str_list(result.get("staerken", []))
         fehlende_evidenz = _to_str_list(result.get("fehlende_evidenz", []))
-        schweregrad_erhoehen = _to_bool(result.get("schweregrad_erhoehen", False), False)
-        nachforderung_empfohlen = _to_bool(result.get("nachforderung_empfohlen", False), False)
+        schweregrad_erhoehen = _to_bool(
+            result.get("schweregrad_erhoehen", False), False
+        )
+        nachforderung_empfohlen = _to_bool(
+            result.get("nachforderung_empfohlen", False), False
+        )
 
         # Bewertungsempfehlung nur wenn nicht akzeptiert
         empfehlung = None
@@ -379,14 +401,17 @@ Antworte als JSON.
         """
         ergebnisse = {}
         for befund in sektionsergebnis.befunde:
-            prueffeld = katalog_sektionen.get(befund.prueffeld_id, {
-                "id": befund.prueffeld_id,
-                "frage": befund.frage,
-                "erwartete_evidenz": [],
-                "input_typen": [],
-                "bewertungskriterien": "",
-                "rechtsgrundlagen": [],
-            })
+            prueffeld = katalog_sektionen.get(
+                befund.prueffeld_id,
+                {
+                    "id": befund.prueffeld_id,
+                    "frage": befund.frage,
+                    "erwartete_evidenz": [],
+                    "input_typen": [],
+                    "bewertungskriterien": "",
+                    "rechtsgrundlagen": [],
+                },
+            )
             evidenz = (evidenz_map or {}).get(befund.prueffeld_id, "")
             skeptiker_befund = self.reviewe(befund, prueffeld, evidenz)
             ergebnisse[befund.prueffeld_id] = skeptiker_befund
@@ -397,6 +422,7 @@ Antworte als JSON.
 # ------------------------------------------------------------------ #
 # Hilfsfunktion: Befund mit Skeptiker-Ergebnis zusammenführen
 # ------------------------------------------------------------------ #
+
 
 def merge_befund_skeptiker(befund: Befund, skeptiker: SkeptikerBefund) -> Befund:
     """
@@ -434,7 +460,7 @@ def merge_befund_skeptiker(befund: Befund, skeptiker: SkeptikerBefund) -> Befund
     return Befund(
         prueffeld_id=befund.prueffeld_id,
         frage=befund.frage,
-        bewertung=befund.bewertung,             # Originalbewertung behalten!
+        bewertung=befund.bewertung,  # Originalbewertung behalten!
         begruendung=befund.begruendung,
         belegte_textstellen=befund.belegte_textstellen,
         empfehlungen=befund.empfehlungen,
