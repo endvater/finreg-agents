@@ -18,14 +18,18 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-
-logger = logging.getLogger(__name__)
 from llama_index.core import Document
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.readers.file import PDFReader
 
+from ingestion.parser import RegulatoryParser
+
+logger = logging.getLogger(__name__)
+
+
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     HAS_YAML = False
@@ -38,7 +42,14 @@ class GwGIngestor:
     """
 
     def __init__(self, chunk_size: int = 1024, chunk_overlap: int = 128):
-        self.splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        # Fallback splitter for non-regulatory text or logs
+        self.splitter = SentenceSplitter(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
+
+        # New: Regulatory parser that splits by structural markers
+        self.regulatory_parser = RegulatoryParser(fallback_chunk_size=chunk_size)
+
         self.pdf_reader = PDFReader()
         self._seen_hashes: set[str] = set()
 
@@ -60,11 +71,11 @@ class GwGIngestor:
         all_docs: list[Document] = []
 
         folder_handlers = {
-            "pdfs":        self._ingest_pdfs,
-            "excel":       self._ingest_excel,
-            "interviews":  self._ingest_interviews,
+            "pdfs": self._ingest_pdfs,
+            "excel": self._ingest_excel,
+            "interviews": self._ingest_interviews,
             "screenshots": self._ingest_screenshots,
-            "logs":        self._ingest_logs,
+            "logs": self._ingest_logs,
         }
 
         for folder_name, handler in folder_handlers.items():
@@ -77,7 +88,8 @@ class GwGIngestor:
 
         logger.info(
             "Gesamt: %d Chunks | %d unique Dateien (nach Deduplizierung)",
-            len(all_docs), len(self._seen_hashes),
+            len(all_docs),
+            len(self._seen_hashes),
         )
         return all_docs
 
@@ -108,19 +120,37 @@ class GwGIngestor:
             if self._is_duplicate(pdf_file):
                 continue
             try:
-                raw = self.pdf_reader.load_data(str(pdf_file))
-                for doc in raw:
-                    doc.metadata.update({
-                        "input_type": "pdf",
-                        "source": pdf_file.name,
-                        "file_path": str(pdf_file),
-                    })
-                chunks = self.splitter.get_nodes_from_documents(raw)
-                for node in chunks:
-                    docs.append(Document(
-                        text=node.get_content(),
-                        metadata=node.metadata,
-                    ))
+                # 1. Extract raw text from all pages
+                raw_documents = self.pdf_reader.load_data(str(pdf_file))
+
+                # Merge into a single text block for easier structural parsing
+                # (e.g., if a paragraph spans across a page break)
+                full_text = "\n".join(doc.get_content() for doc in raw_documents)
+
+                # Add base metadata (document level)
+                base_meta = {
+                    "input_type": "pdf",
+                    "source": pdf_file.name,
+                    "file_path": str(pdf_file),
+                    "page_count": len(raw_documents),
+                }
+
+                # 2. Use the new regulatory parser to intelligently chunk the concatenated text
+                self.regulatory_parser = RegulatoryParser(
+                    fallback_chunk_size=self.chunk_size,
+                    fallback_chunk_overlap=self.chunk_overlap,
+                )
+                nodes = self.regulatory_parser.parse_text(
+                    full_text, base_metadata=base_meta
+                )
+                for node in nodes:
+                    # Cast TextNode back to Document for the index
+                    docs.append(
+                        Document(
+                            text=node.text,
+                            metadata=node.metadata,
+                        )
+                    )
             except Exception as e:
                 logger.warning("Fehler bei %s: %s", pdf_file.name, e)
         return docs
@@ -142,16 +172,18 @@ class GwGIngestor:
                     df = pd.read_excel(f)
 
                 text = self._dataframe_to_text(df, f.name)
-                docs.append(Document(
-                    text=text,
-                    metadata={
-                        "input_type": "excel",
-                        "source": f.name,
-                        "file_path": str(f),
-                        "rows": len(df),
-                        "columns": list(df.columns.astype(str)),
-                    }
-                ))
+                docs.append(
+                    Document(
+                        text=text,
+                        metadata={
+                            "input_type": "excel",
+                            "source": f.name,
+                            "file_path": str(f),
+                            "rows": len(df),
+                            "columns": list(df.columns.astype(str)),
+                        },
+                    )
+                )
             except Exception as e:
                 logger.warning("Fehler bei %s: %s", f.name, e)
         return docs
@@ -186,7 +218,7 @@ class GwGIngestor:
 
         if len(df) > 60:
             lines.append(f"\n... ({len(df) - 60} Zeilen ausgelassen) ...\n")
-            lines.append(f"Letzte 30 Zeilen:")
+            lines.append("Letzte 30 Zeilen:")
             lines.append(df.tail(30).to_string(index=False))
 
         return "\n".join(lines)
@@ -210,19 +242,23 @@ class GwGIngestor:
                         data = yaml.safe_load(f.read_text(encoding="utf-8"))
                         text = self._interview_data_to_text(data, f.name)
                     else:
-                        logger.warning("YAML-Support nicht verfügbar – bitte 'pip install pyyaml'")
+                        logger.warning(
+                            "YAML-Support nicht verfügbar – bitte 'pip install pyyaml'"
+                        )
                         text = f.read_text(encoding="utf-8")
                 else:
                     text = f.read_text(encoding="utf-8")
 
-                docs.append(Document(
-                    text=text,
-                    metadata={
-                        "input_type": "interview",
-                        "source": f.name,
-                        "file_path": str(f),
-                    }
-                ))
+                docs.append(
+                    Document(
+                        text=text,
+                        metadata={
+                            "input_type": "interview",
+                            "source": f.name,
+                            "file_path": str(f),
+                        },
+                    )
+                )
             except Exception as e:
                 logger.warning("Fehler bei %s: %s", f.name, e)
         return docs
@@ -294,21 +330,23 @@ class GwGIngestor:
                 continue
             try:
                 file_size_kb = f.stat().st_size / 1024
-                docs.append(Document(
-                    text=(
-                        f"[SCREENSHOT: {f.name}] "
-                        f"Systemscreenshot ({file_size_kb:.0f} KB). "
-                        f"Visuelle Prüfung durch einen menschlichen Prüfer erforderlich. "
-                        f"Dieser Screenshot kann relevante Evidenz für KYC-Oberflächen, "
-                        f"TM-Systeme oder goAML-Zugang enthalten."
-                    ),
-                    metadata={
-                        "input_type": "screenshot",
-                        "source": f.name,
-                        "file_path": str(f),
-                        "file_size_kb": round(file_size_kb, 1),
-                    }
-                ))
+                docs.append(
+                    Document(
+                        text=(
+                            f"[SCREENSHOT: {f.name}] "
+                            f"Systemscreenshot ({file_size_kb:.0f} KB). "
+                            f"Visuelle Prüfung durch einen menschlichen Prüfer erforderlich. "
+                            f"Dieser Screenshot kann relevante Evidenz für KYC-Oberflächen, "
+                            f"TM-Systeme oder goAML-Zugang enthalten."
+                        ),
+                        metadata={
+                            "input_type": "screenshot",
+                            "source": f.name,
+                            "file_path": str(f),
+                            "file_size_kb": round(file_size_kb, 1),
+                        },
+                    )
+                )
             except Exception as e:
                 logger.warning("Fehler bei %s: %s", f.name, e)
         return docs
@@ -331,11 +369,13 @@ class GwGIngestor:
                     text = f.read_text(encoding="utf-8", errors="replace")
 
                 base_meta = {"input_type": "log", "source": f.name, "file_path": str(f)}
-                chunks = self.splitter.get_nodes_from_documents([
-                    Document(text=text, metadata=base_meta)
-                ])
+                chunks = self.splitter.get_nodes_from_documents(
+                    [Document(text=text, metadata=base_meta)]
+                )
                 for node in chunks:
-                    docs.append(Document(text=node.get_content(), metadata=node.metadata))
+                    docs.append(
+                        Document(text=node.get_content(), metadata=node.metadata)
+                    )
             except Exception as e:
                 logger.warning("Fehler bei %s: %s", f.name, e)
         return docs

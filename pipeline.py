@@ -32,30 +32,30 @@ from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-load_dotenv()
-logger = logging.getLogger(__name__)
-
 from ingestion.ingestor import GwGIngestor
 from agents.pruef_agent import PrueferAgent, Sektionsergebnis, SEKTION_REVIEW_ESCALATION
 from agents.skeptiker_agent import SkeptikerAgent, merge_befund_skeptiker
 from reports.bericht_generator import BerichtGenerator
+
+load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 # ------------------------------------------------------------------ #
 # Katalog-Registry
 # ------------------------------------------------------------------ #
 KATALOG_REGISTRY = {
-    "gwg":    "catalog/gwg_catalog.json",
-    "dora":   "catalog/dora_catalog.json",
+    "gwg": "catalog/gwg_catalog.json",
+    "dora": "catalog/dora_catalog.json",
     "marisk": "catalog/marisk_catalog.json",
-    "wphg":   "catalog/wphg_catalog.json",
+    "wphg": "catalog/wphg_catalog.json",
 }
 
 KATALOG_LABELS = {
-    "gwg":    "GwG-Sonderprüfung (AML/CFT)",
-    "dora":   "DORA – Digital Operational Resilience Act",
+    "gwg": "GwG-Sonderprüfung (AML/CFT)",
+    "dora": "DORA – Digital Operational Resilience Act",
     "marisk": "MaRisk-Prüfung",
-    "wphg":   "WpHG / MaComp-Prüfung",
+    "wphg": "WpHG / MaComp-Prüfung",
 }
 
 
@@ -111,7 +111,7 @@ class AuditPipeline:
         t_start = time.time()
         label = KATALOG_LABELS.get(self.regulatorik, self.regulatorik.upper())
 
-        self._log(f"🚀 FinRegAgents Pipeline v2 gestartet")
+        self._log("🚀 FinRegAgents Pipeline v2 gestartet")
         self._log(f"   Regulatorik: {label}")
         self._log(f"   Institut:    {self.institution}")
         self._log(f"   Modell:      {self.model}")
@@ -138,7 +138,9 @@ class AuditPipeline:
         _prev_embed = Settings.embed_model
         Settings.embed_model = embed_model
         try:
-            index = VectorStoreIndex.from_documents(documents, show_progress=self.verbose)
+            index = VectorStoreIndex.from_documents(
+                documents, show_progress=self.verbose
+            )
         finally:
             Settings.embed_model = _prev_embed
         self._log("   → Index fertig")
@@ -175,7 +177,9 @@ class AuditPipeline:
                 continue
 
             self._log(f"\n  📌 {sektion['id']}: {sektion['titel']}")
-            ergebnis = Sektionsergebnis(sektion_id=sektion["id"], titel=sektion["titel"])
+            ergebnis = Sektionsergebnis(
+                sektion_id=sektion["id"], titel=sektion["titel"]
+            )
 
             for prueffeld in sektion["prueffelder"]:
                 # Lokale Kopie mit Rechtsgrundlagen – keine Mutation des Originals
@@ -191,13 +195,17 @@ class AuditPipeline:
                 dauer = time.time() - t0
 
                 status_icon = {
-                    "konform": "✅", "teilkonform": "⚠️",
-                    "nicht_konform": "🔴", "nicht_prüfbar": "❓"
+                    "konform": "✅",
+                    "teilkonform": "⚠️",
+                    "nicht_konform": "🔴",
+                    "nicht_prüfbar": "❓",
                 }.get(befund.bewertung.value, "?")
 
                 conf_str = f" | Conf: {befund.confidence:.0%}"
                 review_str = " | 🔍 REVIEW" if befund.review_erforderlich else ""
-                self._log(f"       → {status_icon} {befund.bewertung.value.upper()}{conf_str}{review_str} ({dauer:.1f}s)")
+                self._log(
+                    f"       → {status_icon} {befund.bewertung.value.upper()}{conf_str}{review_str} ({dauer:.1f}s)"
+                )
 
                 if befund.validierungshinweise:
                     for hint in befund.validierungshinweise:
@@ -227,7 +235,9 @@ class AuditPipeline:
 
             # Sektions-Eskalation prüfen
             if ergebnis.review_quote >= SEKTION_REVIEW_ESCALATION:
-                self._log(f"  ⚠️  Sektion {sektion['id']}: {ergebnis.review_quote:.0%} Review-Quote → Eskalation empfohlen")
+                self._log(
+                    f"  ⚠️  Sektion {sektion['id']}: {ergebnis.review_quote:.0%} Review-Quote → Eskalation empfohlen"
+                )
 
             sektionsergebnisse.append(ergebnis)
 
@@ -241,7 +251,7 @@ class AuditPipeline:
             )
 
         # ── Schritt 4: Berichte generieren ───────────────────────────────
-        self._log(f"\n📝 Schritt 4/4: Prüfberichte generieren")
+        self._log("\n📝 Schritt 4/4: Prüfberichte generieren")
         generator = BerichtGenerator(
             institution=self.institution,
             pruefer=f"FinRegAgents v2.0 – {label}",
@@ -256,11 +266,11 @@ class AuditPipeline:
 
         # ── Zusammenfassung ──────────────────────────────────────────────
         t_total = time.time() - t_start
-        self._log(f"\n{'='*60}")
+        self._log(f"\n{'=' * 60}")
         self._log(f"✅ Prüfung abgeschlossen in {t_total:.0f}s")
         self._log(f"   Regulatorik: {label}")
         self._log(f"   Prüffelder:  {gepruefte_felder}/{total_felder}")
-        self._log(f"   Berichte:")
+        self._log("   Berichte:")
         for fmt, pth in report_paths.items():
             self._log(f"     {fmt.upper()}: {pth}")
 
@@ -271,22 +281,26 @@ class AuditPipeline:
         try:
             data = []
             for s in sektionsergebnisse:
-                data.append({
-                    "id": s.sektion_id,
-                    "titel": s.titel,
-                    "befunde": [
-                        {
-                            "id": b.prueffeld_id,
-                            "bewertung": b.bewertung.value,
-                            "confidence": b.confidence,
-                            "review_erforderlich": b.review_erforderlich,
-                            "begruendung": b.begruendung[:200],
-                        }
-                        for b in s.befunde
-                    ]
-                })
+                data.append(
+                    {
+                        "id": s.sektion_id,
+                        "titel": s.titel,
+                        "befunde": [
+                            {
+                                "id": b.prueffeld_id,
+                                "bewertung": b.bewertung.value,
+                                "confidence": b.confidence,
+                                "review_erforderlich": b.review_erforderlich,
+                                "begruendung": b.begruendung[:200],
+                            }
+                            for b in s.befunde
+                        ],
+                    }
+                )
             path = checkpoint_dir / "checkpoint_latest.json"
-            path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+            path.write_text(
+                json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+            )
         except Exception as e:
             logger.warning("Checkpoint-Fehler (Pipeline läuft weiter): %s", e)
 
@@ -323,23 +337,47 @@ Beispiele:
   python pipeline.py --input ./docs --regulatorik dora --sektionen D01 D04
   python pipeline.py --input ./docs --regulatorik marisk
   python pipeline.py --input ./docs --regulatorik wphg --model claude-opus-4-5
-        """
+        """,
     )
-    parser.add_argument("--input",        required=True,  help="Verzeichnis mit Prüfungsdokumenten")
-    parser.add_argument("--institution",  default="Prüfinstitut", help="Name des Instituts")
-    parser.add_argument("--regulatorik",  default="gwg",
-                        choices=list(KATALOG_REGISTRY.keys()),
-                        help="Zu prüfende Regulatorik")
-    parser.add_argument("--output",       default="./reports/output", help="Ausgabeverzeichnis")
-    parser.add_argument("--catalog",      default=None,   help="Eigener Katalog (überschreibt --regulatorik)")
-    parser.add_argument("--model",        default="claude-sonnet-4-5-20250514",
-                        help="Anthropic-Modell (Default: Sonnet für Kosteneffizienz)")
-    parser.add_argument("--sektionen",    nargs="*",      help="Nur diese Sektionen prüfen (z.B. S01 S02)")
-    parser.add_argument("--top-k",        type=int, default=8, help="RAG-Chunks pro Prüffrage")
-    parser.add_argument("--skeptiker",    action="store_true", default=False,
-                        help="Skeptiker-Agent aktivieren (adversariales Review)")
-    parser.add_argument("--skeptiker-only-konform", action="store_true", default=False,
-                        help="Skeptiker nur für 'konform'-Ratings aktivieren")
+    parser.add_argument(
+        "--input", required=True, help="Verzeichnis mit Prüfungsdokumenten"
+    )
+    parser.add_argument(
+        "--institution", default="Prüfinstitut", help="Name des Instituts"
+    )
+    parser.add_argument(
+        "--regulatorik",
+        default="gwg",
+        choices=list(KATALOG_REGISTRY.keys()),
+        help="Zu prüfende Regulatorik",
+    )
+    parser.add_argument(
+        "--output", default="./reports/output", help="Ausgabeverzeichnis"
+    )
+    parser.add_argument(
+        "--catalog", default=None, help="Eigener Katalog (überschreibt --regulatorik)"
+    )
+    parser.add_argument(
+        "--model",
+        default="claude-sonnet-4-5-20250514",
+        help="Anthropic-Modell (Default: Sonnet für Kosteneffizienz)",
+    )
+    parser.add_argument(
+        "--sektionen", nargs="*", help="Nur diese Sektionen prüfen (z.B. S01 S02)"
+    )
+    parser.add_argument("--top-k", type=int, default=8, help="RAG-Chunks pro Prüffrage")
+    parser.add_argument(
+        "--skeptiker",
+        action="store_true",
+        default=False,
+        help="Skeptiker-Agent aktivieren (adversariales Review)",
+    )
+    parser.add_argument(
+        "--skeptiker-only-konform",
+        action="store_true",
+        default=False,
+        help="Skeptiker nur für 'konform'-Ratings aktivieren",
+    )
     args = parser.parse_args()
 
     pipeline = AuditPipeline(

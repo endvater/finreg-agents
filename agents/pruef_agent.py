@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Datenmodelle
 # ------------------------------------------------------------------ #
 
+
 class Bewertung(str, Enum):
     KONFORM = "konform"
     TEILKONFORM = "teilkonform"
@@ -68,8 +69,11 @@ class Sektionsergebnis:
 
     @property
     def kritische_befunde(self) -> list[Befund]:
-        return [b for b in self.befunde
-                if b.bewertung in (Bewertung.NICHT_KONFORM, Bewertung.TEILKONFORM)]
+        return [
+            b
+            for b in self.befunde
+            if b.bewertung in (Bewertung.NICHT_KONFORM, Bewertung.TEILKONFORM)
+        ]
 
     @property
     def review_quote(self) -> float:
@@ -87,15 +91,12 @@ SYSTEM_PROMPTS = {
     "gwg": """Du bist ein erfahrener Sonderprüfer der BaFin mit Spezialisierung auf Geldwäscheprävention.
 Du führst eine Sonderprüfung gemäß §25h KWG und GwG durch.
 Relevante Rechtsrahmen: GwG 2017 i.d.F. 2024, §25h KWG, BaFin AuA GwG, AMLA-Leitlinien.""",
-
     "dora": """Du bist ein erfahrener Prüfer mit Spezialisierung auf digitale operationale Resilienz.
 Du führst eine Prüfung gemäß DORA (EU) 2022/2554 durch.
 Relevante Rechtsrahmen: DORA Art. 5-46, RTS ICT Risk, RTS Incident Reporting, TIBER-EU.""",
-
     "marisk": """Du bist ein erfahrener Prüfer der BaFin mit Spezialisierung auf Risikomanagement.
 Du führst eine Prüfung gemäß MaRisk (BaFin-Rundschreiben) und §25a KWG durch.
 Relevante Rechtsrahmen: MaRisk 2023 (AT/BT), §25a KWG, EBA-Leitlinien.""",
-
     "wphg": """Du bist ein erfahrener Prüfer mit Spezialisierung auf Wertpapieraufsicht und Compliance.
 Du führst eine Prüfung gemäß WpHG und MaComp durch.
 Relevante Rechtsrahmen: WpHG, MaComp, MAR (EU) Nr. 596/2014, MiFID II.""",
@@ -137,10 +138,10 @@ Antworte AUSSCHLIESSLICH als valides JSON mit dieser Struktur:
 # ------------------------------------------------------------------ #
 
 # Thresholds
-RETRIEVAL_SCORE_MIN = 0.35          # Unter diesem Wert: nicht_prüfbar
-CONFIDENCE_AUTO_REJECT = 0.4        # Unter diesem Wert: automatisch nicht_prüfbar
-CONFIDENCE_REVIEW_THRESHOLD = 0.7   # Unter diesem Wert: manuelles Review markieren
-SEKTION_REVIEW_ESCALATION = 0.3     # Ab diesem Anteil: Sektion eskalieren
+RETRIEVAL_SCORE_MIN = 0.35  # Unter diesem Wert: nicht_prüfbar
+CONFIDENCE_AUTO_REJECT = 0.4  # Unter diesem Wert: automatisch nicht_prüfbar
+CONFIDENCE_REVIEW_THRESHOLD = 0.7  # Unter diesem Wert: manuelles Review markieren
+SEKTION_REVIEW_ESCALATION = 0.3  # Ab diesem Anteil: Sektion eskalieren
 
 # Retry-Konfiguration für API-Fehler
 LLM_MAX_RETRIES = 3
@@ -216,8 +217,12 @@ def compute_confidence(
 KNOWN_LAW_PATTERNS = {
     "gwg": re.compile(r"§\s*\d+[a-z]?\s*(Abs\.\s*\d+)?\s*(GwG|KWG)"),
     "dora": re.compile(r"Art\.\s*\d+\s*(Abs\.\s*\d+)?\s*DORA"),
-    "marisk": re.compile(r"(MaRisk\s*(AT|BT)\s*\d+(\.\d+)*|§\s*\d+[a-z]?\s*(Abs\.\s*\d+)?\s*KWG)"),
-    "wphg": re.compile(r"(§\s*\d+[a-z]?\s*(Abs\.\s*\d+)?\s*(WpHG|MaComp)|Art\.\s*\d+\s*MA[RD])"),
+    "marisk": re.compile(
+        r"(MaRisk\s*(AT|BT)\s*\d+(\.\d+)*|§\s*\d+[a-z]?\s*(Abs\.\s*\d+)?\s*KWG)"
+    ),
+    "wphg": re.compile(
+        r"(§\s*\d+[a-z]?\s*(Abs\.\s*\d+)?\s*(WpHG|MaComp)|Art\.\s*\d+\s*MA[RD])"
+    ),
 }
 GENERIC_LAW_REF_RE = re.compile(r"(§\s*[^\n,;.]+|Art\.\s*[^\n,;.]+)")
 
@@ -250,9 +255,7 @@ def validate_befund_structure(
     bewertung = llm_result.get("bewertung", "")
     textstellen = llm_result.get("belegte_textstellen", [])
     if bewertung in ("konform", "teilkonform", "nicht_konform") and not textstellen:
-        warnings.append(
-            f"Bewertung '{bewertung}' ohne belegte Textstellen"
-        )
+        warnings.append(f"Bewertung '{bewertung}' ohne belegte Textstellen")
 
     # 4. Mangel_text vorhanden bei konform
     if bewertung == "konform" and llm_result.get("mangel_text"):
@@ -269,7 +272,8 @@ def validate_befund_structure(
             llm_result.get("begruendung", "") or "",
             llm_result.get("mangel_text", "") or "",
             *[
-                str(t) for t in (llm_result.get("belegte_textstellen") or [])
+                str(t)
+                for t in (llm_result.get("belegte_textstellen") or [])
                 if t is not None
             ],
         ]
@@ -281,9 +285,7 @@ def validate_befund_structure(
                     suspicious_refs.add(ref_clean)
         if suspicious_refs:
             refs = ", ".join(sorted(suspicious_refs))
-            warnings.append(
-                f"Unplausible Rechtszitate für '{regulatorik}': {refs}"
-            )
+            warnings.append(f"Unplausible Rechtszitate für '{regulatorik}': {refs}")
 
     return warnings
 
@@ -329,6 +331,7 @@ def extract_json(raw: str) -> dict:
 # Prüfer-Agent
 # ------------------------------------------------------------------ #
 
+
 class PrueferAgent:
     """
     Bewertet ein einzelnes Prüffeld durch:
@@ -364,16 +367,19 @@ class PrueferAgent:
         evidenz_nodes = self._retrieve_evidence(prueffeld)
         allowed_types = set(prueffeld.get("input_typen", []))
         scoped_nodes = [
-            n for n in evidenz_nodes
+            n
+            for n in evidenz_nodes
             if not allowed_types
             or (n.metadata or {}).get("input_type", "unbekannt") in allowed_types
         ]
 
         if not scoped_nodes:
-            verfügbare_typen = sorted({
-                (n.metadata or {}).get("input_type", "unbekannt")
-                for n in evidenz_nodes
-            })
+            verfügbare_typen = sorted(
+                {
+                    (n.metadata or {}).get("input_type", "unbekannt")
+                    for n in evidenz_nodes
+                }
+            )
             return Befund(
                 prueffeld_id=prueffeld["id"],
                 frage=prueffeld["frage"],
@@ -386,15 +392,18 @@ class PrueferAgent:
                 schweregrad=prueffeld.get("schweregrad"),
                 confidence=0.0,
                 review_erforderlich=True,
-                validierungshinweise=["Automatisch nicht_prüfbar: Nur unzulässige Dokumenttypen im Retrieval"],
+                validierungshinweise=[
+                    "Automatisch nicht_prüfbar: Nur unzulässige Dokumenttypen im Retrieval"
+                ],
             )
 
         # 2. Retrieval-Quality-Gate
         scores = [getattr(n, "score", 0.0) or 0.0 for n in scoped_nodes]
-        good_nodes = [n for n, s in zip(scoped_nodes, scores) if s >= self.retrieval_score_min]
+        good_nodes = [
+            n for n, s in zip(scoped_nodes, scores) if s >= self.retrieval_score_min
+        ]
 
         if not good_nodes:
-            avg_score = sum(scores) / len(scores) if scores else 0.0
             return Befund(
                 prueffeld_id=prueffeld["id"],
                 frage=prueffeld["frage"],
@@ -409,7 +418,9 @@ class PrueferAgent:
                 schweregrad=prueffeld.get("schweregrad"),
                 confidence=0.0,
                 review_erforderlich=True,
-                validierungshinweise=["Automatisch nicht_prüfbar: Retrieval-Score unter Threshold"],
+                validierungshinweise=[
+                    "Automatisch nicht_prüfbar: Retrieval-Score unter Threshold"
+                ],
             )
 
         # 3. Evidenz formatieren (nur gute Nodes)
@@ -484,7 +495,9 @@ class PrueferAgent:
         """Baut eine optimierte Suchanfrage und holt relevante Chunks."""
         parts = [prueffeld["frage"]]
         if prueffeld.get("erwartete_evidenz"):
-            parts.append(f"Relevante Begriffe: {', '.join(prueffeld['erwartete_evidenz'])}")
+            parts.append(
+                f"Relevante Begriffe: {', '.join(prueffeld['erwartete_evidenz'])}"
+            )
         rg = prueffeld.get("rechtsgrundlagen", [])
         if isinstance(rg, list) and rg:
             parts.append(f"Rechtsgrundlage: {', '.join(rg)}")
@@ -495,7 +508,9 @@ class PrueferAgent:
     def _format_evidence(self, nodes: list, prueffeld: dict) -> str:
         """Formatiert die Evidenz für den LLM-Prompt."""
         if not nodes:
-            return "KEINE EVIDENZ GEFUNDEN – keine relevanten Dokumente im Prüfungskorpus."
+            return (
+                "KEINE EVIDENZ GEFUNDEN – keine relevanten Dokumente im Prüfungskorpus."
+            )
 
         allowed_types = set(prueffeld.get("input_typen", []))
         lines = ["=== GEFUNDENE EVIDENZ ===\n"]
@@ -515,7 +530,9 @@ class PrueferAgent:
             lines.append(f"--- Evidenz {i}: {source} [{input_type}]{score_str} ---")
 
             if input_type == "screenshot":
-                lines.append(f"[Screenshot-Datei: {source} – visuelle Prüfung durch Mensch erforderlich]")
+                lines.append(
+                    f"[Screenshot-Datei: {source} – visuelle Prüfung durch Mensch erforderlich]"
+                )
             else:
                 lines.append(node.get_content()[:2000])
             lines.append("")
@@ -534,12 +551,12 @@ class PrueferAgent:
         else:
             rg_str = str(rg)
 
-        user_prompt = f"""## PRÜFFELD: {prueffeld['id']}
-**Frage:** {prueffeld['frage']}
+        user_prompt = f"""## PRÜFFELD: {prueffeld["id"]}
+**Frage:** {prueffeld["frage"]}
 **Rechtsgrundlage:** {rg_str}
-**Erwartete Evidenz:** {', '.join(prueffeld.get('erwartete_evidenz', []))}
-**Schweregrad:** {prueffeld.get('schweregrad', 'unbekannt')}
-**Bewertungskriterien:** {prueffeld.get('bewertungskriterien', '')}
+**Erwartete Evidenz:** {", ".join(prueffeld.get("erwartete_evidenz", []))}
+**Schweregrad:** {prueffeld.get("schweregrad", "unbekannt")}
+**Bewertungskriterien:** {prueffeld.get("bewertungskriterien", "")}
 
 {evidenz_text}
 
@@ -569,11 +586,15 @@ Bewerte dieses Prüffeld und antworte als JSON.
             except Exception as e:
                 last_exc = e
                 if attempt < LLM_MAX_RETRIES - 1:
-                    delay = LLM_RETRY_BASE_DELAY * (2 ** attempt)
+                    delay = LLM_RETRY_BASE_DELAY * (2**attempt)
                     logger.warning(
                         "LLM-Aufruf für %s fehlgeschlagen (%s: %s) – Retry %d/%d in %.0fs",
-                        prueffeld["id"], type(e).__name__, e,
-                        attempt + 1, LLM_MAX_RETRIES - 1, delay,
+                        prueffeld["id"],
+                        type(e).__name__,
+                        e,
+                        attempt + 1,
+                        LLM_MAX_RETRIES - 1,
+                        delay,
                     )
                     time.sleep(delay)
 
