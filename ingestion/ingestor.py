@@ -18,11 +18,14 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-
-logger = logging.getLogger(__name__)
 from llama_index.core import Document
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.readers.file import PDFReader
+
+from ingestion.parser import RegulatoryParser
+
+logger = logging.getLogger(__name__)
+
 
 try:
     import yaml
@@ -38,7 +41,12 @@ class GwGIngestor:
     """
 
     def __init__(self, chunk_size: int = 1024, chunk_overlap: int = 128):
+        # Fallback splitter for non-regulatory text or logs
         self.splitter = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        
+        # New: Regulatory parser that splits by structural markers
+        self.regulatory_parser = RegulatoryParser(fallback_chunk_size=chunk_size)
+        
         self.pdf_reader = PDFReader()
         self._seen_hashes: set[str] = set()
 
@@ -108,17 +116,27 @@ class GwGIngestor:
             if self._is_duplicate(pdf_file):
                 continue
             try:
-                raw = self.pdf_reader.load_data(str(pdf_file))
-                for doc in raw:
-                    doc.metadata.update({
-                        "input_type": "pdf",
-                        "source": pdf_file.name,
-                        "file_path": str(pdf_file),
-                    })
-                chunks = self.splitter.get_nodes_from_documents(raw)
-                for node in chunks:
+                # 1. Extract raw text from all pages
+                raw_documents = self.pdf_reader.load_data(str(pdf_file))
+                
+                # Merge into a single text block for easier structural parsing 
+                # (e.g., if a paragraph spans across a page break)
+                full_text = "\n".join(doc.get_content() for doc in raw_documents)
+                
+                # Add base metadata (document level)
+                base_meta = {
+                    "input_type": "pdf",
+                    "source": pdf_file.name,
+                    "file_path": str(pdf_file),
+                }
+                
+                # 2. Use the new regulatory parser to intelligently chunk the concatenated text
+                nodes = self.regulatory_parser.parse_text(text=full_text, base_metadata=base_meta)
+
+                for node in nodes:
+                    # Cast TextNode back to Document for the index
                     docs.append(Document(
-                        text=node.get_content(),
+                        text=node.text,
                         metadata=node.metadata,
                     ))
             except Exception as e:
@@ -186,7 +204,7 @@ class GwGIngestor:
 
         if len(df) > 60:
             lines.append(f"\n... ({len(df) - 60} Zeilen ausgelassen) ...\n")
-            lines.append(f"Letzte 30 Zeilen:")
+            lines.append("Letzte 30 Zeilen:")
             lines.append(df.tail(30).to_string(index=False))
 
         return "\n".join(lines)
