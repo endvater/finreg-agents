@@ -18,22 +18,23 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 
 1. [Was ist neu in v2?](#was-ist-neu-in-v2)
 2. [Bugfixes v2.1](#bugfixes-v21)
-3. [Architektur](#architektur)
-4. [Skeptiker-Agent](#skeptiker-agent)
-5. [Unterstützte Regulatorik](#unterstützte-regulatorik)
-6. [Quickstart](#quickstart)
-7. [Python API](#python-api)
-8. [Confidence-Scoring](#confidence-scoring)
-9. [Strukturelle Validierung](#strukturelle-validierung)
-10. [Bewertungsskala](#bewertungsskala)
-11. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
-12. [Interview-Format](#interview-format)
-13. [Prüfbericht-Output](#prüfbericht-output)
-14. [Kosten-Einschätzung](#kosten-einschätzung)
-15. [Roadmap](#roadmap)
-16. [Disclaimer](#disclaimer)
-17. [Contributing](#contributing)
-18. [Lizenz](#lizenz)
+3. [Adversarial Prompting Layer](#adversarial-prompting-layer)
+4. [Architektur](#architektur)
+5. [Skeptiker-Agent](#skeptiker-agent)
+6. [Unterstützte Regulatorik](#unterstützte-regulatorik)
+7. [Quickstart](#quickstart)
+8. [Python API](#python-api)
+9. [Confidence-Scoring](#confidence-scoring)
+10. [Strukturelle Validierung](#strukturelle-validierung)
+11. [Bewertungsskala](#bewertungsskala)
+12. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
+13. [Interview-Format](#interview-format)
+14. [Prüfbericht-Output](#prüfbericht-output)
+15. [Kosten-Einschätzung](#kosten-einschätzung)
+16. [Roadmap](#roadmap)
+17. [Disclaimer](#disclaimer)
+18. [Contributing](#contributing)
+19. [Lizenz](#lizenz)
 
 ---
 
@@ -87,6 +88,77 @@ Behebt Probleme, die durch ein nachgelagertes Code-Review identifiziert wurden:
 
 ---
 
+## Adversarial Prompting Layer
+
+Der **Adversarial Prompting Layer** ist ein optionaler zweiter LLM-Pass, der auf derselben bereits retrievten Evidenz läuft – aber mit einem **umgekehrten System-Prompt**:
+
+| Pass | Rolle | Ziel |
+|---|---|---|
+| Normal | BaFin-Prüfer | Bewerte ob Anforderung X erfüllt ist |
+| Adversarial | Kritischer Gutachter | Finde alle Gründe, warum sie NICHT erfüllt sein könnte |
+
+Das Ergebnis beider Pässe wird verglichen. Große Abweichungen deuten auf Ambiguität hin und führen zu einem Review-Flag. Kleine oder keine Abweichungen bestätigen die Erstbewertung.
+
+> Idee ursprünglich von @evil_robot_jas (Moltbook, karma 681) vorgeschlagen. Implementiert in v2.2.
+
+### Wie der Adversarial Layer funktioniert
+
+1. **Gleiche Evidenz** – kein zweites Retrieval, kein extra Token-Overhead für RAG
+2. **Umgekehrter System-Prompt** – je Regulatorik (GwG / DORA / MaRisk / WpHG) ein eigener adversarialer Kontext
+3. **Divergenz-Berechnung** – numerische Schweregrade: `konform=0, teilkonform=1, nicht_konform=2, nicht_prüfbar=3`
+4. **Merge** – Originalbewertung bleibt erhalten; nur `confidence` und `review_erforderlich` werden angepasst
+
+### Divergenz-Logik
+
+| Divergenz | Bedeutung | Wirkung |
+|---|---|---|
+| 0 | Adversarial bestätigt | ⚔️ Hinweis, kein Eingriff |
+| 1 | Leicht strenger | ⚔️ Hinweis + −5% Confidence |
+| ≥ 2 | Wesentlich strenger | ⚔️ Review erzwungen + −15–20% Confidence |
+
+### CLI-Flags
+
+```bash
+# Adversarial Layer allein
+python pipeline.py --input ./docs --regulatorik gwg --adversarial
+
+# Kombiniert mit Skeptiker-Agent (maximale QA-Tiefe)
+python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
+```
+
+### Python API
+
+```python
+pipeline = AuditPipeline(
+    input_dir="./docs",
+    regulatorik="gwg",
+    adversarial=True,   # Adversarial Prompting Layer aktivieren
+)
+```
+
+### Unterschied zum Skeptiker-Agent
+
+| | Adversarial Layer | Skeptiker-Agent |
+|---|---|---|
+| **Basis** | Gleiche Evidenz, anderer Prompt | Fertiger Befund (kein RAG-Zugriff) |
+| **Wann** | Während `pruefe_feld()` (zweiter LLM-Pass) | Nach `pruefe_feld()` (Post-Processing) |
+| **Output** | Bewertung + Schwachstellen + Divergenz | Einwände + Stärken + Bewertungsempfehlung |
+| **Confidence** | −5% (Div. 1) / −15–20% (Div. ≥2) | −15% pro Einwand |
+| **Kosten** | +1 LLM-Call pro Prüffeld | +1 LLM-Call pro aktivem Prüffeld |
+
+Beide Layer lassen sich kombinieren: `--adversarial --skeptiker`.
+
+### Wann einsetzen?
+
+| Szenario | Empfehlung |
+|---|---|
+| Maximale QA-Tiefe | `--adversarial --skeptiker` |
+| Schnell-Scan auf offensichtliche Lücken | `--adversarial` |
+| Nur konform-Ratings challengen | `--skeptiker --skeptiker-only-konform` |
+| Kosten-sensitiv | Ohne beide Layer |
+
+---
+
 ## Architektur
 
 ```
@@ -137,8 +209,13 @@ Dokumente (PDF, Excel, Interview, Screenshot, Log)
   [PrueferAgent]
    ├─ RAG-Retrieval           → Top-k relevante Chunks holen
    ├─ Quality-Gate            → Score < Threshold? → nicht_prüfbar (kein LLM-Call)
-   ├─ LLM-Bewertung           → Regulatorik-spezifischer Prompt → Claude
+   ├─ LLM-Bewertung (normal)  → Regulatorik-spezifischer Prompt → Claude
    │   └─ Retry (3×)          → Exponentieller Backoff bei API-Fehlern
+   ├─ [optional, per --adversarial]
+   │   └─ LLM-Bewertung (adv) → Gleiche Evidenz, adversarialer Prompt → Claude
+   │       ├─ Divergenz 0     → Bestätigt, kein Eingriff
+   │       ├─ Divergenz 1     → −5% Confidence + Hinweis
+   │       └─ Divergenz ≥2    → −15-20% Confidence + Review erzwungen
    ├─ Strukturelle Valid.     → Quellen-Cross-Check, Platzhalter, Konsistenz
    └─ Confidence-Score        → 4 Signale → Score + Review-Markierung
         │
@@ -306,6 +383,12 @@ python pipeline.py --input ./docs --regulatorik wphg --skeptiker
 
 # Nur konform-Ratings skeptisch hinterfragen (kostensparender)
 python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only-konform
+
+# Adversarial Layer: zweiter LLM-Pass mit umgekehrtem Prompt
+python pipeline.py --input ./docs --regulatorik gwg --adversarial
+
+# Maximale QA-Tiefe: Adversarial + Skeptiker kombiniert
+python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
 ```
 
 **Alle CLI-Parameter:**
@@ -322,6 +405,7 @@ python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only
 | `--top-k` | `8` | RAG-Chunks pro Prüffrage |
 | `--skeptiker` | aus | Skeptiker-Agent aktivieren |
 | `--skeptiker-only-konform` | aus | Skeptiker nur für `konform`-Ratings |
+| `--adversarial` | aus | Adversarial Prompting Layer aktivieren |
 
 ---
 
@@ -338,6 +422,7 @@ pipeline = AuditPipeline(
     model="claude-sonnet-4-5-20250514",    # optional: Modellwahl
     skeptiker=True,                         # optional: Skeptiker-Agent
     skeptiker_only_konform=False,           # optional: nur konform challengen
+    adversarial=True,                       # optional: Adversarial Prompting Layer
     top_k=8,                                # optional: RAG-Chunks pro Frage
 )
 report_paths = pipeline.run()
@@ -378,6 +463,17 @@ Jeder Befund erhält einen Confidence-Score (0.0–1.0), der aus vier Signalen b
 | 0.40 – 0.70 | Befund markiert als **Review erforderlich** 🔍 |
 | > 0.70 | Befund geht in den Bericht |
 | > 30% Review in einer Sektion | **Sektions-Eskalation** empfohlen |
+
+### Confidence-Anpassung durch Adversarial Layer
+
+Wenn `--adversarial` aktiv, wird der Score vor dem Skeptiker-Pass angepasst:
+
+| Divergenz | Confidence-Änderung | Review |
+|---|---|---|
+| 0 (bestätigt) | ±0 | nein |
+| 1 (leicht strenger) | −0.05 | nein |
+| 2 (wesentlich strenger) | −0.15 | ja (erzwungen) |
+| ≥ 3 (maximal strenger) | −0.20 | ja (erzwungen) |
 
 ### Confidence-Anpassung durch SkeptikerAgent
 
@@ -517,8 +613,9 @@ Alle Berichte enthalten:
 - Confidence-Bars pro Befund (visuelle Indikatoren)
 - Review-Markierungen (🔍) für unsichere Bewertungen
 - Validierungshinweise (⚡) bei strukturellen Problemen
-- Skeptiker-Einwände (⚔️) wenn Skeptiker aktiv war
-- Fehlende-Evidenz-Hinweise (📄) aus Skeptiker-Review
+- Adversarial-Hinweise (⚔️) mit Divergenz und Schwachstellen wenn `--adversarial` aktiv
+- Skeptiker-Einwände (⚔️) wenn `--skeptiker` aktiv war
+- Fehlende-Evidenz-Hinweise (📄) aus Adversarial- und Skeptiker-Review
 - Evidenz-Warnungen bei hohem `nicht_prüfbar`-Anteil
 - Audit-Trail mit Modell, Katalog-Version und Zeitstempel
 
@@ -531,16 +628,17 @@ Zwischenergebnisse werden nach jeder Sektion als Checkpoint gesichert:
 
 ## Kosten-Einschätzung
 
-| Regulatorik | Prüffelder | Sonnet (ohne Skeptiker) | Sonnet (mit Skeptiker) | Opus (ohne Skeptiker) |
-|---|---|---|---|---|
-| GwG | 34 | ~$0.80–1.50 | ~$1.60–3.00 | ~$8–15 |
-| DORA | 18 | ~$0.40–0.80 | ~$0.80–1.60 | ~$4–8 |
-| MaRisk | 22 | ~$0.50–1.00 | ~$1.00–2.00 | ~$5–10 |
-| WpHG | 20 | ~$0.45–0.90 | ~$0.90–1.80 | ~$4.50–9 |
+| Regulatorik | Prüffelder | Sonnet (Standard) | + `--adversarial` | + `--skeptiker` | + beide |
+|---|---|---|---|---|---|
+| GwG | 34 | ~$0.80–1.50 | ~$1.60–3.00 | ~$1.60–3.00 | ~$2.40–4.50 |
+| DORA | 18 | ~$0.40–0.80 | ~$0.80–1.60 | ~$0.80–1.60 | ~$1.20–2.40 |
+| MaRisk | 22 | ~$0.50–1.00 | ~$1.00–2.00 | ~$1.00–2.00 | ~$1.50–3.00 |
+| WpHG | 20 | ~$0.45–0.90 | ~$0.90–1.80 | ~$0.90–1.80 | ~$1.35–2.70 |
 
 Hinweise:
 - Kosten hängen von Dokumentenmenge, Chunk-Anzahl und Antwortlänge ab.
 - Das Retrieval-Quality-Gate spart unnötige LLM-Calls bei schlechtem Retrieval.
+- `--adversarial` verdoppelt die LLM-Calls (kein zweites Retrieval – nur LLM-Overhead).
 - Transiente API-Fehler werden automatisch bis zu 3× wiederholt, ohne die Pipeline zu unterbrechen.
 - Mit `--skeptiker-only-konform` reduziert sich der Skeptiker-Overhead auf typischerweise 40–60%.
 
@@ -548,7 +646,13 @@ Hinweise:
 
 ## Roadmap
 
-- [x] ~~Skeptiker-Agent: Adversariales LLM-Review als optionaler Post-Processing-Layer~~ ✅ *implementiert in v2.1*
+- [x] ~~Skeptiker-Agent: Adversariales LLM-Review als optionaler Post-Processing-Layer~~ ✅ *v2.1*
+- [x] ~~Adversarial Prompting Layer: zweiter LLM-Pass mit umgekehrtem System-Prompt~~ ✅ *v2.2 – Issue #4*
+- [ ] Disagreement Resolution Protocol: `disputed`-Status + eigener Report-Abschnitt bei Prüfer-vs-Adversarial-Widerspruch *(Issue #2)*
+- [ ] Context Drift Detection: Regulatory Term Preservation Layer in `bericht_generator.py` *(Issue #3)*
+- [ ] Per-Claim Provenance + Skeptic-Tagging: Claim-Level-Annotation mit Corroboration-Status *(Issue #6)*
+- [ ] Human Validation Cadence: `--review-budget N` Flag + Checkpoint-Resume *(Issue #1)*
+- [ ] Multi-Model Cross-Validation: Adversarial Reviewer mit Gemini / Grok für Confidence 0.40–0.70 *(Issue #5)*
 - [ ] Synthetische Kontroll-Prüffelder (Ground-Truth-Signal) zur Kalibrierung
 - [ ] Persistenter Vektorindex via ChromaDB / Weaviate
 - [ ] Claude Vision für Screenshot-Analyse (TM-Systeme, KYC-Oberflächen)
