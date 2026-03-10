@@ -211,6 +211,19 @@ class TestStructuralValidation:
         )
         assert any("Unplausible Rechtszitate" in w for w in warnings)
 
+    def test_valid_gwg_reference_with_abs_not_flagged(self):
+        warnings = validate_befund_structure(
+            llm_result={
+                "bewertung": "teilkonform",
+                "quellen": [],
+                "belegte_textstellen": ["Verweis auf § 15 Abs. 2 GwG ist vorhanden."],
+                "begruendung": "Die Maßnahme orientiert sich an § 15 Abs. 2 GwG.",
+            },
+            retrieved_sources=set(),
+            regulatorik="gwg",
+        )
+        assert not any("Unplausible Rechtszitate" in w for w in warnings)
+
 
 # ------------------------------------------------------------------ #
 # Test: Sektionsergebnis
@@ -454,6 +467,22 @@ class TestSkeptikerAgent:
         assert result.schweregrad_erhoehen is True
         assert result.nachforderung_empfohlen is False
         assert result.adjustierter_confidence == 0.65
+
+    def test_build_skeptiker_befund_normalizes_int_booleans(self):
+        befund = self._make_befund(confidence=0.8)
+        agent = SkeptikerAgent.__new__(SkeptikerAgent)
+        result = agent._build_skeptiker_befund(
+            befund,
+            {
+                "akzeptiert": 0,
+                "bewertung_empfehlung": "teilkonform",
+                "schweregrad_erhoehen": 1,
+                "nachforderung_empfohlen": 0,
+            },
+        )
+        assert result.akzeptiert is False
+        assert result.schweregrad_erhoehen is True
+        assert result.nachforderung_empfohlen is False
 
 
 class _FakeNode:

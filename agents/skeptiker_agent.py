@@ -56,6 +56,8 @@ SKEPTIKER_RETRY_BASE_DELAY = 2.0
 def _to_bool(value, default: bool) -> bool:
     if isinstance(value, bool):
         return value
+    if isinstance(value, int):
+        return bool(value)
     if isinstance(value, str):
         normalized = value.strip().lower()
         if normalized in {"true", "1", "yes", "ja"}:
