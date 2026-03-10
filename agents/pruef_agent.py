@@ -219,7 +219,11 @@ KNOWN_LAW_PATTERNS = {
     "marisk": re.compile(r"(MaRisk\s*(AT|BT)\s*\d+(\.\d+)*|§\s*\d+[a-z]?\s*(Abs\.\s*\d+)?\s*KWG)"),
     "wphg": re.compile(r"(§\s*\d+[a-z]?\s*(Abs\.\s*\d+)?\s*(WpHG|MaComp)|Art\.\s*\d+\s*MA[RD])"),
 }
-GENERIC_LAW_REF_RE = re.compile(r"(§\s*[^\n,;.]+|Art\.\s*[^\n,;.]+)")
+# Erfasst generische Normzitate inkl. "Abs." (Punkt muss erlaubt sein),
+# begrenzt aber die Match-Länge durch Tokenanzahl.
+GENERIC_LAW_REF_RE = re.compile(
+    r"(§\s*\d+[a-z]?(?:\s+\S+){0,6}|Art\.\s*\d+[a-z]?(?:\s+\S+){0,6})"
+)
 
 
 def validate_befund_structure(
