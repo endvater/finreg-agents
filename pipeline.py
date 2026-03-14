@@ -88,6 +88,7 @@ class AuditPipeline:
         top_k: int = 8,
         verbose: bool = True,
         verbose_token_details: bool = False,
+        review_budget: int | None = None,
         skeptiker: bool = False,
         skeptiker_only_konform: bool = False,
         adversarial: bool = False,
@@ -104,8 +105,11 @@ class AuditPipeline:
         self.top_k = top_k
         self.verbose = verbose
         self.verbose_token_details = verbose_token_details
+        self.review_budget = review_budget
         self.skeptiker = skeptiker
         self.skeptiker_only_konform = skeptiker_only_konform
+        if self.review_budget is not None and self.review_budget < 1:
+            raise ValueError("review_budget muss >= 1 sein")
         self.run_token_stats = {
             "version": "1.0",
             "gesamt": {"input": 0, "output": 0, "total": 0},
@@ -116,15 +120,6 @@ class AuditPipeline:
             "details": [],
         }
         self.adversarial = adversarial
-        self.run_token_stats = {
-            "version": "1.0",
-            "gesamt": {"input": 0, "output": 0, "total": 0},
-            "nach_agent": {
-                "pruefer": {"input": 0, "output": 0, "total": 0},
-                "skeptiker": {"input": 0, "output": 0, "total": 0},
-            },
-            "details": [],
-        }
 
         # Katalogpfad auflösen
         base = Path(__file__).parent
@@ -221,6 +216,8 @@ class AuditPipeline:
         sektionsergebnisse = []
         total_felder = 0
         gepruefte_felder = 0
+        review_markierte_felder = 0
+        review_budget_erreicht = False
         checkpoint_dir = Path(self.output_dir) / ".checkpoints"
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
@@ -261,7 +258,6 @@ class AuditPipeline:
                 self._log(
                     f"       → {status_icon} {befund.bewertung.value.upper()}{conf_str}{review_str} ({dauer:.1f}s)"
                 )
-                self._add_detail_stat(sektion["id"], feld["id"], befund)
 
                 if befund.validierungshinweise:
                     for hint in befund.validierungshinweise:
@@ -287,8 +283,21 @@ class AuditPipeline:
                     befund = merge_befund_skeptiker(befund, skeptiker_result)
                     self._add_token_usage("skeptiker", skeptiker_result.token_usage)
 
+                self._add_detail_stat(sektion["id"], feld["id"], befund)
                 ergebnis.befunde.append(befund)
                 gepruefte_felder += 1
+                if befund.review_erforderlich:
+                    review_markierte_felder += 1
+                    if (
+                        self.review_budget is not None
+                        and review_markierte_felder >= self.review_budget
+                    ):
+                        review_budget_erreicht = True
+                        self._log(
+                            f"  ⏸️ Review-Budget erreicht ({review_markierte_felder}/{self.review_budget}). "
+                            "Lauf wird nach dieser Sektion pausiert."
+                        )
+                        break
 
             # Sektions-Eskalation prüfen
             if ergebnis.review_quote >= SEKTION_REVIEW_ESCALATION:
@@ -299,7 +308,15 @@ class AuditPipeline:
             sektionsergebnisse.append(ergebnis)
 
             # Checkpoint: Zwischenergebnis sichern
-            self._save_checkpoint(sektionsergebnisse, checkpoint_dir)
+            self._save_checkpoint(
+                sektionsergebnisse,
+                checkpoint_dir,
+                review_budget=self.review_budget,
+                review_markierte_felder=review_markierte_felder,
+                review_budget_erreicht=review_budget_erreicht,
+            )
+            if review_budget_erreicht:
+                break
 
         if gepruefte_felder == 0:
             raise ValueError(
@@ -331,13 +348,25 @@ class AuditPipeline:
         self._log(f"✅ Prüfung abgeschlossen in {t_total:.0f}s")
         self._log(f"   Regulatorik: {label}")
         self._log(f"   Prüffelder:  {gepruefte_felder}/{total_felder}")
+        if self.review_budget is not None:
+            self._log(
+                f"   Review-Budget: {review_markierte_felder}/{self.review_budget} "
+                f"(erreicht={review_budget_erreicht})"
+            )
         self._log("   Berichte:")
         for fmt, pth in report_paths.items():
             self._log(f"     {fmt.upper()}: {pth}")
 
         return report_paths
 
-    def _save_checkpoint(self, sektionsergebnisse: list, checkpoint_dir: Path):
+    def _save_checkpoint(
+        self,
+        sektionsergebnisse: list,
+        checkpoint_dir: Path,
+        review_budget: int | None = None,
+        review_markierte_felder: int = 0,
+        review_budget_erreicht: bool = False,
+    ):
         """Sichert Zwischenergebnisse nach jeder Sektion."""
         try:
             data = []
@@ -362,6 +391,18 @@ class AuditPipeline:
             path.write_text(
                 json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
             )
+            if review_budget is not None:
+                meta_path = checkpoint_dir / "checkpoint_meta.json"
+                meta_payload = {
+                    "review_budget": review_budget,
+                    "review_markierte_felder": review_markierte_felder,
+                    "review_budget_erreicht": review_budget_erreicht,
+                    "fortsetzung_erforderlich": review_budget_erreicht,
+                }
+                meta_path.write_text(
+                    json.dumps(meta_payload, indent=2, ensure_ascii=False),
+                    encoding="utf-8",
+                )
         except Exception as e:
             logger.warning("Checkpoint-Fehler (Pipeline läuft weiter): %s", e)
 
@@ -549,6 +590,12 @@ Beispiele:
     )
     parser.add_argument("--top-k", type=int, default=8, help="RAG-Chunks pro Prüffrage")
     parser.add_argument(
+        "--review-budget",
+        type=int,
+        default=None,
+        help="Stoppt den Lauf nach N review-markierten Befunden und schreibt einen Checkpoint.",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         default=False,
@@ -603,6 +650,7 @@ Beispiele:
         top_k=args.top_k,
         verbose=not args.quiet,
         verbose_token_details=args.verbose,
+        review_budget=args.review_budget,
         skeptiker=args.skeptiker,
         skeptiker_only_konform=args.skeptiker_only_konform,
         adversarial=args.adversarial,
