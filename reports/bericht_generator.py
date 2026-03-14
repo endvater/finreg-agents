@@ -466,8 +466,6 @@ class BerichtGenerator:
             parts.append(self._html_mangelkatalog(z))
         if z["nicht_pruefbar_quote"] >= 30:
             parts.append(self._html_evidenz_warnung(z))
-        if token_stats:
-            parts.append(self._html_token_stats(token_stats, stats_file))
         parts.append(self._html_detailbefunde(sektionsergebnisse))
         parts.append(self._html_audit_trail(z))
         parts.append(self._html_footer())
