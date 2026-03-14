@@ -137,15 +137,32 @@ class AuditPipeline:
 
         # ── Schritt 2: Vektorindex ───────────────────────────────────────
         self._log("\n🔍 Schritt 2/4: Vektorindex aufbauen")
+        embed_model = None
         if self.local_embeddings:
-            from llama_index.embeddings.fastembed import FastEmbedEmbedding
+            try:
+                from llama_index.embeddings.fastembed import FastEmbedEmbedding
+            except ModuleNotFoundError:
+                logger.warning(
+                    "FastEmbed nicht installiert; Fallback auf OpenAI-Embeddings."
+                )
+            else:
+                embed_model = FastEmbedEmbedding(model_name="BAAI/bge-small-en-v1.5")
+                self._log("   → Embedding: FastEmbed BAAI/bge-small-en-v1.5 (lokal)")
 
-            embed_model = FastEmbedEmbedding(model_name="BAAI/bge-small-en-v1.5")
-            self._log("   → Embedding: FastEmbed BAAI/bge-small-en-v1.5 (lokal)")
-        else:
+        if embed_model is None:
             from llama_index.embeddings.openai import OpenAIEmbedding
 
-            embed_model = OpenAIEmbedding(model=self.embedding_model)
+            try:
+                embed_model = OpenAIEmbedding(model=self.embedding_model)
+            except Exception as exc:
+                if not os.environ.get("OPENAI_API_KEY"):
+                    raise RuntimeError(
+                        "Kein Embedding-Modell verfügbar: FastEmbed ist nicht "
+                        "installiert und OPENAI_API_KEY fehlt. "
+                        "Bitte entweder `pip install llama-index-embeddings-fastembed` "
+                        "ausführen oder OPENAI_API_KEY setzen."
+                    ) from exc
+                raise
             self._log(f"   → Embedding: OpenAI {self.embedding_model}")
         # Settings temporär setzen und danach wiederherstellen (save/restore).
         # Beim ersten Aufruf ohne konfigurierten Key schlägt der Getter fehl →
