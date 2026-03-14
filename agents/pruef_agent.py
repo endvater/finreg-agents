@@ -298,6 +298,11 @@ KNOWN_LAW_PATTERNS = {
         r"(§\s*\d+[a-z]?\s*(Abs\.\s*\d+)?\s*(WpHG|MaComp)|Art\.\s*\d+\s*MA[RD])"
     ),
 }
+# Erfasst generische Normzitate inkl. "Abs." (Punkt muss erlaubt sein),
+# begrenzt aber die Match-Länge durch Tokenanzahl.
+GENERIC_LAW_REF_RE = re.compile(
+    r"(§\s*\d+[a-z]?(?:\s+\S+){0,6}|Art\.\s*\d+[a-z]?(?:\s+\S+){0,6})"
+)
 
 
 def validate_befund_structure(
@@ -337,6 +342,28 @@ def validate_befund_structure(
     # 5. Mangel_text fehlt bei nicht_konform
     if bewertung == "nicht_konform" and not llm_result.get("mangel_text"):
         warnings.append("Kein Mangel-Text bei 'nicht_konform'-Bewertung")
+
+    # 6. Rechtszitate auf regulatorik-spezifische Plausibilität prüfen
+    law_pattern = KNOWN_LAW_PATTERNS.get(regulatorik)
+    if law_pattern:
+        prüftexte = [
+            llm_result.get("begruendung", "") or "",
+            llm_result.get("mangel_text", "") or "",
+            *[
+                str(t)
+                for t in (llm_result.get("belegte_textstellen") or [])
+                if t is not None
+            ],
+        ]
+        suspicious_refs = set()
+        for text in prüftexte:
+            for ref in GENERIC_LAW_REF_RE.findall(text):
+                ref_clean = ref.strip()
+                if ref_clean and not law_pattern.search(ref_clean):
+                    suspicious_refs.add(ref_clean)
+        if suspicious_refs:
+            refs = ", ".join(sorted(suspicious_refs))
+            warnings.append(f"Unplausible Rechtszitate für '{regulatorik}': {refs}")
 
     return warnings
 
@@ -427,11 +454,42 @@ class PrueferAgent:
 
         # 1. Relevante Evidenz aus dem Index holen
         evidenz_nodes = self._retrieve_evidence(prueffeld)
+        allowed_types = set(prueffeld.get("input_typen", []))
+        scoped_nodes = [
+            n
+            for n in evidenz_nodes
+            if not allowed_types
+            or (n.metadata or {}).get("input_type", "unbekannt") in allowed_types
+        ]
+
+        if not scoped_nodes:
+            verfügbare_typen = sorted(
+                {
+                    (n.metadata or {}).get("input_type", "unbekannt")
+                    for n in evidenz_nodes
+                }
+            )
+            return Befund(
+                prueffeld_id=prueffeld["id"],
+                frage=prueffeld["frage"],
+                bewertung=Bewertung.NICHT_PRUEFBAR,
+                begruendung=(
+                    "Keine Evidenz in erlaubten Dokumenttypen gefunden "
+                    f"(erlaubt: {sorted(allowed_types) if allowed_types else 'alle'}, "
+                    f"gefunden: {verfügbare_typen or ['keine']})."
+                ),
+                schweregrad=prueffeld.get("schweregrad"),
+                confidence=0.0,
+                review_erforderlich=True,
+                validierungshinweise=[
+                    "Automatisch nicht_prüfbar: Nur unzulässige Dokumenttypen im Retrieval"
+                ],
+            )
 
         # 2. Retrieval-Quality-Gate
-        scores = [getattr(n, "score", 0.0) or 0.0 for n in evidenz_nodes]
+        scores = [getattr(n, "score", 0.0) or 0.0 for n in scoped_nodes]
         good_nodes = [
-            n for n, s in zip(evidenz_nodes, scores) if s >= self.retrieval_score_min
+            n for n, s in zip(scoped_nodes, scores) if s >= self.retrieval_score_min
         ]
 
         if not good_nodes:

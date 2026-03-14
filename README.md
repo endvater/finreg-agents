@@ -17,24 +17,25 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 ## Inhaltsverzeichnis
 
 1. [Was ist neu in v2?](#was-ist-neu-in-v2)
-2. [Bugfixes v2.1](#bugfixes-v21)
+2. [Bugfixes v2.1 / v2.2](#bugfixes-v21--v22)
 3. [Adversarial Prompting Layer](#adversarial-prompting-layer)
 4. [Architektur](#architektur)
 5. [Skeptiker-Agent](#skeptiker-agent)
 6. [Unterstützte Regulatorik](#unterstützte-regulatorik)
 7. [Quickstart](#quickstart)
-8. [Python API](#python-api)
-9. [Confidence-Scoring](#confidence-scoring)
-10. [Strukturelle Validierung](#strukturelle-validierung)
-11. [Bewertungsskala](#bewertungsskala)
-12. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
-13. [Interview-Format](#interview-format)
-14. [Prüfbericht-Output](#prüfbericht-output)
-15. [Kosten-Einschätzung](#kosten-einschätzung)
-16. [Roadmap](#roadmap)
-17. [Disclaimer](#disclaimer)
-18. [Contributing](#contributing)
-19. [Lizenz](#lizenz)
+8. [Streamlit Web-UI](#streamlit-web-ui)
+9. [Python API](#python-api)
+10. [Confidence-Scoring](#confidence-scoring)
+11. [Strukturelle Validierung](#strukturelle-validierung)
+12. [Bewertungsskala](#bewertungsskala)
+13. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
+14. [Interview-Format](#interview-format)
+15. [Prüfbericht-Output](#prüfbericht-output)
+16. [Kosten-Einschätzung](#kosten-einschätzung)
+17. [Roadmap](#roadmap)
+18. [Disclaimer](#disclaimer)
+19. [Contributing](#contributing)
+20. [Lizenz](#lizenz)
 
 ---
 
@@ -65,7 +66,7 @@ Version 2 ist eine vollständige Überarbeitung, die fünf kritische Architektur
 
 ---
 
-## Bugfixes v2.1
+## Bugfixes v2.1 / v2.2
 
 Behebt Probleme, die durch ein nachgelagertes Code-Review identifiziert wurden:
 
@@ -85,6 +86,10 @@ Behebt Probleme, die durch ein nachgelagertes Code-Review identifiziert wurden:
 | **Skeptiker-Agent**: `import json` und `CONFIDENCE_REVIEW_THRESHOLD` ungenutzt (F401) | Entfernt |
 | **Skeptiker-Agent**: Kein Logging | `logging.getLogger(__name__)` ergänzt |
 | **Skeptiker-Agent**: Keine Retry-Logik in `_challenge()` | Exponentieller Backoff analog `PrueferAgent` |
+| **Input-Typ-Leak im Scoring**: unzulässige Typen konnten Confidence/Gate beeinflussen | Type-Scoping vor Retrieval-Gate und Confidence-Berechnung |
+| **Skeptiker-Typdrift**: String statt Liste bei `einwaende` verzerrte Confidence-Penalty | Robuste Typnormalisierung (Bool/List/String-Coercion) |
+| `--sektionen` ohne Treffer erzeugte leeren Report mit implizit "KONFORM" | Harte Validierung: Pipeline wirft `ValueError`, wenn 0 Prüffelder verarbeitet wurden |
+| Regulatorik-spezifische Paragraphen-Patterns waren deklariert, aber ungenutzt | Rechtszitat-Plausibilitätscheck je Regulatorik in der strukturellen Validierung aktiviert |
 
 ---
 
@@ -184,7 +189,7 @@ finreg-agents/
 │   └── bericht_generator.py  ← Prüfbericht (JSON / MD / HTML) mit Audit-Trail
 │
 ├── tests/
-│   └── test_core.py          ← Pytest-Tests (32 Tests)
+│   └── test_core.py          ← Pytest-Tests (36 Tests)
 │
 └── .github/workflows/
     └── ci.yml                ← CI: Tests (3.11/3.12) + Lint (ruff)
@@ -208,6 +213,7 @@ Dokumente (PDF, Excel, Interview, Screenshot, Log)
         ▼
   [PrueferAgent]
    ├─ RAG-Retrieval           → Top-k relevante Chunks holen
+   ├─ Type-Scoping            → Nur erlaubte input_typen bleiben im Bewertungs-Pfad
    ├─ Quality-Gate            → Score < Threshold? → nicht_prüfbar (kein LLM-Call)
    ├─ LLM-Bewertung (normal)  → Regulatorik-spezifischer Prompt → Claude
    │   └─ Retry (3×)          → Exponentieller Backoff bei API-Fehlern
@@ -224,6 +230,7 @@ Dokumente (PDF, Excel, Interview, Screenshot, Log)
   [SkeptikerAgent]            Adversariales LLM-Review (Advocatus Diaboli)
    ├─ Befund-Challenge        → System-Prompt: "Finde Schwächen"
    │   └─ Retry (3×)          → Exponentieller Backoff bei API-Fehlern
+   ├─ Output-Normalisierung   → JSON-Felder robust typisieren (bool/list/string)
    ├─ Einwände + Stärken      → Konkrete Kritikpunkte + mildernde Faktoren
    ├─ Bewertungsempfehlung     → Abweichende Empfehlung (wird nicht übernommen)
    ├─ Confidence-Penalty      → -0.15 pro Einwand auf adjustierten Score
@@ -407,6 +414,28 @@ python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
 | `--skeptiker-only-konform` | aus | Skeptiker nur für `konform`-Ratings |
 | `--adversarial` | aus | Adversarial Prompting Layer aktivieren |
 
+> **Wichtig:** Wenn `--sektionen` keine gültige Sektion trifft, bricht die Pipeline mit `ValueError` ab (statt einen leeren "KONFORM"-Report zu erzeugen).
+
+## Streamlit Web-UI
+
+<div align="center">
+  <img src="assets/streamlit-ui.jpg" alt="Streamlit Web-UI" width="800">
+</div>
+
+FinRegAgents bietet eine interaktive **Streamlit Web-UI**, die es ermöglicht, Prüfungen vollständig über den Browser zu steuern, ohne die Kommandozeile (CLI) nutzen zu müssen. Streamlit ist ein Open-Source Python-Framework, mit dem sich schnell interaktive Web-Anwendungen für Machine Learning und Data Science bauen lassen.
+
+Die Benutzeroberfläche bietet folgende Funktionen:
+- **Konfiguration via GUI:** API-Keys, Regulatorik, Institut, LLM-Modell und Skeptiker-Modus können bequem über die Seitenleiste eingestellt werden.
+- **Dokumenten-Upload:** Laden Sie Prüfungsdokumente direkt im Browser via Drag & Drop hoch oder geben Sie einen lokalen Ordnerpfad an.
+- **Live-Logs:** Verfolgen Sie den Prüfungsfortschritt und die Bewertungen der KI-Agenten in Echtzeit im Browser.
+- **Ergebnis-Preview & Download:** Betrachten Sie die fertigen Prüfberichte direkt in der App und laden Sie diese als Markdown, HTML oder JSON herunter.
+
+**So starten Sie die Benutzeroberfläche:**
+```bash
+streamlit run app.py
+```
+Dies öffnet die App automatisch in Ihrem Standard-Browser (meist unter `http://localhost:8501`).
+
 ---
 
 ## Python API
@@ -432,7 +461,7 @@ report_paths = pipeline.run()
 ### Tests & Linting
 
 ```bash
-# Tests (32 Tests)
+# Tests (36 Tests)
 pytest tests/ -v
 
 # Linting
@@ -496,6 +525,7 @@ Vor der Aufnahme in den Bericht durchläuft jeder Befund automatische Checks:
 - **Platzhalter-Check**: Unaufgelöste `{}`-Platzhalter in Begründungen oder Mangel-Texten
 - **Konsistenz-Check**: `konform` ohne Textstellen? `nicht_konform` ohne Mangel-Text?
 - **Bewertungs-Konsistenz**: Mangel-Text bei `konform`-Bewertung?
+- **Rechtszitat-Plausibilität**: Passen Paragraphen/Artikel sprachlich zur gewählten Regulatorik?
 
 Alle Warnungen werden im Befund als `validierungshinweise` gespeichert und im Bericht angezeigt.
 
@@ -657,7 +687,7 @@ Hinweise:
 - [ ] Persistenter Vektorindex via ChromaDB / Weaviate
 - [ ] Claude Vision für Screenshot-Analyse (TM-Systeme, KYC-Oberflächen)
 - [ ] Delta-Prüfung – nur geänderte Dokumente neu einlesen
-- [ ] Streamlit-UI für interaktive Prüfung mit Sampling-Audit
+- [x] ~~Streamlit-UI für interaktive Prüfung mit Sampling-Audit~~ ✅ *implementiert in app.py*
 - [ ] JSON-Schema für Custom-Kataloge mit Validierung beim Laden
 - [ ] Multi-Institut-Vergleich – Benchmarking über Institutsgrenzen
 

@@ -6,6 +6,7 @@ Ausführen: pytest tests/ -v
 import json
 import pytest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from agents.skeptiker_agent import (
     SkeptikerAgent,
@@ -23,10 +24,12 @@ from agents.pruef_agent import (
     compute_confidence,
     extract_json,
     validate_befund_structure,
+    PrueferAgent,
     Bewertung,
     Sektionsergebnis,
     Befund,
 )
+from pipeline import AuditPipeline
 
 
 class TestConfidenceScore:
@@ -195,6 +198,32 @@ class TestStructuralValidation:
             regulatorik="gwg",
         )
         assert any("Platzhalter" in w for w in warnings)
+
+    def test_unplausible_law_reference_detected(self):
+        warnings = validate_befund_structure(
+            llm_result={
+                "bewertung": "teilkonform",
+                "quellen": [],
+                "belegte_textstellen": ["Prüfverweis: § 99 XYZ"],
+                "begruendung": "Gemäß § 99 XYZ bestehen Defizite.",
+            },
+            retrieved_sources=set(),
+            regulatorik="gwg",
+        )
+        assert any("Unplausible Rechtszitate" in w for w in warnings)
+
+    def test_valid_gwg_reference_with_abs_not_flagged(self):
+        warnings = validate_befund_structure(
+            llm_result={
+                "bewertung": "teilkonform",
+                "quellen": [],
+                "belegte_textstellen": ["Verweis auf § 15 Abs. 2 GwG ist vorhanden."],
+                "begruendung": "Die Maßnahme orientiert sich an § 15 Abs. 2 GwG.",
+            },
+            retrieved_sources=set(),
+            regulatorik="gwg",
+        )
+        assert not any("Unplausible Rechtszitate" in w for w in warnings)
 
 
 # ------------------------------------------------------------------ #
@@ -417,6 +446,86 @@ class TestSkeptikerAgent:
         assert sb.einwaende == []
         assert sb.fehlende_evidenz == []
 
+    def test_build_skeptiker_befund_normalizes_types(self):
+        befund = self._make_befund(confidence=0.8)
+        agent = SkeptikerAgent.__new__(SkeptikerAgent)
+        result = agent._build_skeptiker_befund(
+            befund,
+            {
+                "akzeptiert": "false",
+                "bewertung_empfehlung": "teilkonform",
+                "einwaende": "Evidenz zu vage",
+                "staerken": "Gute Struktur",
+                "schweregrad_erhoehen": "true",
+                "nachforderung_empfohlen": "false",
+                "fehlende_evidenz": "Audit-Trail",
+            },
+        )
+        assert result.akzeptiert is False
+        assert result.einwaende == ["Evidenz zu vage"]
+        assert result.staerken == ["Gute Struktur"]
+        assert result.fehlende_evidenz == ["Audit-Trail"]
+        assert result.schweregrad_erhoehen is True
+        assert result.nachforderung_empfohlen is False
+        assert result.adjustierter_confidence == 0.65
+
+    def test_build_skeptiker_befund_normalizes_int_booleans(self):
+        befund = self._make_befund(confidence=0.8)
+        agent = SkeptikerAgent.__new__(SkeptikerAgent)
+        result = agent._build_skeptiker_befund(
+            befund,
+            {
+                "akzeptiert": 0,
+                "bewertung_empfehlung": "teilkonform",
+                "schweregrad_erhoehen": 1,
+                "nachforderung_empfohlen": 0,
+            },
+        )
+        assert result.akzeptiert is False
+        assert result.schweregrad_erhoehen is True
+        assert result.nachforderung_empfohlen is False
+
+
+class _FakeNode:
+    def __init__(self, score, metadata=None, content="evidenz"):
+        self.score = score
+        self.metadata = metadata or {}
+        self._content = content
+
+    def get_content(self):
+        return self._content
+
+
+class TestPrueferAgentTypeScoping:
+    def test_disallowed_types_force_nicht_pruefbar(self):
+        agent = PrueferAgent.__new__(PrueferAgent)
+        agent.retrieval_score_min = 0.35
+        agent.regulatorik = "gwg"
+        agent._retrieve_evidence = MagicMock(
+            return_value=[
+                _FakeNode(0.95, {"input_type": "log", "source": "tm.log"}, "logcontent")
+            ]
+        )
+        agent._evaluate_with_llm = MagicMock(
+            side_effect=AssertionError("LLM darf hier nicht aufgerufen werden")
+        )
+        agent._format_evidence = MagicMock(return_value="unused")
+
+        befund = agent.pruefe_feld(
+            {
+                "id": "S01-99",
+                "frage": "Testfrage",
+                "input_typen": ["pdf"],
+                "schweregrad": "bedeutsam",
+            }
+        )
+        assert befund.bewertung == Bewertung.NICHT_PRUEFBAR
+        assert befund.review_erforderlich is True
+        assert "erlaubten Dokumenttypen" in befund.begruendung
+        assert any(
+            "unzulässige Dokumenttypen" in h for h in befund.validierungshinweise
+        )
+
 
 # ------------------------------------------------------------------ #
 # Test: Katalog-Validierung
@@ -455,3 +564,36 @@ class TestKatalogStruktur:
                 assert feld["schweregrad"] in ("wesentlich", "bedeutsam", "gering"), (
                     f"Ungültiger Schweregrad in {feld['id']}: {feld['schweregrad']}"
                 )
+
+
+class TestPipelineScopeValidation:
+    @patch("pipeline.BerichtGenerator")
+    @patch("pipeline.PrueferAgent")
+    @patch("pipeline.VectorStoreIndex")
+    @patch("llama_index.embeddings.openai.OpenAIEmbedding")
+    @patch("pipeline.Settings")
+    @patch("pipeline.GwGIngestor")
+    def test_run_raises_if_no_fields_processed(
+        self,
+        mock_ingestor_cls,
+        mock_settings,
+        _mock_embedding,
+        mock_vector_store_index,
+        _mock_pruefer_cls,
+        _mock_bericht_cls,
+    ):
+        mock_ingestor = MagicMock()
+        mock_ingestor.ingest_directory.return_value = [object()]
+        mock_ingestor_cls.return_value = mock_ingestor
+        mock_vector_store_index.from_documents.return_value = MagicMock()
+        mock_settings.embed_model = None
+
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            regulatorik="gwg",
+            sektionen_filter=["NICHT_EXISTENT"],
+            verbose=False,
+        )
+
+        with pytest.raises(ValueError, match="Keine Prüffelder wurden verarbeitet"):
+            pipeline.run()

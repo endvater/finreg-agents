@@ -268,6 +268,12 @@ class AuditPipeline:
             # Checkpoint: Zwischenergebnis sichern
             self._save_checkpoint(sektionsergebnisse, checkpoint_dir)
 
+        if gepruefte_felder == 0:
+            raise ValueError(
+                "Keine Prüffelder wurden verarbeitet. "
+                "Bitte --sektionen prüfen oder einen Katalog mit gültigen Prüffeldern verwenden."
+            )
+
         # ── Schritt 4: Berichte generieren ───────────────────────────────
         self._log("\n📝 Schritt 4/4: Prüfberichte generieren")
         generator = BerichtGenerator(
