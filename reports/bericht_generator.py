@@ -427,6 +427,8 @@ class BerichtGenerator:
             self._html_header(z),
             self._html_zusammenfassung(z),
         ]
+        if token_stats:
+            parts.append(self._html_token_stats(token_stats, stats_file))
         if z["kritische_befunde"]:
             parts.append(self._html_mangelkatalog(z))
         if z["nicht_pruefbar_quote"] >= 30:
@@ -558,6 +560,23 @@ class BerichtGenerator:
   <div class="stat-card" style="background:#f2f3f4;border-color:#d5d8dc">
     <div class="stat-number" style="color:#7f8c8d">{z["nicht_pruefbar"]}</div>
     <div class="stat-label">❓ Nicht prüfbar ({z["nicht_pruefbar_quote"]}%)</div></div>
+</div>
+"""
+
+    def _html_token_stats(self, token_stats: dict, stats_file: str) -> str:
+        kosten = token_stats.get("kosten_schaetzung", {})
+        gesamt = token_stats.get("gesamt", {})
+        sf = stats_file or token_stats.get("stats_file", "")
+        return f"""
+<div class="audit-trail">
+  <h2>Token-Stats</h2>
+  <table>
+    <tr><td>Gesamt Tokens</td><td>{gesamt.get("total", 0)}</td></tr>
+    <tr><td>Input / Output</td><td>{gesamt.get("input", 0)} / {gesamt.get("output", 0)}</td></tr>
+    <tr><td>Kostenschätzung</td><td>{kosten.get("total_cost", 0)} {kosten.get("currency", "USD")}</td></tr>
+    <tr><td>Pricing-Stand</td><td>{kosten.get("pricing_timestamp", "n/a")}</td></tr>
+    <tr><td>Stats-Datei</td><td>{_esc(sf)}</td></tr>
+  </table>
 </div>
 """
 

@@ -79,7 +79,8 @@ class AuditPipeline:
         embedding_model: str = "text-embedding-3-small",
         sektionen_filter: list = None,
         top_k: int = 8,
-        verbose: bool = False,
+        verbose: bool = True,
+        verbose_token_details: bool = False,
         skeptiker: bool = False,
         skeptiker_only_konform: bool = False,
     ):
@@ -272,11 +273,11 @@ class AuditPipeline:
             model=self.model,
             katalog_version=katalog_version,
         )
-        stats_file = self._write_run_stats()
+        stats_file, costs = self._write_run_stats()
         report_paths = generator.generiere_alle_berichte(
             sektionsergebnisse=sektionsergebnisse,
             output_dir=self.output_dir,
-            token_stats=self._token_stats_summary(stats_file),
+            token_stats=self._token_stats_summary(stats_file, costs),
             stats_file=stats_file,
             verbose=self.verbose,
         )
@@ -326,7 +327,9 @@ class AuditPipeline:
         output_tokens = int((usage or {}).get("output", 0))
         total_tokens = int((usage or {}).get("total", input_tokens + output_tokens))
 
-        agent_bucket = self.run_token_stats["nach_agent"][agent_name]
+        agent_bucket = self.run_token_stats["nach_agent"].setdefault(
+            agent_name, {"input": 0, "output": 0, "total": 0}
+        )
         agent_bucket["input"] += input_tokens
         agent_bucket["output"] += output_tokens
         agent_bucket["total"] += total_tokens
@@ -373,27 +376,27 @@ class AuditPipeline:
             "pricing_timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
-    def _write_run_stats(self) -> str:
+    def _write_run_stats(self) -> tuple[str, dict]:
         out_dir = Path(self.output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         stats_path = out_dir / "run_stats.json"
+        costs = self._estimate_costs()
         payload = {
             "token_stats": {
                 "version": self.run_token_stats["version"],
                 "gesamt": self.run_token_stats["gesamt"],
                 "nach_agent": self.run_token_stats["nach_agent"],
             },
-            "kosten_schaetzung": self._estimate_costs(),
+            "kosten_schaetzung": costs,
             "stats_file": str(stats_path),
         }
         if self.verbose:
             payload["details"] = self.run_token_stats["details"]
 
         stats_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-        return str(stats_path)
+        return str(stats_path), costs
 
-    def _token_stats_summary(self, stats_file: str) -> dict:
-        costs = self._estimate_costs()
+    def _token_stats_summary(self, stats_file: str, costs: dict) -> dict:
         return {
             "version": self.run_token_stats["version"],
             "gesamt": self.run_token_stats["gesamt"],

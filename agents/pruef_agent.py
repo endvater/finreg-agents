@@ -547,7 +547,8 @@ class PrueferAgent:
             val_warnings.append(
                 f"Confidence-Guards verletzt: {', '.join(guard_result['violations'])}"
             )
-            # Kein "high" bei Guard-Verletzung
+            # Guards können confidence_level nur auf max. "medium" deckeln,
+            # nicht weiter absenken ("low" bleibt "low")
             if confidence_level == "high":
                 confidence_level = "medium"
 
