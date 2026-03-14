@@ -22,7 +22,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-from langchain_anthropic import ChatAnthropic
+from agents.llm_factory import build_llm
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agents.pruef_agent import (
@@ -182,11 +182,14 @@ class SkeptikerAgent:
 
     def __init__(
         self,
-        model: str = "claude-sonnet-4-5-20250514",
+        provider: str = "anthropic",
+        model: str | None = None,
         temperature: float = 0.3,  # Etwas höher als PrueferAgent für kreativere Einwände
         only_konform: bool = False,  # Nur konform-Ratings challengen
     ):
-        self.llm = ChatAnthropic(model=model, temperature=temperature, max_tokens=1500)
+        self.llm = build_llm(
+            provider=provider, model=model, temperature=temperature, max_tokens=1500
+        )
         self.only_konform = only_konform
 
     def reviewe(

@@ -1,0 +1,9 @@
+# Alle Provider – vollständige Installation
+# pip install -r requirements-all.txt
+-r requirements.txt
+-r requirements-openai.txt
+-r requirements-gemini.txt
+-r requirements-mistral.txt
+-r requirements-cohere.txt
+-r requirements-grok.txt
+-r requirements-ollama.txt

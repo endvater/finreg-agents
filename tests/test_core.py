@@ -592,7 +592,7 @@ class TestPipelineScopeValidation:
     @patch("pipeline.BerichtGenerator")
     @patch("pipeline.PrueferAgent")
     @patch("pipeline.VectorStoreIndex")
-    @patch("pipeline.OpenAIEmbedding")
+    @patch("pipeline.build_embedding")
     @patch("pipeline.Settings")
     @patch("pipeline.GwGIngestor")
     def test_run_raises_if_no_fields_processed(

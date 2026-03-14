@@ -31,11 +31,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings
-from llama_index.embeddings.openai import OpenAIEmbedding
 
 from ingestion.ingestor import GwGIngestor
 from agents.pruef_agent import PrueferAgent, Sektionsergebnis, SEKTION_REVIEW_ESCALATION
 from agents.skeptiker_agent import SkeptikerAgent, merge_befund_skeptiker
+from agents.llm_factory import PROVIDER_DEFAULTS, list_providers, default_model
+from agents.embedding_factory import build_embedding, list_embedding_providers, default_embedding_model
 from reports.bericht_generator import BerichtGenerator
 
 load_dotenv()
@@ -75,8 +76,10 @@ class AuditPipeline:
         regulatorik: str = "gwg",
         catalog_path: str = None,
         output_dir: str = "./reports/output",
-        model: str = "claude-sonnet-4-5-20250514",
-        embedding_model: str = "text-embedding-3-small",
+        provider: str = "anthropic",
+        model: str | None = None,
+        embedding_provider: str | None = None,
+        embedding_model: str | None = None,
         sektionen_filter: list = None,
         top_k: int = 8,
         verbose: bool = True,
@@ -88,8 +91,10 @@ class AuditPipeline:
         self.institution = institution
         self.regulatorik = regulatorik
         self.output_dir = output_dir
-        self.model = model
-        self.embedding_model = embedding_model
+        self.provider = provider
+        self.model = model or default_model(provider)
+        self.embedding_provider = embedding_provider  # None → Auto-Detect in factory
+        self.embedding_model = embedding_model  # None → Provider-Default in factory
         self.sektionen_filter = sektionen_filter
         self.top_k = top_k
         self.verbose = verbose
@@ -126,6 +131,7 @@ class AuditPipeline:
         self._log("🚀 FinRegAgents Pipeline v2 gestartet")
         self._log(f"   Regulatorik: {label}")
         self._log(f"   Institut:    {self.institution}")
+        self._log(f"   Provider:    {self.provider}")
         self._log(f"   Modell:      {self.model}")
         self._log(f"   Katalog:     {self.catalog_path}")
         self._log("")
@@ -144,17 +150,31 @@ class AuditPipeline:
 
         # ── Schritt 2: Vektorindex ───────────────────────────────────────
         self._log("\n🔍 Schritt 2/4: Vektorindex aufbauen")
-        embed_model = OpenAIEmbedding(model=self.embedding_model)
+        embed_model = build_embedding(
+            provider=self.embedding_provider,
+            model=self.embedding_model,
+        )
+        ep = self.embedding_provider or "auto"
+        em = self.embedding_model or default_embedding_model(
+            self.embedding_provider or "openai"
+        )
+        self._log(f"   → Embedding: {ep} / {em}")
         # Settings temporär setzen und danach wiederherstellen, damit kein
         # dauerhafter globaler State entsteht (wichtig bei mehreren Pipeline-Instanzen)
-        _prev_embed = Settings.embed_model
+        try:
+            _prev_embed = Settings.embed_model
+        except Exception:
+            _prev_embed = None
         Settings.embed_model = embed_model
         try:
             index = VectorStoreIndex.from_documents(
                 documents, show_progress=self.verbose
             )
         finally:
-            Settings.embed_model = _prev_embed
+            if _prev_embed is not None:
+                Settings.embed_model = _prev_embed
+            else:
+                Settings._embed_model = None
         self._log("   → Index fertig")
 
         # ── Schritt 3: Prüfkatalog laden & Prüfung durchführen ──────────
@@ -165,6 +185,7 @@ class AuditPipeline:
         agent = PrueferAgent(
             index=index,
             regulatorik=self.regulatorik,
+            provider=self.provider,
             model=self.model,
             top_k=self.top_k,
         )
@@ -174,6 +195,7 @@ class AuditPipeline:
         if self.skeptiker:
             self._log("   → Skeptiker-Agent aktiviert ⚔️")
             skeptiker_agent = SkeptikerAgent(
+                provider=self.provider,
                 model=self.model,
                 only_konform=self.skeptiker_only_konform,
             )
@@ -443,7 +465,10 @@ Beispiele:
   python pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
   python pipeline.py --input ./docs --regulatorik dora --sektionen D01 D04
   python pipeline.py --input ./docs --regulatorik marisk
-  python pipeline.py --input ./docs --regulatorik wphg --model claude-opus-4-5
+  python pipeline.py --input ./docs --regulatorik wphg --provider openai --model gpt-4o
+  python pipeline.py --input ./docs --regulatorik gwg --provider gemini --model gemini-2.0-flash
+  python pipeline.py --input ./docs --regulatorik gwg --provider ollama --model llama3.3
+  python pipeline.py --input ./docs --regulatorik gwg --provider mistral --embedding-provider mistral
         """,
     )
     parser.add_argument(
@@ -465,9 +490,34 @@ Beispiele:
         "--catalog", default=None, help="Eigener Katalog (überschreibt --regulatorik)"
     )
     parser.add_argument(
+        "--provider",
+        default="anthropic",
+        choices=list_providers(),
+        help=(
+            "LLM-Provider (Default: anthropic). "
+            f"Verfügbar: {', '.join(list_providers())}"
+        ),
+    )
+    parser.add_argument(
         "--model",
-        default="claude-sonnet-4-5-20250514",
-        help="Anthropic-Modell (Default: Sonnet für Kosteneffizienz)",
+        default=None,
+        help="Modellname (Default: Provider-spezifisch, z.B. claude-sonnet-4-6 / gpt-4o / gemini-2.0-flash)",
+    )
+    parser.add_argument(
+        "--embedding-provider",
+        default=None,
+        dest="embedding_provider",
+        choices=list_embedding_providers() + [None],
+        help=(
+            "Embedding-Provider (Default: auto – openai wenn Key vorhanden, sonst fastembed). "
+            f"Verfügbar: {', '.join(list_embedding_providers())}"
+        ),
+    )
+    parser.add_argument(
+        "--embedding-model",
+        default=None,
+        dest="embedding_model",
+        help="Embedding-Modellname (Default: Provider-spezifisch)",
     )
     parser.add_argument(
         "--sektionen", nargs="*", help="Nur diese Sektionen prüfen (z.B. S01 S02)"
@@ -505,7 +555,10 @@ Beispiele:
         regulatorik=args.regulatorik,
         catalog_path=args.catalog,
         output_dir=args.output,
+        provider=args.provider,
         model=args.model,
+        embedding_provider=args.embedding_provider,
+        embedding_model=args.embedding_model,
         sektionen_filter=args.sektionen,
         top_k=args.top_k,
         verbose=not args.quiet,
