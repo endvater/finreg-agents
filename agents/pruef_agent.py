@@ -23,7 +23,7 @@ from collections import Counter
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
 from agents.llm_factory import build_llm
-from agents.provenance import ClaimProvenance
+from agents.provenance import ClaimProvenance, annotate_claims
 from agents.term_checker import TermDriftChecker
 from langchain_core.messages import HumanMessage, SystemMessage
 

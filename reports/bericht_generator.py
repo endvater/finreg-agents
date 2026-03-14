@@ -19,6 +19,7 @@ from pathlib import Path
 from collections import Counter
 from typing import TYPE_CHECKING, Optional
 
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
