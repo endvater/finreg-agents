@@ -621,6 +621,75 @@ class TestPipelineScopeValidation:
         with pytest.raises(ValueError, match="Keine Prüffelder wurden verarbeitet"):
             pipeline.run()
 
+    @patch("pipeline.BerichtGenerator")
+    @patch("pipeline.PrueferAgent")
+    @patch("pipeline.VectorStoreIndex")
+    @patch("pipeline.build_embedding")
+    @patch("pipeline.Settings")
+    @patch("pipeline.GwGIngestor")
+    def test_run_stops_at_review_budget_and_writes_checkpoint_meta(
+        self,
+        mock_ingestor_cls,
+        mock_settings,
+        _mock_embedding,
+        mock_vector_store_index,
+        mock_pruefer_cls,
+        mock_bericht_cls,
+        tmp_path,
+    ):
+        mock_ingestor = MagicMock()
+        mock_ingestor.ingest_directory.return_value = [object()]
+        mock_ingestor_cls.return_value = mock_ingestor
+        mock_vector_store_index.from_documents.return_value = MagicMock()
+        mock_settings.embed_model = None
+
+        befund = Befund(
+            prueffeld_id="GWG-S01-01",
+            frage="Testfrage",
+            bewertung=Bewertung.KONFORM,
+            begruendung="ok",
+            belegte_textstellen=["beleg"],
+            confidence=0.7,
+            confidence_level="medium",
+            confidence_guards={},
+            low_confidence_reasons=[],
+            token_usage={"input": 10, "output": 5, "total": 15},
+            review_erforderlich=True,
+            validierungshinweise=[],
+        )
+        mock_pruefer = MagicMock()
+        mock_pruefer.pruefe_feld.return_value = befund
+        mock_pruefer_cls.return_value = mock_pruefer
+
+        mock_bericht = MagicMock()
+        mock_bericht.generiere_alle_berichte.return_value = {
+            "json": "a.json",
+            "markdown": "a.md",
+            "html": "a.html",
+        }
+        mock_bericht_cls.return_value = mock_bericht
+
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            output_dir=str(tmp_path),
+            regulatorik="gwg",
+            review_budget=1,
+            verbose=False,
+        )
+        pipeline.run()
+
+        assert mock_pruefer.pruefe_feld.call_count == 1
+        meta_path = tmp_path / ".checkpoints" / "checkpoint_meta.json"
+        assert meta_path.exists()
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        assert meta["review_budget"] == 1
+        assert meta["review_markierte_felder"] == 1
+        assert meta["review_budget_erreicht"] is True
+
+    def test_review_budget_must_be_positive(self):
+        with pytest.raises(ValueError, match="review_budget muss >= 1 sein"):
+            AuditPipeline(input_dir="demo", review_budget=0)
+
 
 class TestTokenStats:
     def test_write_run_stats_contains_required_fields(self, tmp_path):
