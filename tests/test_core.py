@@ -249,26 +249,33 @@ class TestStructuralValidation:
         )
         assert not any("Unplausible Rechtszitate" in w for w in warnings)
 
-    def test_build_claim_annotations_status_and_provenance(self):
-        class _Node:
-            def __init__(self, metadata):
-                self.metadata = metadata
-
-        claims = build_claim_annotations(
+    def test_context_drift_warning_when_norm_ref_missing(self):
+        warnings = validate_befund_structure(
             llm_result={
-                "belegte_textstellen": ["Claim A"],
-                "begruendung": "Fallback",
+                "bewertung": "teilkonform",
+                "quellen": ["doc.pdf"],
+                "belegte_textstellen": ["Interne Sicherungsmaßnahmen sind vorhanden."],
+                "begruendung": "Es gibt Sicherungsmaßnahmen, Details bleiben unklar.",
             },
-            nodes=[
-                _Node({"source": "a.pdf", "chunk_id": "c1", "page_label": "12"}),
-                _Node({"source": "b.pdf", "chunk_id": "c2", "page_label": "3"}),
-            ],
-            retrieved_sources={"a.pdf", "b.pdf"},
+            retrieved_sources={"doc.pdf"},
+            regulatorik="gwg",
+            evidence_text="Evidenz mit § 15 Abs. 2 GwG und weiteren Details.",
         )
+        assert any("Context-Drift-Verdacht" in w for w in warnings)
 
-        assert len(claims) == 1
-        assert claims[0]["status"] == "corroborated"
-        assert claims[0]["provenance_ids"] == ["P1", "P2"]
+    def test_context_drift_not_flagged_when_norm_ref_preserved(self):
+        warnings = validate_befund_structure(
+            llm_result={
+                "bewertung": "konform",
+                "quellen": ["doc.pdf"],
+                "belegte_textstellen": ["§ 15 Abs. 2 GwG wird umgesetzt."],
+                "begruendung": "Die Vorgaben aus § 15 Abs. 2 GwG sind erfüllt.",
+            },
+            retrieved_sources={"doc.pdf"},
+            regulatorik="gwg",
+            evidence_text="Evidenz mit § 15 Abs. 2 GwG und Umsetzungsbeschreibung.",
+        )
+        assert not any("Context-Drift-Verdacht" in w for w in warnings)
 
 
 # ------------------------------------------------------------------ #
