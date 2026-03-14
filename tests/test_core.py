@@ -6,7 +6,14 @@ Ausführen: pytest tests/ -v
 import json
 import pytest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+
+from agents.skeptiker_agent import (
+    SkeptikerAgent,
+    SkeptikerBefund,
+    merge_befund_skeptiker,
+    SKEPTIKER_MIN_CONFIDENCE,
+    SKEPTIKER_CONFIDENCE_PENALTY,
+)
 
 # ------------------------------------------------------------------ #
 # Test: Confidence-Berechnung
@@ -23,7 +30,6 @@ from agents.pruef_agent import (
 
 
 class TestConfidenceScore:
-
     def test_perfect_confidence(self):
         score = compute_confidence(
             retrieval_scores=[0.95, 0.90, 0.85],
@@ -87,8 +93,8 @@ class TestConfidenceScore:
 # Test: JSON-Extraktion
 # ------------------------------------------------------------------ #
 
-class TestJsonExtraction:
 
+class TestJsonExtraction:
     def test_clean_json(self):
         result = extract_json('{"bewertung": "konform", "begruendung": "Alles gut"}')
         assert result["bewertung"] == "konform"
@@ -112,8 +118,8 @@ class TestJsonExtraction:
 # Test: Strukturelle Validierung
 # ------------------------------------------------------------------ #
 
-class TestStructuralValidation:
 
+class TestStructuralValidation:
     def test_phantom_quellen(self):
         warnings = validate_befund_structure(
             llm_result={
@@ -195,24 +201,49 @@ class TestStructuralValidation:
 # Test: Sektionsergebnis
 # ------------------------------------------------------------------ #
 
-class TestSektionsergebnis:
 
+class TestSektionsergebnis:
     def test_review_quote(self):
         s = Sektionsergebnis(sektion_id="S01", titel="Test")
         s.befunde = [
-            Befund(prueffeld_id="S01-01", frage="?", bewertung=Bewertung.KONFORM,
-                   begruendung="ok", review_erforderlich=True),
-            Befund(prueffeld_id="S01-02", frage="?", bewertung=Bewertung.KONFORM,
-                   begruendung="ok", review_erforderlich=False),
+            Befund(
+                prueffeld_id="S01-01",
+                frage="?",
+                bewertung=Bewertung.KONFORM,
+                begruendung="ok",
+                review_erforderlich=True,
+            ),
+            Befund(
+                prueffeld_id="S01-02",
+                frage="?",
+                bewertung=Bewertung.KONFORM,
+                begruendung="ok",
+                review_erforderlich=False,
+            ),
         ]
         assert s.review_quote == 0.5
 
     def test_kritische_befunde(self):
         s = Sektionsergebnis(sektion_id="S01", titel="Test")
         s.befunde = [
-            Befund(prueffeld_id="S01-01", frage="?", bewertung=Bewertung.KONFORM, begruendung="ok"),
-            Befund(prueffeld_id="S01-02", frage="?", bewertung=Bewertung.NICHT_KONFORM, begruendung="nicht ok"),
-            Befund(prueffeld_id="S01-03", frage="?", bewertung=Bewertung.TEILKONFORM, begruendung="teils"),
+            Befund(
+                prueffeld_id="S01-01",
+                frage="?",
+                bewertung=Bewertung.KONFORM,
+                begruendung="ok",
+            ),
+            Befund(
+                prueffeld_id="S01-02",
+                frage="?",
+                bewertung=Bewertung.NICHT_KONFORM,
+                begruendung="nicht ok",
+            ),
+            Befund(
+                prueffeld_id="S01-03",
+                frage="?",
+                bewertung=Bewertung.TEILKONFORM,
+                begruendung="teils",
+            ),
         ]
         assert len(s.kritische_befunde) == 2
 
@@ -221,16 +252,17 @@ class TestSektionsergebnis:
 # Test: Interview-Ingestion
 # ------------------------------------------------------------------ #
 
-class TestInterviewIngestion:
 
+class TestInterviewIngestion:
     def test_dict_format_with_fragen_antworten(self):
         from ingestion.ingestor import GwGIngestor
+
         ingestor = GwGIngestor()
         data = {
             "meta": {"institut": "Testbank", "datum": "2025-01-01"},
             "fragen_antworten": [
                 {"id": "I-01", "frage": "Test?", "antwort": "Ja", "kommentar": "OK"}
-            ]
+            ],
         }
         text = ingestor._interview_data_to_text(data, "test.json")
         assert "institut: Testbank" in text
@@ -239,10 +271,9 @@ class TestInterviewIngestion:
 
     def test_array_format(self):
         from ingestion.ingestor import GwGIngestor
+
         ingestor = GwGIngestor()
-        data = [
-            {"frage": "Frage 1?", "antwort": "Antwort 1"}
-        ]
+        data = [{"frage": "Frage 1?", "antwort": "Antwort 1"}]
         text = ingestor._interview_data_to_text(data, "test.json")
         assert "Frage 1?" in text
         assert "Antwort 1" in text
@@ -252,10 +283,11 @@ class TestInterviewIngestion:
 # Test: Bericht-Generator XSS-Schutz
 # ------------------------------------------------------------------ #
 
-class TestBerichtXSS:
 
+class TestBerichtXSS:
     def test_html_escape_in_befund(self):
         from reports.bericht_generator import _esc
+
         dangerous = '<script>alert("xss")</script>'
         escaped = _esc(dangerous)
         assert "<script>" not in escaped
@@ -263,6 +295,7 @@ class TestBerichtXSS:
 
     def test_none_handling(self):
         from reports.bericht_generator import _esc
+
         assert _esc(None) == ""
 
 
@@ -270,17 +303,8 @@ class TestBerichtXSS:
 # Test: Skeptiker-Agent
 # ------------------------------------------------------------------ #
 
-from agents.skeptiker_agent import (
-    SkeptikerAgent,
-    SkeptikerBefund,
-    merge_befund_skeptiker,
-    SKEPTIKER_MIN_CONFIDENCE,
-    SKEPTIKER_CONFIDENCE_PENALTY,
-)
-
 
 class TestSkeptikerAgent:
-
     def _make_befund(self, bewertung=Bewertung.KONFORM, confidence=0.75, review=False):
         return Befund(
             prueffeld_id="S01-01",
@@ -398,14 +422,17 @@ class TestSkeptikerAgent:
 # Test: Katalog-Validierung
 # ------------------------------------------------------------------ #
 
-class TestKatalogStruktur:
 
-    @pytest.mark.parametrize("catalog_file", [
-        "catalog/gwg_catalog.json",
-        "catalog/dora_catalog.json",
-        "catalog/marisk_catalog.json",
-        "catalog/wphg_catalog.json",
-    ])
+class TestKatalogStruktur:
+    @pytest.mark.parametrize(
+        "catalog_file",
+        [
+            "catalog/gwg_catalog.json",
+            "catalog/dora_catalog.json",
+            "catalog/marisk_catalog.json",
+            "catalog/wphg_catalog.json",
+        ],
+    )
     def test_katalog_pflichtfelder(self, catalog_file):
         path = Path(__file__).parent.parent / catalog_file
         if not path.exists():
@@ -417,7 +444,7 @@ class TestKatalogStruktur:
         assert len(katalog["pruefsektionen"]) > 0
 
         for sektion in katalog["pruefsektionen"]:
-            assert "id" in sektion, f"Sektion ohne ID"
+            assert "id" in sektion, "Sektion ohne ID"
             assert "titel" in sektion, f"Sektion {sektion.get('id')} ohne Titel"
             assert "prueffelder" in sektion, f"Sektion {sektion['id']} ohne Prüffelder"
 
@@ -425,5 +452,6 @@ class TestKatalogStruktur:
                 assert "id" in feld, f"Prüffeld ohne ID in {sektion['id']}"
                 assert "frage" in feld, f"Prüffeld {feld.get('id')} ohne Frage"
                 assert "schweregrad" in feld, f"Prüffeld {feld['id']} ohne Schweregrad"
-                assert feld["schweregrad"] in ("wesentlich", "bedeutsam", "gering"), \
+                assert feld["schweregrad"] in ("wesentlich", "bedeutsam", "gering"), (
                     f"Ungültiger Schweregrad in {feld['id']}: {feld['schweregrad']}"
+                )

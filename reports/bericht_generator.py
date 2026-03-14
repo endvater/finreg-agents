@@ -17,39 +17,55 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from collections import Counter
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from agents.pruef_agent import Befund, Bewertung
+    pass
 
 
 # ------------------------------------------------------------------ #
 # Bewertungs-Farbcodes
 # ------------------------------------------------------------------ #
 BEWERTUNG_STYLE = {
-    "konform":        {"emoji": "✅", "color": "#27ae60", "bg": "#eafaf1"},
-    "teilkonform":    {"emoji": "⚠️",  "color": "#e67e22", "bg": "#fef9e7"},
-    "nicht_konform":  {"emoji": "🔴", "color": "#c0392b", "bg": "#fdedec"},
-    "nicht_prüfbar":  {"emoji": "❓", "color": "#7f8c8d", "bg": "#f2f3f4"},
+    "konform": {"emoji": "✅", "color": "#27ae60", "bg": "#eafaf1"},
+    "teilkonform": {"emoji": "⚠️", "color": "#e67e22", "bg": "#fef9e7"},
+    "nicht_konform": {"emoji": "🔴", "color": "#c0392b", "bg": "#fdedec"},
+    "nicht_prüfbar": {"emoji": "❓", "color": "#7f8c8d", "bg": "#f2f3f4"},
 }
 
 SCHWEREGRAD_STYLE = {
     "wesentlich": {"label": "WESENTLICH", "color": "#c0392b"},
-    "bedeutsam":  {"label": "BEDEUTSAM",  "color": "#e67e22"},
-    "gering":     {"label": "GERING",     "color": "#27ae60"},
+    "bedeutsam": {"label": "BEDEUTSAM", "color": "#e67e22"},
+    "gering": {"label": "GERING", "color": "#27ae60"},
 }
 
 REGULATORIK_LABELS = {
-    "gwg":    ("GwG-Sonderprüfungsbericht", "Simulierte Sonderprüfung gemäß §25h KWG · GwG · BaFin-Auslegungshinweise",
-               "GwG-Sonderprüfung", ["GwG 2017 i.d.F. 2024", "§25h KWG", "BaFin AuA GwG"]),
-    "dora":   ("DORA-Prüfungsbericht", "Prüfung der digitalen operationalen Resilienz gemäß DORA (EU) 2022/2554",
-               "DORA-Prüfung", ["DORA (EU) 2022/2554", "RTS ICT Risk", "RTS Incident Reporting"]),
-    "marisk": ("MaRisk-Prüfungsbericht", "Prüfung gemäß MaRisk und §25a KWG",
-               "MaRisk-Prüfung", ["MaRisk 2023 AT/BT", "§25a KWG", "EBA-Leitlinien"]),
-    "wphg":   ("WpHG/MaComp-Prüfungsbericht", "Prüfung gemäß WpHG, MaComp und MiFID II",
-               "WpHG/MaComp-Prüfung", ["WpHG", "MaComp", "MAR", "MiFID II"]),
+    "gwg": (
+        "GwG-Sonderprüfungsbericht",
+        "Simulierte Sonderprüfung gemäß §25h KWG · GwG · BaFin-Auslegungshinweise",
+        "GwG-Sonderprüfung",
+        ["GwG 2017 i.d.F. 2024", "§25h KWG", "BaFin AuA GwG"],
+    ),
+    "dora": (
+        "DORA-Prüfungsbericht",
+        "Prüfung der digitalen operationalen Resilienz gemäß DORA (EU) 2022/2554",
+        "DORA-Prüfung",
+        ["DORA (EU) 2022/2554", "RTS ICT Risk", "RTS Incident Reporting"],
+    ),
+    "marisk": (
+        "MaRisk-Prüfungsbericht",
+        "Prüfung gemäß MaRisk und §25a KWG",
+        "MaRisk-Prüfung",
+        ["MaRisk 2023 AT/BT", "§25a KWG", "EBA-Leitlinien"],
+    ),
+    "wphg": (
+        "WpHG/MaComp-Prüfungsbericht",
+        "Prüfung gemäß WpHG, MaComp und MiFID II",
+        "WpHG/MaComp-Prüfung",
+        ["WpHG", "MaComp", "MAR", "MiFID II"],
+    ),
 }
 
 
@@ -61,7 +77,6 @@ def _esc(text: str) -> str:
 
 
 class BerichtGenerator:
-
     def __init__(
         self,
         institution: str = "Prüfinstitut",
@@ -92,9 +107,7 @@ class BerichtGenerator:
     # Public: Alle Formate auf einmal generieren
     # ------------------------------------------------------------------ #
     def generiere_alle_berichte(
-        self,
-        sektionsergebnisse: list,
-        output_dir: str = "./reports/output"
+        self, sektionsergebnisse: list, output_dir: str = "./reports/output"
     ) -> dict[str, str]:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -121,7 +134,9 @@ class BerichtGenerator:
         bewertungs_zähler = Counter(b.bewertung.value for b in alle_befunde)
         mängel = [b for b in alle_befunde if b.bewertung.value == "nicht_konform"]
         teilkonform = [b for b in alle_befunde if b.bewertung.value == "teilkonform"]
-        nicht_pruefbar = [b for b in alle_befunde if b.bewertung.value == "nicht_prüfbar"]
+        nicht_pruefbar = [
+            b for b in alle_befunde if b.bewertung.value == "nicht_prüfbar"
+        ]
         review_nötig = [b for b in alle_befunde if b.review_erforderlich]
 
         wesentliche_mängel = [b for b in mängel if b.schweregrad == "wesentlich"]
@@ -167,10 +182,16 @@ class BerichtGenerator:
             "anzahl_mängel": len(mängel),
             "anzahl_wesentliche_mängel": len(wesentliche_mängel),
             "kritische_befunde": [
-                {"id": b.prueffeld_id, "frage": b.frage, "schweregrad": b.schweregrad,
-                 "mangel": b.mangel_text}
-                for b in sorted(mängel + teilkonform,
-                                key=lambda x: 0 if x.schweregrad == "wesentlich" else 1)
+                {
+                    "id": b.prueffeld_id,
+                    "frage": b.frage,
+                    "schweregrad": b.schweregrad,
+                    "mangel": b.mangel_text,
+                }
+                for b in sorted(
+                    mängel + teilkonform,
+                    key=lambda x: 0 if x.schweregrad == "wesentlich" else 1,
+                )
             ],
             "audit_trail": {
                 "modell": self.model,
@@ -221,7 +242,9 @@ class BerichtGenerator:
                 for s in sektionsergebnisse
             ],
         }
-        Path(path).write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+        Path(path).write_text(
+            json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         logger.info("JSON-Bericht: %s", path)
 
     # ------------------------------------------------------------------ #
@@ -231,29 +254,29 @@ class BerichtGenerator:
         z = zusammenfassung
         lines = [
             f"# {self.report_title} (simuliert)",
-            f"",
-            f"| | |",
-            f"|---|---|",
+            "",
+            "| | |",
+            "|---|---|",
             f"| **Institut** | {self.institution} |",
             f"| **Prüfer** | {self.pruefer} |",
             f"| **Prüfungsdatum** | {self.pruefungsdatum} |",
             f"| **Prüfungsgrundlage** | {', '.join(self.report_basis)} |",
             f"| **Modell** | {self.model} |",
             f"| **Ø Confidence** | {z['avg_confidence']:.1%} |",
-            f"",
-            f"---",
-            f"",
+            "",
+            "---",
+            "",
             f"## Gesamtergebnis: {z['gesamtbewertung']}",
-            f"",
-            f"| Bewertung | Anzahl |",
-            f"|---|---|",
+            "",
+            "| Bewertung | Anzahl |",
+            "|---|---|",
             f"| ✅ Konform | {z['konform']} |",
             f"| ⚠️ Teilkonform | {z['teilkonform']} |",
             f"| 🔴 Nicht konform | {z['nicht_konform']} |",
             f"| ❓ Nicht prüfbar | {z['nicht_pruefbar']} ({z['nicht_pruefbar_quote']}%) |",
             f"| **Gesamt** | **{z['total_prueffelder']}** |",
             f"| 🔍 Review erforderlich | {z['review_erforderlich']} |",
-            f"",
+            "",
         ]
 
         # Nicht-prüfbar-Warnung
@@ -261,7 +284,7 @@ class BerichtGenerator:
             lines += [
                 f"> ⚠️ **Hinweis:** {z['nicht_pruefbar_quote']}% der Prüffelder konnten nicht "
                 f"bewertet werden. Die Prüfungsergebnisse sind eingeschränkt belastbar.",
-                f"",
+                "",
             ]
 
         # Mängelübersicht
@@ -269,7 +292,7 @@ class BerichtGenerator:
             lines += [
                 f"## Mängelkatalog ({z['anzahl_mängel']} Mängel, "
                 f"davon {z['anzahl_wesentliche_mängel']} wesentlich)",
-                f"",
+                "",
             ]
             for m in z["kritische_befunde"]:
                 sg = (m.get("schweregrad") or "").upper()
@@ -281,24 +304,28 @@ class BerichtGenerator:
         # Detailbefunde
         lines.append("## Detailbefunde")
         for sektion in sektionsergebnisse:
-            lines += [f"", f"### {sektion.sektion_id}: {sektion.titel}", ""]
+            lines += ["", f"### {sektion.sektion_id}: {sektion.titel}", ""]
             if sektion.review_quote > 0.3:
-                lines.append(f"> ⚠️ {sektion.review_quote:.0%} der Befunde in dieser Sektion erfordern manuelles Review.\n")
+                lines.append(
+                    f"> ⚠️ {sektion.review_quote:.0%} der Befunde in dieser Sektion erfordern manuelles Review.\n"
+                )
 
             for b in sektion.befunde:
                 style = BEWERTUNG_STYLE.get(b.bewertung.value, {})
                 emoji = style.get("emoji", "")
                 conf_str = f" | Confidence: {b.confidence:.0%}" if b.confidence else ""
-                review_str = " | 🔍 REVIEW ERFORDERLICH" if b.review_erforderlich else ""
+                review_str = (
+                    " | 🔍 REVIEW ERFORDERLICH" if b.review_erforderlich else ""
+                )
 
                 lines += [
                     f"#### {b.prueffeld_id}: {b.frage}",
-                    f"",
+                    "",
                     f"**Bewertung:** {emoji} `{b.bewertung.value.upper()}`{conf_str}{review_str}  ",
                     f"**Schweregrad:** {b.schweregrad}  ",
-                    f"",
+                    "",
                     f"{b.begruendung}",
-                    f"",
+                    "",
                 ]
                 if b.belegte_textstellen:
                     lines.append("**Belegte Textstellen:**")
@@ -323,12 +350,14 @@ class BerichtGenerator:
 
         # Audit Trail
         lines += [
-            "", "## Audit Trail", "",
-            f"| Parameter | Wert |",
-            f"|---|---|",
+            "",
+            "## Audit Trail",
+            "",
+            "| Parameter | Wert |",
+            "|---|---|",
             f"| Modell | {self.model} |",
             f"| Katalog-Version | {self.katalog_version} |",
-            f"| Generator | finreg-agents v2.0 |",
+            "| Generator | finreg-agents v2.0 |",
             f"| Zeitstempel | {datetime.now().isoformat()} |",
         ]
 
@@ -384,8 +413,8 @@ class BerichtGenerator:
   .meta-value {{ font-weight: 600; color: #2c3e50; margin-top: 2px; }}
   .content {{ padding: 32px 40px; }}
   .gesamtbewertung {{ padding: 16px 20px; border-radius: 8px; margin-bottom: 24px;
-                      font-weight: 700; font-size: 16px; border-left: 5px solid {z['gesamtfarbe']};
-                      background: {z['gesamtfarbe']}15; color: {z['gesamtfarbe']}; }}
+                      font-weight: 700; font-size: 16px; border-left: 5px solid {z["gesamtfarbe"]};
+                      background: {z["gesamtfarbe"]}15; color: {z["gesamtfarbe"]}; }}
   .stats-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
                  margin-bottom: 32px; }}
   .stat-card {{ padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #ecf0f1; }}
@@ -461,27 +490,27 @@ class BerichtGenerator:
 
     def _html_zusammenfassung(self, z) -> str:
         return f"""
-<div class="gesamtbewertung">Gesamtergebnis: {_esc(z['gesamtbewertung'])}</div>
+<div class="gesamtbewertung">Gesamtergebnis: {_esc(z["gesamtbewertung"])}</div>
 <div class="stats-grid">
   <div class="stat-card" style="background:#eafaf1;border-color:#a9dfbf">
-    <div class="stat-number" style="color:#27ae60">{z['konform']}</div>
+    <div class="stat-number" style="color:#27ae60">{z["konform"]}</div>
     <div class="stat-label">✅ Konform</div></div>
   <div class="stat-card" style="background:#fef9e7;border-color:#f9e79f">
-    <div class="stat-number" style="color:#e67e22">{z['teilkonform']}</div>
+    <div class="stat-number" style="color:#e67e22">{z["teilkonform"]}</div>
     <div class="stat-label">⚠️ Teilkonform</div></div>
   <div class="stat-card" style="background:#fdedec;border-color:#fadbd8">
-    <div class="stat-number" style="color:#c0392b">{z['nicht_konform']}</div>
+    <div class="stat-number" style="color:#c0392b">{z["nicht_konform"]}</div>
     <div class="stat-label">🔴 Nicht konform</div></div>
   <div class="stat-card" style="background:#f2f3f4;border-color:#d5d8dc">
-    <div class="stat-number" style="color:#7f8c8d">{z['nicht_pruefbar']}</div>
-    <div class="stat-label">❓ Nicht prüfbar ({z['nicht_pruefbar_quote']}%)</div></div>
+    <div class="stat-number" style="color:#7f8c8d">{z["nicht_pruefbar"]}</div>
+    <div class="stat-label">❓ Nicht prüfbar ({z["nicht_pruefbar_quote"]}%)</div></div>
 </div>
 """
 
     def _html_evidenz_warnung(self, z) -> str:
         return f"""
 <div class="warning-box">
-  ⚠️ <strong>Evidenz-Warnung:</strong> {z['nicht_pruefbar_quote']}% der Prüffelder konnten nicht bewertet werden.
+  ⚠️ <strong>Evidenz-Warnung:</strong> {z["nicht_pruefbar_quote"]}% der Prüffelder konnten nicht bewertet werden.
   Die Prüfungsergebnisse sind eingeschränkt belastbar. Bitte stellen Sie sicher, dass alle relevanten
   Dokumente im Prüfungskorpus enthalten sind.
 </div>
@@ -490,14 +519,14 @@ class BerichtGenerator:
     def _html_mangelkatalog(self, z) -> str:
         items = "".join(
             f'<div class="mangel-item">'
-            f'<strong>[{_esc(m["id"])}] [{_esc((m.get("schweregrad") or "").upper())}]</strong> '
-            f'{_esc(m.get("mangel") or m["frage"])}</div>'
+            f"<strong>[{_esc(m['id'])}] [{_esc((m.get('schweregrad') or '').upper())}]</strong> "
+            f"{_esc(m.get('mangel') or m['frage'])}</div>"
             for m in z["kritische_befunde"]
         )
         return f"""
 <div class="mangelkatalog">
-  <h2>⚠ Mängelkatalog ({z['anzahl_mängel']} Mängel,
-      davon {z['anzahl_wesentliche_mängel']} wesentlich)</h2>
+  <h2>⚠ Mängelkatalog ({z["anzahl_mängel"]} Mängel,
+      davon {z["anzahl_wesentliche_mängel"]} wesentlich)</h2>
   {items}
 </div>
 """
@@ -505,56 +534,82 @@ class BerichtGenerator:
     def _html_detailbefunde(self, sektionsergebnisse) -> str:
         out = '<h2 style="font-size:17px;color:#1a3a5c;margin-bottom:24px">Detailbefunde</h2>'
         for sektion in sektionsergebnisse:
-            out += f'<div class="section">'
+            out += '<div class="section">'
             out += f'<div class="section-title">{_esc(sektion.sektion_id)}: {_esc(sektion.titel)}</div>'
 
             if sektion.review_quote > 0.3:
-                out += (f'<div class="warning-box">⚠️ {sektion.review_quote:.0%} der Befunde '
-                        f'in dieser Sektion erfordern manuelles Review.</div>')
+                out += (
+                    f'<div class="warning-box">⚠️ {sektion.review_quote:.0%} der Befunde '
+                    f"in dieser Sektion erfordern manuelles Review.</div>"
+                )
 
             for b in sektion.befunde:
-                style = BEWERTUNG_STYLE.get(b.bewertung.value,
-                                            {"emoji": "?", "color": "#7f8c8d", "bg": "#f2f3f4"})
-                sg_style = SCHWEREGRAD_STYLE.get(b.schweregrad or "",
-                                                 {"label": b.schweregrad or "", "color": "#7f8c8d"})
+                style = BEWERTUNG_STYLE.get(
+                    b.bewertung.value,
+                    {"emoji": "?", "color": "#7f8c8d", "bg": "#f2f3f4"},
+                )
+                sg_style = SCHWEREGRAD_STYLE.get(
+                    b.schweregrad or "",
+                    {"label": b.schweregrad or "", "color": "#7f8c8d"},
+                )
 
                 # Confidence-Bar
                 conf_pct = int(b.confidence * 100)
-                conf_color = "#27ae60" if b.confidence >= 0.7 else "#e67e22" if b.confidence >= 0.4 else "#c0392b"
+                conf_color = (
+                    "#27ae60"
+                    if b.confidence >= 0.7
+                    else "#e67e22"
+                    if b.confidence >= 0.4
+                    else "#c0392b"
+                )
                 conf_html = (
                     f'<span style="font-size:11px;color:#7f8c8d;margin-left:8px">'
                     f'<span class="confidence-bar"><span class="confidence-fill" '
                     f'style="width:{conf_pct}%;background:{conf_color}"></span></span> '
-                    f'{conf_pct}%</span>'
+                    f"{conf_pct}%</span>"
                 )
 
-                review_html = (' <span class="badge" style="background:#fef9e7;color:#7d6608">'
-                               '🔍 REVIEW</span>') if b.review_erforderlich else ""
+                review_html = (
+                    (
+                        ' <span class="badge" style="background:#fef9e7;color:#7d6608">'
+                        "🔍 REVIEW</span>"
+                    )
+                    if b.review_erforderlich
+                    else ""
+                )
 
                 textstellen_html = ""
                 if b.belegte_textstellen:
                     for t in b.belegte_textstellen:
-                        textstellen_html += f'<div class="textstellen">📎 {_esc(t)}</div>'
+                        textstellen_html += (
+                            f'<div class="textstellen">📎 {_esc(t)}</div>'
+                        )
 
                 mangel_html = (
                     f'<div class="mangel-box">⚠ <strong>Mangel:</strong> {_esc(b.mangel_text)}</div>'
-                    if b.mangel_text else ""
+                    if b.mangel_text
+                    else ""
                 )
 
                 empf_html = ""
                 if b.empfehlungen:
-                    items = "".join(f'<div class="empfehlung-item">→ {_esc(e)}</div>'
-                                    for e in b.empfehlungen)
+                    items = "".join(
+                        f'<div class="empfehlung-item">→ {_esc(e)}</div>'
+                        for e in b.empfehlungen
+                    )
                     empf_html = f'<div class="empfehlungen"><strong>Empfehlungen:</strong>{items}</div>'
 
                 val_html = ""
                 if b.validierungshinweise:
-                    items = "".join(f'<div>⚡ {_esc(v)}</div>' for v in b.validierungshinweise)
+                    items = "".join(
+                        f"<div>⚡ {_esc(v)}</div>" for v in b.validierungshinweise
+                    )
                     val_html = f'<div class="validation-hints"><strong>Validierung:</strong>{items}</div>'
 
                 quellen_html = (
                     f'<div class="quellen">Quellen: {_esc(", ".join(b.quellen))}</div>'
-                    if b.quellen else ""
+                    if b.quellen
+                    else ""
                 )
 
                 out += f"""
@@ -562,10 +617,10 @@ class BerichtGenerator:
   <div class="befund-header">
     <span class="befund-id">{_esc(b.prueffeld_id)}</span>
     <span class="befund-frage">{_esc(b.frage)}</span>
-    <span class="badge" style="background:{style['bg']};color:{style['color']}">
-      {style['emoji']} {_esc(b.bewertung.value.upper())}</span>
-    <span class="badge" style="background:#f2f3f4;color:{sg_style['color']}">
-      {_esc(sg_style['label'])}</span>
+    <span class="badge" style="background:{style["bg"]};color:{style["color"]}">
+      {style["emoji"]} {_esc(b.bewertung.value.upper())}</span>
+    <span class="badge" style="background:#f2f3f4;color:{sg_style["color"]}">
+      {_esc(sg_style["label"])}</span>
     {conf_html}{review_html}
   </div>
   <div class="befund-body">
@@ -577,7 +632,7 @@ class BerichtGenerator:
     {quellen_html}
   </div>
 </div>"""
-            out += '</div>'
+            out += "</div>"
         return out
 
     def _html_audit_trail(self, z) -> str:
@@ -592,9 +647,9 @@ class BerichtGenerator:
   <h2>Audit Trail</h2>
   {rows}
   <div class="audit-row"><span class="audit-label">Ø Confidence</span>
-    <span class="audit-value">{z['avg_confidence']:.1%}</span></div>
+    <span class="audit-value">{z["avg_confidence"]:.1%}</span></div>
   <div class="audit-row"><span class="audit-label">Review erforderlich</span>
-    <span class="audit-value">{z['review_erforderlich']} / {z['total_prueffelder']} Befunde</span></div>
+    <span class="audit-value">{z["review_erforderlich"]} / {z["total_prueffelder"]} Befunde</span></div>
 </div>
 """
 
