@@ -22,6 +22,8 @@ from agents.skeptiker_agent import (
 
 from agents.pruef_agent import (
     compute_confidence,
+    confidence_level_from_score,
+    evaluate_confidence_guards,
     extract_json,
     validate_befund_structure,
     PrueferAgent,
@@ -30,6 +32,7 @@ from agents.pruef_agent import (
     Befund,
 )
 from pipeline import AuditPipeline
+from reports.bericht_generator import BerichtGenerator
 
 
 class TestConfidenceScore:
@@ -90,6 +93,26 @@ class TestConfidenceScore:
             llm_confidence=1.5,
         )
         assert 0.0 <= score <= 1.0
+
+    def test_confidence_level_mapping(self):
+        assert confidence_level_from_score(0.85) == "high"
+        assert confidence_level_from_score(0.6) == "medium"
+        assert confidence_level_from_score(0.2) == "low"
+
+    def test_confidence_guards_fail_and_pass(self):
+        failed = evaluate_confidence_guards(
+            input_tokens=120, distinct_sources=1, evidence_quotes=0
+        )
+        assert failed["passed"] is False
+        assert "MIN_INPUT_TOKENS" in failed["violations"]
+        assert "MIN_DISTINCT_SOURCES" in failed["violations"]
+        assert "MIN_EVIDENCE_QUOTES" in failed["violations"]
+
+        passed = evaluate_confidence_guards(
+            input_tokens=420, distinct_sources=3, evidence_quotes=2
+        )
+        assert passed["passed"] is True
+        assert passed["violations"] == []
 
 
 # ------------------------------------------------------------------ #
@@ -597,3 +620,78 @@ class TestPipelineScopeValidation:
 
         with pytest.raises(ValueError, match="Keine Prüffelder wurden verarbeitet"):
             pipeline.run()
+
+
+class TestTokenStats:
+    def test_write_run_stats_contains_required_fields(self, tmp_path):
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            output_dir=str(tmp_path),
+            verbose=False,
+        )
+        pipeline._add_token_usage(
+            "pruefer", {"input": 1000, "output": 400, "total": 1400}
+        )
+        pipeline._add_token_usage(
+            "skeptiker", {"input": 200, "output": 100, "total": 300}
+        )
+        stats_file, costs = pipeline._write_run_stats()
+
+        payload = json.loads(Path(stats_file).read_text(encoding="utf-8"))
+        assert payload["token_stats"]["version"] == "1.0"
+        assert payload["token_stats"]["gesamt"]["total"] == 1700
+        assert payload["token_stats"]["nach_agent"]["pruefer"]["input"] == 1000
+        assert "kosten_schaetzung" in payload
+        assert "pricing_timestamp" in payload["kosten_schaetzung"]
+        assert payload["stats_file"].endswith("run_stats.json")
+
+    def test_add_token_usage_creates_dynamic_agent_bucket(self, tmp_path):
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            output_dir=str(tmp_path),
+            verbose=False,
+        )
+        pipeline._add_token_usage(
+            "adversarial", {"input": 150, "output": 50, "total": 200}
+        )
+
+        assert pipeline.run_token_stats["nach_agent"]["adversarial"]["input"] == 150
+        assert pipeline.run_token_stats["gesamt"]["total"] == 200
+
+    def test_token_stats_summary_reuses_identical_cost_timestamp(self, tmp_path):
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            output_dir=str(tmp_path),
+            verbose=False,
+        )
+        pipeline._add_token_usage("pruefer", {"input": 100, "output": 40, "total": 140})
+
+        stats_file, persisted_costs = pipeline._write_run_stats()
+        summary = pipeline._token_stats_summary(stats_file, persisted_costs)
+        payload = json.loads(Path(stats_file).read_text(encoding="utf-8"))
+
+        assert (
+            payload["kosten_schaetzung"]["pricing_timestamp"]
+            == summary["kosten_schaetzung"]["pricing_timestamp"]
+        )
+
+
+class TestBerichtGeneratorTokenStats:
+    def test_html_token_stats_block_rendered(self):
+        generator = BerichtGenerator()
+        token_stats = {
+            "gesamt": {"input": 100, "output": 40, "total": 140},
+            "kosten_schaetzung": {
+                "total_cost": 0.0123,
+                "currency": "USD",
+                "pricing_timestamp": "2026-03-14T10:00:00+00:00",
+            },
+            "stats_file": "reports/output/run_stats.json",
+        }
+
+        html = generator._html_token_stats(token_stats, None)
+
+        assert "Token-Stats" in html
+        assert "Gesamt Tokens" in html
+        assert "Pricing-Stand" in html
+        assert "run_stats.json" in html
