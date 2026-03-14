@@ -912,6 +912,55 @@ class TestTermDriftChecker:
         assert warnings == []
 
 
+# ------------------------------------------------------------------ #
+# Test: Evidence Relevance Classifier (Issue #29)
+# ------------------------------------------------------------------ #
+
+
+class TestEvidenceRelevanceClassifier:
+    def setup_method(self):
+        from ingestion.relevance_classifier import EvidenceRelevanceClassifier
+
+        self.classifier = EvidenceRelevanceClassifier()
+
+    def test_classifier_keeps_regulatory_anchor(self):
+        """Text with '§ 10 GwG' must never be classified as noise."""
+        from ingestion.relevance_classifier import ChunkCategory
+
+        category, drop_reason = self.classifier.classify(
+            "Gemäß § 10 GwG sind allgemeine Sorgfaltspflichten zu beachten."
+        )
+        assert category != ChunkCategory.CONTEXT_NOISE
+        assert drop_reason is None
+
+    def test_classifier_drops_marketing(self):
+        """Text with 'Willkommen bei unserer Bank' should be context_noise."""
+        from ingestion.relevance_classifier import ChunkCategory
+
+        category, drop_reason = self.classifier.classify(
+            "Willkommen bei unserer Bank. Wir freuen uns über Ihren Besuch."
+        )
+        assert category == ChunkCategory.CONTEXT_NOISE
+
+    def test_classifier_keeps_control_evidence(self):
+        """Text with 'wurde dokumentiert am 01.01.2025' should be control_evidence."""
+        from ingestion.relevance_classifier import ChunkCategory
+
+        category, drop_reason = self.classifier.classify(
+            "Die Maßnahme wurde dokumentiert am 01.01.2025 durch die Compliance-Abteilung."
+        )
+        assert category == ChunkCategory.CONTROL_EVIDENCE
+        assert drop_reason is None
+
+    def test_classifier_reason_code(self):
+        """Dropped chunks must have a non-None drop_reason."""
+        from ingestion.relevance_classifier import ChunkCategory
+
+        category, drop_reason = self.classifier.classify("Impressum")
+        assert category == ChunkCategory.CONTEXT_NOISE
+        assert drop_reason is not None
+
+
 class TestBerichtGeneratorTokenStats:
     def test_html_token_stats_block_rendered(self):
         generator = BerichtGenerator()

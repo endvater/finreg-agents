@@ -738,11 +738,15 @@ class PrueferAgent:
             val_warnings.extend(drift_warnings)
             review_erforderlich = True
 
+        # 9. Per-Claim Provenance Annotation
+        begruendung_text = llm_result.get("begruendung", "") or ""
+        claim_prov = annotate_claims(begruendung_text, good_nodes)
+
         befund = Befund(
             prueffeld_id=prueffeld["id"],
             frage=prueffeld["frage"],
             bewertung=Bewertung(bewertung_str),
-            begruendung=llm_result.get("begruendung", ""),
+            begruendung=begruendung_text,
             belegte_textstellen=llm_result.get("belegte_textstellen", []),
             empfehlungen=llm_result.get("empfehlungen", []),
             mangel_text=llm_result.get("mangel_text"),
@@ -759,6 +763,7 @@ class PrueferAgent:
             review_erforderlich=review_erforderlich,
             validierungshinweise=val_warnings,
             term_drift_warnings=drift_warnings,
+            claim_provenance=claim_prov,
         )
 
     # ------------------------------------------------------------------ #
@@ -1005,6 +1010,7 @@ def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
         review_erforderlich=review_erforderlich,
         validierungshinweise=hinweise,
         term_drift_warnings=befund.term_drift_warnings,
+        claim_provenance=befund.claim_provenance,
     )
 
 
