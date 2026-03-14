@@ -37,6 +37,7 @@ class Bewertung(str, Enum):
     TEILKONFORM = "teilkonform"
     NICHT_KONFORM = "nicht_konform"
     NICHT_PRUEFBAR = "nicht_prüfbar"
+    DISPUTED = "disputed"
 
 
 class Schweregrad(str, Enum):
@@ -192,6 +193,7 @@ BEWERTUNG_SEVERITY = {
     "teilkonform": 1,
     "nicht_konform": 2,
     "nicht_prüfbar": 3,
+    "disputed": 3,
 }
 
 # Confidence-Penalty je Divergenzstufe

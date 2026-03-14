@@ -33,6 +33,7 @@ BEWERTUNG_STYLE = {
     "teilkonform": {"emoji": "⚠️", "color": "#e67e22", "bg": "#fef9e7"},
     "nicht_konform": {"emoji": "🔴", "color": "#c0392b", "bg": "#fdedec"},
     "nicht_prüfbar": {"emoji": "❓", "color": "#7f8c8d", "bg": "#f2f3f4"},
+    "disputed": {"emoji": "⚖️", "color": "#8e44ad", "bg": "#f4ecf7"},
 }
 
 SCHWEREGRAD_STYLE = {
@@ -163,12 +164,15 @@ class BerichtGenerator:
         nicht_pruefbar = [
             b for b in alle_befunde if b.bewertung.value == "nicht_prüfbar"
         ]
+        strittig = [b for b in alle_befunde if b.bewertung.value == "disputed"]
         review_nötig = [b for b in alle_befunde if b.review_erforderlich]
 
         wesentliche_mängel = [b for b in mängel if b.schweregrad == "wesentlich"]
 
         total = len(alle_befunde)
-        np_quote = len(nicht_pruefbar) / total if total else 0
+        gewertet = max(0, total - len(strittig))
+        unresolved = len(nicht_pruefbar) + len(strittig)
+        np_quote = unresolved / gewertet if gewertet else 1.0
 
         # Confidence-Statistiken
         confidences = [b.confidence for b in alle_befunde]
@@ -198,10 +202,12 @@ class BerichtGenerator:
             "gesamtbewertung": gesamtbewertung,
             "gesamtfarbe": gesamtfarbe,
             "total_prueffelder": total,
+            "gewertete_prueffelder": gewertet,
             "konform": bewertungs_zähler.get("konform", 0),
             "teilkonform": bewertungs_zähler.get("teilkonform", 0),
             "nicht_konform": bewertungs_zähler.get("nicht_konform", 0),
             "nicht_pruefbar": bewertungs_zähler.get("nicht_prüfbar", 0),
+            "disputed": bewertungs_zähler.get("disputed", 0),
             "nicht_pruefbar_quote": round(np_quote * 100, 1),
             "review_erforderlich": len(review_nötig),
             "avg_confidence": round(avg_confidence, 3),
@@ -218,6 +224,21 @@ class BerichtGenerator:
                     mängel + teilkonform,
                     key=lambda x: 0 if x.schweregrad == "wesentlich" else 1,
                 )
+            ],
+            "strittige_befunde": [
+                {
+                    "id": b.prueffeld_id,
+                    "frage": b.frage,
+                    "empfehlung": next(
+                        (
+                            h.split("'")[1]
+                            for h in b.validierungshinweise
+                            if "Skeptiker widerspricht" in h and "'" in h
+                        ),
+                        "unklar",
+                    ),
+                }
+                for b in strittig
             ],
             "audit_trail": {
                 "modell": self.model,
@@ -322,7 +343,9 @@ class BerichtGenerator:
             f"| ⚠️ Teilkonform | {z['teilkonform']} |",
             f"| 🔴 Nicht konform | {z['nicht_konform']} |",
             f"| ❓ Nicht prüfbar | {z['nicht_pruefbar']} ({z['nicht_pruefbar_quote']}%) |",
+            f"| ⚖️ Strittig (disputed) | {z['disputed']} |",
             f"| **Gesamt** | **{z['total_prueffelder']}** |",
+            f"| **Gewertet** | **{z['gewertete_prueffelder']}** |",
             f"| 🔍 Review erforderlich | {z['review_erforderlich']} |",
             "",
         ]
@@ -358,6 +381,17 @@ class BerichtGenerator:
             for m in z["kritische_befunde"]:
                 sg = (m.get("schweregrad") or "").upper()
                 lines.append(f"- **[{m['id']}] [{sg}]** {m['mangel'] or m['frage']}")
+            lines.append("")
+
+        if z["strittige_befunde"]:
+            lines += [
+                f"## Strittige Befunde ({len(z['strittige_befunde'])})",
+                "",
+            ]
+            for s in z["strittige_befunde"]:
+                lines.append(
+                    f"- **[{s['id']}]** {s['frage']} *(Skeptiker-Empfehlung: {s['empfehlung']})*"
+                )
             lines.append("")
 
         lines.append("---")
@@ -504,7 +538,7 @@ class BerichtGenerator:
   .gesamtbewertung {{ padding: 16px 20px; border-radius: 8px; margin-bottom: 24px;
                       font-weight: 700; font-size: 16px; border-left: 5px solid {z["gesamtfarbe"]};
                       background: {z["gesamtfarbe"]}15; color: {z["gesamtfarbe"]}; }}
-  .stats-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  .stats-grid {{ display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
                  margin-bottom: 32px; }}
   .stat-card {{ padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #ecf0f1; }}
   .stat-number {{ font-size: 28px; font-weight: 700; }}
@@ -596,6 +630,9 @@ class BerichtGenerator:
   <div class="stat-card" style="background:#fdedec;border-color:#fadbd8">
     <div class="stat-number" style="color:#c0392b">{z["nicht_konform"]}</div>
     <div class="stat-label">🔴 Nicht konform</div></div>
+  <div class="stat-card" style="background:#f4ecf7;border-color:#e8daef">
+    <div class="stat-number" style="color:#8e44ad">{z["disputed"]}</div>
+    <div class="stat-label">⚖️ Strittig</div></div>
   <div class="stat-card" style="background:#f2f3f4;border-color:#d5d8dc">
     <div class="stat-number" style="color:#7f8c8d">{z["nicht_pruefbar"]}</div>
     <div class="stat-label">❓ Nicht prüfbar ({z["nicht_pruefbar_quote"]}%)</div></div>
