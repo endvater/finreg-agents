@@ -273,7 +273,9 @@ class SkeptikerAgent:
 Bei einer '{befund.bewertung.value}'-Bewertung – bist du damit einverstanden?
 Antworte als JSON.
 """
-        prompt_input_tokens = estimate_tokens(SKEPTIKER_SYSTEM_PROMPT) + estimate_tokens(user_prompt)
+        prompt_input_tokens = estimate_tokens(
+            SKEPTIKER_SYSTEM_PROMPT
+        ) + estimate_tokens(user_prompt)
         messages = [
             SystemMessage(content=SKEPTIKER_SYSTEM_PROMPT),
             HumanMessage(content=user_prompt),
@@ -307,7 +309,11 @@ Antworte als JSON.
                     "nachforderung_empfohlen": False,
                     "fehlende_evidenz": [],
                     "begruendung": "Skeptiker-Antwort konnte nicht geparst werden.",
-                    "_token_usage": {"input": prompt_input_tokens, "output": 0, "total": prompt_input_tokens},
+                    "_token_usage": {
+                        "input": prompt_input_tokens,
+                        "output": 0,
+                        "total": prompt_input_tokens,
+                    },
                 }
             except Exception as e:
                 last_exc = e
@@ -341,7 +347,11 @@ Antworte als JSON.
             "nachforderung_empfohlen": False,
             "fehlende_evidenz": [],
             "begruendung": "Skeptiker-Review konnte nicht durchgeführt werden.",
-            "_token_usage": {"input": prompt_input_tokens, "output": 0, "total": prompt_input_tokens},
+            "_token_usage": {
+                "input": prompt_input_tokens,
+                "output": 0,
+                "total": prompt_input_tokens,
+            },
         }
 
     def _build_skeptiker_befund(self, befund: Befund, result: dict) -> SkeptikerBefund:

@@ -214,7 +214,9 @@ class AuditPipeline:
                     "nicht_prüfbar": "❓",
                 }.get(befund.bewertung.value, "?")
 
-                conf_str = f" | Conf: {befund.confidence:.0%} ({befund.confidence_level})"
+                conf_str = (
+                    f" | Conf: {befund.confidence:.0%} ({befund.confidence_level})"
+                )
                 review_str = " | 🔍 REVIEW" if befund.review_erforderlich else ""
                 self._log(
                     f"       → {status_icon} {befund.bewertung.value.upper()}{conf_str}{review_str} ({dauer:.1f}s)"
@@ -395,7 +397,9 @@ class AuditPipeline:
         if self.verbose_token_details:
             payload["details"] = self.run_token_stats["details"]
 
-        stats_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        stats_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         return str(stats_path), costs
 
     def _token_stats_summary(self, stats_file: str, costs: dict) -> dict:

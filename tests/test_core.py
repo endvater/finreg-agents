@@ -628,8 +628,12 @@ class TestTokenStats:
             output_dir=str(tmp_path),
             verbose=False,
         )
-        pipeline._add_token_usage("pruefer", {"input": 1000, "output": 400, "total": 1400})
-        pipeline._add_token_usage("skeptiker", {"input": 200, "output": 100, "total": 300})
+        pipeline._add_token_usage(
+            "pruefer", {"input": 1000, "output": 400, "total": 1400}
+        )
+        pipeline._add_token_usage(
+            "skeptiker", {"input": 200, "output": 100, "total": 300}
+        )
         stats_file, costs = pipeline._write_run_stats()
 
         payload = json.loads(Path(stats_file).read_text(encoding="utf-8"))

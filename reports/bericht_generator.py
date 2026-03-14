@@ -122,17 +122,32 @@ class BerichtGenerator:
 
         json_path = f"{output_dir}/{prefix}.json"
         self._schreibe_json(
-            sektionsergebnisse, zusammenfassung, json_path, token_stats, stats_file, verbose
+            sektionsergebnisse,
+            zusammenfassung,
+            json_path,
+            token_stats,
+            stats_file,
+            verbose,
         )
 
         md_path = f"{output_dir}/{prefix}.md"
         self._schreibe_markdown(
-            sektionsergebnisse, zusammenfassung, md_path, token_stats, stats_file, verbose
+            sektionsergebnisse,
+            zusammenfassung,
+            md_path,
+            token_stats,
+            stats_file,
+            verbose,
         )
 
         html_path = f"{output_dir}/{prefix}.html"
         self._schreibe_html(
-            sektionsergebnisse, zusammenfassung, html_path, token_stats, stats_file, verbose
+            sektionsergebnisse,
+            zusammenfassung,
+            html_path,
+            token_stats,
+            stats_file,
+            verbose,
         )
 
         return {"json": json_path, "markdown": md_path, "html": html_path}
@@ -217,7 +232,13 @@ class BerichtGenerator:
     # JSON-Report
     # ------------------------------------------------------------------ #
     def _schreibe_json(
-        self, sektionsergebnisse, zusammenfassung, path, token_stats=None, stats_file=None, verbose=False
+        self,
+        sektionsergebnisse,
+        zusammenfassung,
+        path,
+        token_stats=None,
+        stats_file=None,
+        verbose=False,
     ):
         report = {
             "meta": {
@@ -270,7 +291,13 @@ class BerichtGenerator:
     # Markdown-Report
     # ------------------------------------------------------------------ #
     def _schreibe_markdown(
-        self, sektionsergebnisse, zusammenfassung, path, token_stats=None, stats_file=None, verbose=False
+        self,
+        sektionsergebnisse,
+        zusammenfassung,
+        path,
+        token_stats=None,
+        stats_file=None,
+        verbose=False,
     ):
         z = zusammenfassung
         lines = [
@@ -420,7 +447,13 @@ class BerichtGenerator:
     # HTML-Report (druckfähig)
     # ------------------------------------------------------------------ #
     def _schreibe_html(
-        self, sektionsergebnisse, zusammenfassung, path, token_stats=None, stats_file=None, verbose=False
+        self,
+        sektionsergebnisse,
+        zusammenfassung,
+        path,
+        token_stats=None,
+        stats_file=None,
+        verbose=False,
     ):
         z = zusammenfassung
         parts = [
