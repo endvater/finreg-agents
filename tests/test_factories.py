@@ -3,30 +3,40 @@ Tests für LLM-Factory und Embedding-Factory (agents/llm_factory.py + agents/emb
 Ausführen: pytest tests/test_factories.py -v
 """
 
-import os
 import pytest
 from unittest.mock import MagicMock, patch
-
-
-# ------------------------------------------------------------------ #
-# LLM Factory
-# ------------------------------------------------------------------ #
 
 from agents.llm_factory import (
     build_llm,
     list_providers,
     default_model,
     PROVIDER_DEFAULTS,
-    VALID_PROVIDERS,
+)
+from agents.embedding_factory import (
+    build_embedding,
+    list_embedding_providers,
+    default_embedding_model,
+    is_local_provider,
+    EMBEDDING_DEFAULTS,
 )
 
 
-class TestLLMFactory:
+# ------------------------------------------------------------------ #
+# LLM Factory
+# ------------------------------------------------------------------ #
 
+
+class TestLLMFactory:
     def test_list_providers_returns_all_seven(self):
         providers = list_providers()
         assert set(providers) == {
-            "anthropic", "openai", "gemini", "mistral", "cohere", "grok", "ollama"
+            "anthropic",
+            "openai",
+            "gemini",
+            "mistral",
+            "cohere",
+            "grok",
+            "ollama",
         }
 
     def test_default_model_known_provider(self):
@@ -99,6 +109,7 @@ class TestLLMFactory:
     def test_build_llm_ollama_warns_on_small_model(self, monkeypatch, caplog):
         """Warnung bei Modellen unter der Mindestempfehlung."""
         import logging
+
         mock_ollama_module = MagicMock()
         mock_ollama_module.ChatOllama = MagicMock(return_value=MagicMock())
         with patch.dict("sys.modules", {"langchain_ollama": mock_ollama_module}):
@@ -122,25 +133,17 @@ class TestLLMFactory:
 
     def test_provider_defaults_have_required_keys(self):
         for provider, defaults in PROVIDER_DEFAULTS.items():
-            assert "model" in defaults, f"{provider}: 'model' fehlt in PROVIDER_DEFAULTS"
+            assert "model" in defaults, (
+                f"{provider}: 'model' fehlt in PROVIDER_DEFAULTS"
+            )
 
 
 # ------------------------------------------------------------------ #
 # Embedding Factory
 # ------------------------------------------------------------------ #
 
-from agents.embedding_factory import (
-    build_embedding,
-    list_embedding_providers,
-    default_embedding_model,
-    is_local_provider,
-    EMBEDDING_DEFAULTS,
-    VALID_EMBEDDING_PROVIDERS,
-)
-
 
 class TestEmbeddingFactory:
-
     def test_list_embedding_providers_returns_all_five(self):
         providers = list_embedding_providers()
         assert set(providers) == {"openai", "fastembed", "gemini", "mistral", "ollama"}
@@ -172,7 +175,9 @@ class TestEmbeddingFactory:
     ):
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         mock_embed = MagicMock()
-        with patch("agents.embedding_factory._build_fastembed", return_value=mock_embed) as m:
+        with patch(
+            "agents.embedding_factory._build_fastembed", return_value=mock_embed
+        ) as m:
             result = build_embedding(provider=None)
             m.assert_called_once()
             assert result is mock_embed
@@ -180,7 +185,9 @@ class TestEmbeddingFactory:
     def test_build_embedding_auto_detect_uses_openai_with_key(self, monkeypatch):
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
         mock_embed = MagicMock()
-        with patch("agents.embedding_factory._build_openai_embed", return_value=mock_embed) as m:
+        with patch(
+            "agents.embedding_factory._build_openai_embed", return_value=mock_embed
+        ) as m:
             result = build_embedding(provider=None)
             m.assert_called_once()
             assert result is mock_embed
@@ -194,7 +201,9 @@ class TestEmbeddingFactory:
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
         mock_gemini_module = MagicMock()
         mock_gemini_module.GeminiEmbedding = MagicMock()
-        with patch.dict("sys.modules", {"llama_index.embeddings.gemini": mock_gemini_module}):
+        with patch.dict(
+            "sys.modules", {"llama_index.embeddings.gemini": mock_gemini_module}
+        ):
             with pytest.raises(EnvironmentError, match="GOOGLE_API_KEY"):
                 build_embedding(provider="gemini")
 
@@ -202,19 +211,25 @@ class TestEmbeddingFactory:
         monkeypatch.delenv("MISTRAL_API_KEY", raising=False)
         mock_mistral_module = MagicMock()
         mock_mistral_module.MistralAIEmbedding = MagicMock()
-        with patch.dict("sys.modules", {"llama_index.embeddings.mistralai": mock_mistral_module}):
+        with patch.dict(
+            "sys.modules", {"llama_index.embeddings.mistralai": mock_mistral_module}
+        ):
             with pytest.raises(EnvironmentError, match="MISTRAL_API_KEY"):
                 build_embedding(provider="mistral")
 
     def test_build_embedding_fastembed_no_key_required(self):
         mock_embed = MagicMock()
-        with patch("agents.embedding_factory._build_fastembed", return_value=mock_embed):
+        with patch(
+            "agents.embedding_factory._build_fastembed", return_value=mock_embed
+        ):
             result = build_embedding(provider="fastembed")
             assert result is mock_embed
 
     def test_build_embedding_ollama_no_key_required(self):
         mock_embed = MagicMock()
-        with patch("agents.embedding_factory._build_ollama_embed", return_value=mock_embed):
+        with patch(
+            "agents.embedding_factory._build_ollama_embed", return_value=mock_embed
+        ):
             result = build_embedding(provider="ollama")
             assert result is mock_embed
 
@@ -230,4 +245,6 @@ class TestEmbeddingFactory:
 
     def test_embedding_defaults_have_model_key(self):
         for provider, defaults in EMBEDDING_DEFAULTS.items():
-            assert "model" in defaults, f"{provider}: 'model' fehlt in EMBEDDING_DEFAULTS"
+            assert "model" in defaults, (
+                f"{provider}: 'model' fehlt in EMBEDDING_DEFAULTS"
+            )

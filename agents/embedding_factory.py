@@ -56,6 +56,7 @@ LOCAL_EMBEDDING_PROVIDERS = {"fastembed", "ollama"}
 # Factory
 # ------------------------------------------------------------------ #
 
+
 def build_embedding(
     provider: str | None = None,
     model: str | None = None,
@@ -100,6 +101,7 @@ def build_embedding(
 # ------------------------------------------------------------------ #
 # Provider-Implementierungen
 # ------------------------------------------------------------------ #
+
 
 def _build_openai_embed(model: str, **kwargs):
     try:
@@ -165,6 +167,7 @@ def _build_ollama_embed(model: str, **kwargs):
 # ------------------------------------------------------------------ #
 # Hilfsfunktionen
 # ------------------------------------------------------------------ #
+
 
 def _resolve_provider(provider: str | None) -> str:
     """

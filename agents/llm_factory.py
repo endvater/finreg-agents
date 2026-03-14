@@ -77,6 +77,7 @@ OLLAMA_MIN_RECOMMENDED_MODELS = {
 # Factory
 # ------------------------------------------------------------------ #
 
+
 def build_llm(
     provider: str,
     model: str | None = None,
@@ -114,13 +115,17 @@ def build_llm(
     logger.info("LLM-Factory: provider=%s model=%s", provider, resolved_model)
 
     if provider == "anthropic":
-        return _build_anthropic(resolved_model, temperature, resolved_max_tokens, **kwargs)
+        return _build_anthropic(
+            resolved_model, temperature, resolved_max_tokens, **kwargs
+        )
     if provider == "openai":
         return _build_openai(resolved_model, temperature, resolved_max_tokens, **kwargs)
     if provider == "gemini":
         return _build_gemini(resolved_model, temperature, resolved_max_tokens, **kwargs)
     if provider == "mistral":
-        return _build_mistral(resolved_model, temperature, resolved_max_tokens, **kwargs)
+        return _build_mistral(
+            resolved_model, temperature, resolved_max_tokens, **kwargs
+        )
     if provider == "cohere":
         return _build_cohere(resolved_model, temperature, resolved_max_tokens, **kwargs)
     if provider == "grok":
@@ -132,6 +137,7 @@ def build_llm(
 # ------------------------------------------------------------------ #
 # Provider-Implementierungen
 # ------------------------------------------------------------------ #
+
 
 def _build_anthropic(model, temperature, max_tokens, **kwargs):
     try:
@@ -251,7 +257,9 @@ def _build_ollama(model, temperature, max_tokens, **kwargs):
             "langchain-ollama ist nicht installiert. "
             "Installieren: pip install langchain-ollama"
         )
-    base_url = kwargs.pop("base_url", os.environ.get("OLLAMA_HOST", "http://localhost:11434"))
+    base_url = kwargs.pop(
+        "base_url", os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+    )
 
     if model not in OLLAMA_MIN_RECOMMENDED_MODELS:
         logger.warning(
@@ -273,6 +281,7 @@ def _build_ollama(model, temperature, max_tokens, **kwargs):
 # ------------------------------------------------------------------ #
 # Hilfsfunktionen
 # ------------------------------------------------------------------ #
+
 
 def _require_env(var: str, provider: str) -> None:
     if not os.environ.get(var):

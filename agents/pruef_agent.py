@@ -21,7 +21,7 @@ import time
 
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
-from agents.llm_factory import build_llm, PROVIDER_DEFAULTS
+from agents.llm_factory import build_llm
 from langchain_core.messages import HumanMessage, SystemMessage
 
 logger = logging.getLogger(__name__)

@@ -14,5 +14,6 @@ import pytest
 def mock_anthropic_key(monkeypatch):
     """Setzt ANTHROPIC_API_KEY als Dummy, falls nicht gesetzt."""
     import os
+
     if not os.environ.get("ANTHROPIC_API_KEY"):
         monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key-for-testing")

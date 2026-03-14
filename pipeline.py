@@ -25,7 +25,6 @@ Oder als Python-Modul:
 import argparse
 import json
 import logging
-import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,8 +35,12 @@ from llama_index.core import VectorStoreIndex, Settings
 from ingestion.ingestor import GwGIngestor
 from agents.pruef_agent import PrueferAgent, Sektionsergebnis, SEKTION_REVIEW_ESCALATION
 from agents.skeptiker_agent import SkeptikerAgent, merge_befund_skeptiker
-from agents.llm_factory import PROVIDER_DEFAULTS, list_providers, default_model
-from agents.embedding_factory import build_embedding, list_embedding_providers, default_embedding_model
+from agents.llm_factory import list_providers, default_model
+from agents.embedding_factory import (
+    build_embedding,
+    list_embedding_providers,
+    default_embedding_model,
+)
 from reports.bericht_generator import BerichtGenerator
 
 load_dotenv(override=True)
