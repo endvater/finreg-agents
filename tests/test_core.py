@@ -5,6 +5,7 @@ Ausführen: pytest tests/ -v
 
 import json
 import pytest
+from collections import Counter
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -566,6 +567,29 @@ class TestPrueferAgentTypeScoping:
             "unzulässige Dokumenttypen" in h for h in befund.validierungshinweise
         )
 
+    def test_relevance_filter_drops_marketing_but_keeps_guardrail_refs(self):
+        agent = PrueferAgent.__new__(PrueferAgent)
+        kept, dropped = agent._apply_relevance_filter(
+            [
+                _FakeNode(
+                    0.9,
+                    {"source": "marketing.pdf"},
+                    "Unsere Vision und Kampagne ist innovativ und premium.",
+                ),
+                _FakeNode(
+                    0.9,
+                    {"source": "policy.pdf"},
+                    "Gemäß § 15 Abs. 2 GwG gelten interne Kontrollen.",
+                ),
+            ],
+            {"id": "S01-01"},
+        )
+
+        assert len(kept) == 1
+        assert kept[0].metadata["source"] == "policy.pdf"
+        assert len(dropped) == 1
+        assert dropped[0]["reason"] == "MARKETING_PHRASE"
+
 
 # ------------------------------------------------------------------ #
 # Test: Katalog-Validierung
@@ -706,6 +730,30 @@ class TestPipelineScopeValidation:
     def test_review_budget_must_be_positive(self):
         with pytest.raises(ValueError, match="review_budget muss >= 1 sein"):
             AuditPipeline(input_dir="demo", review_budget=0)
+
+    def test_write_relevance_filter_report_contains_sampling(self, tmp_path):
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            output_dir=str(tmp_path),
+            evidence_relevance_filter=True,
+            verbose=False,
+        )
+        fake_agent = MagicMock()
+        fake_agent.relevance_filter_stats = Counter(
+            {"kept": 3, "dropped": 4, "reason:NO_REG_REF": 4}
+        )
+        fake_agent.relevance_filter_drops = [
+            {"prueffeld_id": "S01-01", "reason": "NO_REG_REF", "snippet": "x"}
+            for _ in range(25)
+        ]
+
+        report_path = pipeline._write_relevance_filter_report(fake_agent)
+        payload = json.loads(Path(report_path).read_text(encoding="utf-8"))
+
+        assert payload["enabled"] is True
+        assert payload["stats"]["dropped"] == 4
+        assert payload["sample_size"] == 20
+        assert len(payload["dropped_samples"]) == 20
 
 
 class TestTokenStats:
