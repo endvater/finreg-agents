@@ -26,7 +26,6 @@ from ingestion.parser import RegulatoryParser
 
 logger = logging.getLogger(__name__)
 
-
 try:
     import yaml
 

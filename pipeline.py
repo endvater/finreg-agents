@@ -25,19 +25,19 @@ Oder als Python-Modul:
 import argparse
 import json
 import logging
+import os
 import time
 from pathlib import Path
 
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings
-from llama_index.embeddings.openai import OpenAIEmbedding
 
 from ingestion.ingestor import GwGIngestor
 from agents.pruef_agent import PrueferAgent, Sektionsergebnis, SEKTION_REVIEW_ESCALATION
 from agents.skeptiker_agent import SkeptikerAgent, merge_befund_skeptiker
 from reports.bericht_generator import BerichtGenerator
 
-load_dotenv()
+load_dotenv(override=True)
 logger = logging.getLogger(__name__)
 
 
@@ -76,11 +76,13 @@ class AuditPipeline:
         output_dir: str = "./reports/output",
         model: str = "claude-sonnet-4-5-20250514",
         embedding_model: str = "text-embedding-3-small",
+        local_embeddings: bool = False,
         sektionen_filter: list = None,
         top_k: int = 8,
         verbose: bool = True,
         skeptiker: bool = False,
         skeptiker_only_konform: bool = False,
+        adversarial: bool = False,
     ):
         self.input_dir = input_dir
         self.institution = institution
@@ -88,11 +90,14 @@ class AuditPipeline:
         self.output_dir = output_dir
         self.model = model
         self.embedding_model = embedding_model
+        # Lokale Embeddings: explizit gesetzt oder Auto-Fallback wenn kein OPENAI_API_KEY
+        self.local_embeddings = local_embeddings or not os.environ.get("OPENAI_API_KEY")
         self.sektionen_filter = sektionen_filter
         self.top_k = top_k
         self.verbose = verbose
         self.skeptiker = skeptiker
         self.skeptiker_only_konform = skeptiker_only_konform
+        self.adversarial = adversarial
 
         # Katalogpfad auflösen
         base = Path(__file__).parent
@@ -132,17 +137,50 @@ class AuditPipeline:
 
         # ── Schritt 2: Vektorindex ───────────────────────────────────────
         self._log("\n🔍 Schritt 2/4: Vektorindex aufbauen")
-        embed_model = OpenAIEmbedding(model=self.embedding_model)
-        # Settings temporär setzen und danach wiederherstellen, damit kein
-        # dauerhafter globaler State entsteht (wichtig bei mehreren Pipeline-Instanzen)
-        _prev_embed = Settings.embed_model
+        embed_model = None
+        if self.local_embeddings:
+            try:
+                from llama_index.embeddings.fastembed import FastEmbedEmbedding
+            except ModuleNotFoundError:
+                logger.warning(
+                    "FastEmbed nicht installiert; Fallback auf OpenAI-Embeddings."
+                )
+            else:
+                embed_model = FastEmbedEmbedding(model_name="BAAI/bge-small-en-v1.5")
+                self._log("   → Embedding: FastEmbed BAAI/bge-small-en-v1.5 (lokal)")
+
+        if embed_model is None:
+            from llama_index.embeddings.openai import OpenAIEmbedding
+
+            try:
+                embed_model = OpenAIEmbedding(model=self.embedding_model)
+            except Exception as exc:
+                if not os.environ.get("OPENAI_API_KEY"):
+                    raise RuntimeError(
+                        "Kein Embedding-Modell verfügbar: FastEmbed ist nicht "
+                        "installiert und OPENAI_API_KEY fehlt. "
+                        "Bitte entweder `pip install llama-index-embeddings-fastembed` "
+                        "ausführen oder OPENAI_API_KEY setzen."
+                    ) from exc
+                raise
+            self._log(f"   → Embedding: OpenAI {self.embedding_model}")
+        # Settings temporär setzen und danach wiederherstellen (save/restore).
+        # Beim ersten Aufruf ohne konfigurierten Key schlägt der Getter fehl →
+        # _prev_embed auf None setzen und Settings nach dem Lauf zurücksetzen.
+        try:
+            _prev_embed = Settings.embed_model
+        except Exception:
+            _prev_embed = None
         Settings.embed_model = embed_model
         try:
             index = VectorStoreIndex.from_documents(
                 documents, show_progress=self.verbose
             )
         finally:
-            Settings.embed_model = _prev_embed
+            if _prev_embed is not None:
+                Settings.embed_model = _prev_embed
+            else:
+                Settings._embed_model = None  # zurück auf "nicht konfiguriert"
         self._log("   → Index fertig")
 
         # ── Schritt 3: Prüfkatalog laden & Prüfung durchführen ──────────
@@ -155,7 +193,10 @@ class AuditPipeline:
             regulatorik=self.regulatorik,
             model=self.model,
             top_k=self.top_k,
+            adversarial=self.adversarial,
         )
+        if self.adversarial:
+            self._log("   → Adversarial Prompting Layer aktiviert ⚔️")
 
         # Skeptiker-Agent optional initialisieren
         skeptiker_agent = None
@@ -337,6 +378,8 @@ Beispiele:
   python pipeline.py --input ./docs --regulatorik dora --sektionen D01 D04
   python pipeline.py --input ./docs --regulatorik marisk
   python pipeline.py --input ./docs --regulatorik wphg --model claude-opus-4-5
+  python pipeline.py --input ./docs --regulatorik gwg --adversarial
+  python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
         """,
     )
     parser.add_argument(
@@ -378,6 +421,21 @@ Beispiele:
         default=False,
         help="Skeptiker nur für 'konform'-Ratings aktivieren",
     )
+    parser.add_argument(
+        "--adversarial",
+        action="store_true",
+        default=False,
+        help="Adversarial Prompting Layer: zweiter LLM-Pass mit umgekehrtem "
+        "System-Prompt auf gleicher Evidenz. Große Abweichung → "
+        "Confidence-Penalty + Review-Markierung.",
+    )
+    parser.add_argument(
+        "--local-embeddings",
+        action="store_true",
+        default=False,
+        help="Lokale Embeddings (FastEmbed, kein OpenAI-Key nötig). "
+        "Wird automatisch aktiviert wenn OPENAI_API_KEY fehlt.",
+    )
     args = parser.parse_args()
 
     pipeline = AuditPipeline(
@@ -387,10 +445,12 @@ Beispiele:
         catalog_path=args.catalog,
         output_dir=args.output,
         model=args.model,
+        local_embeddings=args.local_embeddings,
         sektionen_filter=args.sektionen,
         top_k=args.top_k,
         skeptiker=args.skeptiker,
         skeptiker_only_konform=args.skeptiker_only_konform,
+        adversarial=args.adversarial,
     )
     pipeline.run()
 
