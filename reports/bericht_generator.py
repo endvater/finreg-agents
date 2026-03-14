@@ -19,6 +19,7 @@ from pathlib import Path
 from collections import Counter
 from typing import TYPE_CHECKING, Optional
 
+from agents.provenance import CorroborationStatus
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,97 @@ def _esc(text: str) -> str:
     if text is None:
         return ""
     return html.escape(str(text))
+
+
+# Provenance status display mappings
+_PROV_EMOJI = {
+    CorroborationStatus.CORROBORATED: "✅",
+    CorroborationStatus.SINGLE_SOURCED: "⚠️",
+    CorroborationStatus.UNVERIFIED: "❓",
+}
+_PROV_LABEL_MD = {
+    CorroborationStatus.CORROBORATED: "belegt (2+ Quellen)",
+    CorroborationStatus.SINGLE_SOURCED: "Einzelquelle",
+    CorroborationStatus.UNVERIFIED: "unbelegt",
+}
+_PROV_COLOR_HTML = {
+    CorroborationStatus.CORROBORATED: "#27ae60",
+    CorroborationStatus.SINGLE_SOURCED: "#e67e22",
+    CorroborationStatus.UNVERIFIED: "#7f8c8d",
+}
+_PROV_BG_HTML = {
+    CorroborationStatus.CORROBORATED: "#eafaf1",
+    CorroborationStatus.SINGLE_SOURCED: "#fef9e7",
+    CorroborationStatus.UNVERIFIED: "#f2f3f4",
+}
+
+
+def _esc_md(text: str) -> str:
+    """Escape pipe chars in Markdown table cells."""
+    return str(text).replace("|", "\\|")
+
+
+def _render_provenance_markdown(claim_provenance: list) -> list[str]:
+    """Render a compact provenance table in Markdown."""
+    if not claim_provenance:
+        return []
+    lines = [
+        "**Aussagen-Provenance:**",
+        "",
+        "| ID | Aussage | Status |",
+        "|---|---|---|",
+    ]
+    for cp in claim_provenance:
+        emoji = _PROV_EMOJI.get(cp.status, "❓")
+        label = _PROV_LABEL_MD.get(cp.status, cp.status.value)
+        claim_short = (
+            cp.claim_text[:80] + "…" if len(cp.claim_text) > 80 else cp.claim_text
+        )
+        lines.append(
+            f'| `{cp.provenance_id}` | "{_esc_md(claim_short)}" | {emoji} {label} |'
+        )
+    lines.append("")
+    return lines
+
+
+def _render_provenance_html(claim_provenance: list) -> str:
+    """Render a compact provenance table in HTML."""
+    if not claim_provenance:
+        return ""
+    rows = ""
+    for cp in claim_provenance:
+        emoji = _PROV_EMOJI.get(cp.status, "❓")
+        label = _PROV_LABEL_MD.get(cp.status, cp.status.value)
+        color = _PROV_COLOR_HTML.get(cp.status, "#7f8c8d")
+        bg = _PROV_BG_HTML.get(cp.status, "#f2f3f4")
+        claim_short = (
+            cp.claim_text[:80] + "…" if len(cp.claim_text) > 80 else cp.claim_text
+        )
+        rows += (
+            f"<tr>"
+            f'<td style="font-family:monospace;font-size:11px;white-space:nowrap">'
+            f"{_esc(cp.provenance_id)}</td>"
+            f'<td style="font-size:12px">&ldquo;{_esc(claim_short)}&rdquo;</td>'
+            f'<td><span style="background:{bg};color:{color};padding:2px 8px;'
+            f'border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap">'
+            f"{emoji} {_esc(label)}</span></td>"
+            f"</tr>"
+        )
+    return (
+        '<div style="margin:8px 0">'
+        '<strong style="font-size:12px;color:#555">Aussagen-Provenance:</strong>'
+        '<table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:12px">'
+        "<thead><tr>"
+        '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ecf0f1;'
+        'color:#7f8c8d;font-size:10px">ID</th>'
+        '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ecf0f1;'
+        'color:#7f8c8d;font-size:10px">Aussage</th>'
+        '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ecf0f1;'
+        'color:#7f8c8d;font-size:10px">Status</th>'
+        "</tr></thead>"
+        f"<tbody>{rows}</tbody>"
+        "</table></div>"
+    )
 
 
 class BerichtGenerator:
@@ -300,6 +392,15 @@ class BerichtGenerator:
                             "term_drift_warnings": getattr(
                                 b, "term_drift_warnings", []
                             ),
+                            "claim_provenance": [
+                                {
+                                    "provenance_id": cp.provenance_id,
+                                    "claim_text": cp.claim_text,
+                                    "status": cp.status.value,
+                                    "source_chunk_ids": cp.source_chunk_ids,
+                                }
+                                for cp in getattr(b, "claim_provenance", [])
+                            ],
                             **({"token_usage": b.token_usage} if verbose else {}),
                         }
                         for b in s.befunde
@@ -456,6 +557,9 @@ class BerichtGenerator:
                         f"output `{b.token_usage.get('output', 0)}` | total `{b.token_usage.get('total', 0)}`",
                         "",
                     ]
+                claim_prov = getattr(b, "claim_provenance", [])
+                if claim_prov:
+                    lines += _render_provenance_markdown(claim_prov)
                 if b.belegte_textstellen:
                     lines.append("**Belegte Textstellen:**")
                     for t in b.belegte_textstellen:
