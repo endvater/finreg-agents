@@ -21,7 +21,6 @@ from agents.skeptiker_agent import (
 # ------------------------------------------------------------------ #
 
 from agents.pruef_agent import (
-    build_claim_annotations,
     compute_confidence,
     confidence_level_from_score,
     evaluate_confidence_guards,
