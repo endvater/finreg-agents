@@ -104,6 +104,7 @@ def build_embedding(
 
 
 def _build_openai_embed(model: str, **kwargs):
+    _require_env("OPENAI_API_KEY", "openai (embeddings)")
     try:
         from llama_index.embeddings.openai import OpenAIEmbedding
     except ImportError:
@@ -111,7 +112,6 @@ def _build_openai_embed(model: str, **kwargs):
             "llama-index-embeddings-openai ist nicht installiert. "
             "Installieren: pip install llama-index-embeddings-openai"
         )
-    _require_env("OPENAI_API_KEY", "openai (embeddings)")
     return OpenAIEmbedding(model=model, **kwargs)
 
 
