@@ -862,6 +862,56 @@ class TestTokenStats:
         )
 
 
+# ------------------------------------------------------------------ #
+# Test: Term Drift Checker
+# ------------------------------------------------------------------ #
+
+
+class TestTermDriftChecker:
+    def test_term_drift_detects_phantom_citation(self):
+        """Befund cites '§ 15 GwG' but chunks don't contain it → warning."""
+        from agents.term_checker import TermDriftChecker
+
+        checker = TermDriftChecker()
+        warnings = checker.check_befund(
+            befund_text="Gemäß § 15 GwG sind verstärkte Sorgfaltspflichten einzuhalten.",
+            regulatorik="gwg",
+            retrieved_chunks=[
+                "Die allgemeinen Sorgfaltspflichten ergeben sich aus § 10 GwG.",
+                "Risikoanalysen sind regelmäßig zu aktualisieren.",
+            ],
+        )
+        assert len(warnings) > 0
+        assert any("§ 15 GwG" in w or "Phantom" in w for w in warnings)
+
+    def test_term_drift_no_warning_when_citation_present(self):
+        """Citation appears in chunks → no phantom warning."""
+        from agents.term_checker import TermDriftChecker
+
+        checker = TermDriftChecker()
+        warnings = checker.check_befund(
+            befund_text="Gemäß § 15 GwG sind verstärkte Sorgfaltspflichten einzuhalten.",
+            regulatorik="gwg",
+            retrieved_chunks=[
+                "§ 15 GwG regelt die verstärkten Sorgfaltspflichten bei erhöhtem Risiko.",
+                "Weitere Vorschriften ergeben sich aus dem KWG.",
+            ],
+        )
+        assert warnings == []
+
+    def test_term_drift_empty_befund(self):
+        """Empty befund text → no warnings."""
+        from agents.term_checker import TermDriftChecker
+
+        checker = TermDriftChecker()
+        warnings = checker.check_befund(
+            befund_text="",
+            regulatorik="gwg",
+            retrieved_chunks=["Irgendein Chunk-Inhalt"],
+        )
+        assert warnings == []
+
+
 class TestBerichtGeneratorTokenStats:
     def test_html_token_stats_block_rendered(self):
         generator = BerichtGenerator()

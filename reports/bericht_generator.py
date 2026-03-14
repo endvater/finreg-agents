@@ -296,6 +296,9 @@ class BerichtGenerator:
                             "claim_list": b.claim_list,
                             "review_erforderlich": b.review_erforderlich,
                             "validierungshinweise": b.validierungshinweise,
+                            "term_drift_warnings": getattr(
+                                b, "term_drift_warnings", []
+                            ),
                             **({"token_usage": b.token_usage} if verbose else {}),
                         }
                         for b in s.befunde
@@ -468,6 +471,12 @@ class BerichtGenerator:
                     lines.append("**Validierungshinweise:**")
                     for v in b.validierungshinweise:
                         lines.append(f"- ⚡ {v}")
+                    lines.append("")
+                term_drift = getattr(b, "term_drift_warnings", [])
+                if term_drift:
+                    lines.append("**Term-Drift-Warnungen:**")
+                    for w in term_drift:
+                        lines.append(f"- 🌊 {w}")
                     lines.append("")
                 if b.quellen:
                     lines.append(f"*Quellen: {', '.join(b.quellen)}*")
@@ -767,6 +776,12 @@ class BerichtGenerator:
                     )
                     val_html = f'<div class="validation-hints"><strong>Validierung:</strong>{items}</div>'
 
+                drift_html = ""
+                term_drift = getattr(b, "term_drift_warnings", [])
+                if term_drift:
+                    items = "".join(f"<div>🌊 {_esc(w)}</div>" for w in term_drift)
+                    drift_html = f'<div class="validation-hints"><strong>Term-Drift-Warnungen:</strong>{items}</div>'
+
                 quellen_html = (
                     f'<div class="quellen">Quellen: {_esc(", ".join(b.quellen))}</div>'
                     if b.quellen
@@ -790,6 +805,7 @@ class BerichtGenerator:
     {mangel_html}
     {empf_html}
     {val_html}
+    {drift_html}
     {quellen_html}
   </div>
 </div>"""

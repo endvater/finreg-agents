@@ -34,6 +34,7 @@ from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings
 
 from ingestion.ingestor import GwGIngestor
+from ingestion.relevance_classifier import EvidenceRelevanceClassifier
 from agents.pruef_agent import PrueferAgent, Sektionsergebnis, SEKTION_REVIEW_ESCALATION
 from agents.skeptiker_agent import SkeptikerAgent, merge_befund_skeptiker
 from agents.llm_factory import list_providers, default_model
@@ -94,6 +95,7 @@ class AuditPipeline:
         skeptiker: bool = False,
         skeptiker_only_konform: bool = False,
         adversarial: bool = False,
+        use_relevance_filter: bool = False,
     ):
         self.input_dir = input_dir
         self.institution = institution
@@ -123,6 +125,7 @@ class AuditPipeline:
             "details": [],
         }
         self.adversarial = adversarial
+        self.use_relevance_filter = use_relevance_filter
 
         # Katalogpfad auflösen
         base = Path(__file__).parent
@@ -189,6 +192,86 @@ class AuditPipeline:
             else:
                 Settings._embed_model = None
         self._log("   → Index fertig")
+
+        # ── Schritt 2b: Relevanz-Filter (Feature-Flag) ───────────────────
+        if self.use_relevance_filter:
+            self._log("\n🔎 Relevanz-Filter aktiviert (Feature-Flag)")
+            classifier = EvidenceRelevanceClassifier()
+            kept_docs, dropped_docs = classifier.filter_chunks(
+                documents, self.regulatorik
+            )
+            n_filtered = len(dropped_docs)
+            n_kept = len(kept_docs)
+            self._log(
+                f"   → {n_filtered} Chunks gefiltert (context_noise), {n_kept} behalten"
+            )
+
+            # Write sampling report (up to 20 random decisions)
+            sample_size = min(20, len(dropped_docs) + len(kept_docs))
+            all_decisions = []
+            for chunk in dropped_docs:
+                all_decisions.append(
+                    {
+                        "node_id": chunk.node_id,
+                        "category": chunk.category,
+                        "drop_reason": chunk.drop_reason,
+                        "text_preview": chunk.text[:120],
+                        "kept": False,
+                    }
+                )
+            for doc in kept_docs[:sample_size]:
+                if hasattr(doc, "text"):
+                    text_preview = doc.text[:120]
+                elif hasattr(doc, "get_content"):
+                    text_preview = doc.get_content()[:120]
+                else:
+                    text_preview = str(doc)[:120]
+                all_decisions.append(
+                    {
+                        "node_id": getattr(doc, "doc_id", None) or "unknown",
+                        "category": "kept",
+                        "drop_reason": None,
+                        "text_preview": text_preview,
+                        "kept": True,
+                    }
+                )
+            sample = random.sample(all_decisions, min(20, len(all_decisions)))
+            sampling_report = {
+                "regulatorik": self.regulatorik,
+                "total_chunks": len(documents),
+                "kept": n_kept,
+                "filtered": n_filtered,
+                "filter_rate_pct": round(
+                    100.0 * n_filtered / max(1, len(documents)), 1
+                ),
+                "sample": sample,
+            }
+            out_dir = Path(self.output_dir)
+            out_dir.mkdir(parents=True, exist_ok=True)
+            sampling_path = out_dir / "relevance_sampling.json"
+            sampling_path.write_text(
+                json.dumps(sampling_report, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            self._log(f"   → Sampling-Report: {sampling_path}")
+
+            # Rebuild index with filtered documents if any were dropped
+            if n_filtered > 0 and n_kept > 0:
+                self._log("   → Index wird mit gefilterten Dokumenten neu aufgebaut")
+                try:
+                    _prev_embed2 = Settings.embed_model
+                except Exception:
+                    _prev_embed2 = None
+                Settings.embed_model = embed_model
+                try:
+                    index = VectorStoreIndex.from_documents(
+                        kept_docs, show_progress=self.verbose
+                    )
+                finally:
+                    if _prev_embed2 is not None:
+                        Settings.embed_model = _prev_embed2
+                    else:
+                        Settings._embed_model = None
 
         # ── Schritt 3: Prüfkatalog laden & Prüfung durchführen ──────────
         self._log(f"\n📋 Schritt 3/4: Katalog laden & Prüfung durchführen [{label}]")
@@ -676,6 +759,14 @@ Beispiele:
         help="Lokale Embeddings (FastEmbed, kein OpenAI-Key nötig). "
         "Wird automatisch aktiviert wenn OPENAI_API_KEY fehlt.",
     )
+    parser.add_argument(
+        "--relevance-filter",
+        action="store_true",
+        default=False,
+        dest="relevance_filter",
+        help="Relevanz-Filter aktivieren: context_noise Chunks werden vor "
+        "LLM-Auswertung herausgefiltert. Schreibt relevance_sampling.json.",
+    )
     args = parser.parse_args()
 
     pipeline = AuditPipeline(
@@ -697,6 +788,7 @@ Beispiele:
         skeptiker=args.skeptiker,
         skeptiker_only_konform=args.skeptiker_only_konform,
         adversarial=args.adversarial,
+        use_relevance_filter=args.relevance_filter,
     )
     pipeline.run()
 

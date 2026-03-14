@@ -23,6 +23,8 @@ from collections import Counter
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
 from agents.llm_factory import build_llm
+from agents.provenance import ClaimProvenance
+from agents.term_checker import TermDriftChecker
 from langchain_core.messages import HumanMessage, SystemMessage
 
 logger = logging.getLogger(__name__)
@@ -66,6 +68,8 @@ class Befund:
     claim_list: list[dict] = field(default_factory=list)
     review_erforderlich: bool = False
     validierungshinweise: list[str] = field(default_factory=list)
+    term_drift_warnings: list[str] = field(default_factory=list)
+    claim_provenance: list[ClaimProvenance] = field(default_factory=list)
 
 
 @dataclass
@@ -709,7 +713,32 @@ class PrueferAgent:
             review_erforderlich = True
         low_confidence_reasons = list(dict.fromkeys(low_confidence_reasons))
 
-        return Befund(
+        # 8. Term Drift Check
+        befund_text_for_drift = " ".join(
+            filter(
+                None,
+                [
+                    llm_result.get("begruendung", "") or "",
+                    llm_result.get("mangel_text", "") or "",
+                    *[
+                        str(t)
+                        for t in (llm_result.get("belegte_textstellen") or [])
+                        if t is not None
+                    ],
+                ],
+            )
+        )
+        retrieved_chunk_texts = [n.get_content() for n in good_nodes]
+        drift_warnings = TermDriftChecker().check_befund(
+            befund_text=befund_text_for_drift,
+            regulatorik=self.regulatorik,
+            retrieved_chunks=retrieved_chunk_texts,
+        )
+        if drift_warnings:
+            val_warnings.extend(drift_warnings)
+            review_erforderlich = True
+
+        befund = Befund(
             prueffeld_id=prueffeld["id"],
             frage=prueffeld["frage"],
             bewertung=Bewertung(bewertung_str),
@@ -729,6 +758,7 @@ class PrueferAgent:
             ),
             review_erforderlich=review_erforderlich,
             validierungshinweise=val_warnings,
+            term_drift_warnings=drift_warnings,
         )
 
     # ------------------------------------------------------------------ #
@@ -908,6 +938,74 @@ Bewerte dieses Prüffeld und antworte als JSON.
                 "total": prompt_input_tokens,
             },
         }
+
+
+# ------------------------------------------------------------------ #
+# Adversarial Merge
+# ------------------------------------------------------------------ #
+
+
+def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
+    """
+    Führt originalen Befund und adversariales Ergebnis zusammen.
+
+    Divergenz-Logik:
+      0   → Adversarial bestätigt → kein Eingriff
+      1   → Leicht strenger → kleine Confidence-Penalty + Hinweis
+      ≥2  → Wesentlich strenger → größere Penalty + Review erzwingen
+    """
+    sev_normal = BEWERTUNG_SEVERITY.get(befund.bewertung.value, 3)
+    sev_adv = BEWERTUNG_SEVERITY.get(adv.adversarial_bewertung.value, 3)
+    divergenz = sev_adv - sev_normal  # positiv = adversarial strenger
+
+    hinweise = list(befund.validierungshinweise)
+    confidence_delta = 0.0
+    review_erforderlich = befund.review_erforderlich
+
+    if divergenz <= 0:
+        hinweise.append(
+            f"⚔️ Adversarial Layer bestätigt Bewertung "
+            f"({adv.adversarial_bewertung.value})"
+        )
+    elif divergenz == 1:
+        confidence_delta = _ADVERSARIAL_PENALTY[1]
+        hinweise.append(
+            f"⚔️ Adversarial Layer schätzt strenger: "
+            f"{befund.bewertung.value} → {adv.adversarial_bewertung.value} "
+            f"(Divergenz: {divergenz})"
+        )
+        for sw in adv.schwachstellen:
+            hinweise.append(f"⚔️ Schwachstelle: {sw}")
+    else:
+        confidence_delta = _ADVERSARIAL_PENALTY.get(divergenz, _ADVERSARIAL_PENALTY[3])
+        review_erforderlich = True
+        hinweise.append(
+            f"⚔️ Adversarial Divergenz ({divergenz}): "
+            f"{befund.bewertung.value} → {adv.adversarial_bewertung.value} "
+            f"→ Review erzwungen"
+        )
+        for sw in adv.schwachstellen:
+            hinweise.append(f"⚔️ Schwachstelle: {sw}")
+        for fn in adv.fehlende_nachweise:
+            hinweise.append(f"📄 Fehlender Nachweis (adversarial): {fn}")
+
+    new_confidence = max(0.0, round(befund.confidence - confidence_delta, 3))
+
+    return Befund(
+        prueffeld_id=befund.prueffeld_id,
+        frage=befund.frage,
+        bewertung=befund.bewertung,  # Originalbewertung bleibt erhalten
+        begruendung=befund.begruendung,
+        belegte_textstellen=befund.belegte_textstellen,
+        empfehlungen=befund.empfehlungen,
+        mangel_text=befund.mangel_text,
+        schweregrad=befund.schweregrad,
+        quellen=befund.quellen,
+        confidence=new_confidence,
+        review_erforderlich=review_erforderlich,
+        validierungshinweise=hinweise,
+        term_drift_warnings=befund.term_drift_warnings,
+    )
 
 
 # Rückwärtskompatibilität
