@@ -893,6 +893,8 @@ class BerichtGenerator:
                     else ""
                 )
 
+                prov_html = _render_provenance_html(getattr(b, "claim_provenance", []))
+
                 out += f"""
 <div class="befund-card">
   <div class="befund-header">
@@ -906,6 +908,7 @@ class BerichtGenerator:
   </div>
   <div class="befund-body">
     <div class="begruendung">{_esc(b.begruendung)}</div>
+    {prov_html}
     {textstellen_html}
     {mangel_html}
     {empf_html}
