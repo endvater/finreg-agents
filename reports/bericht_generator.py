@@ -17,7 +17,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from collections import Counter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,12 @@ class BerichtGenerator:
     # Public: Alle Formate auf einmal generieren
     # ------------------------------------------------------------------ #
     def generiere_alle_berichte(
-        self, sektionsergebnisse: list, output_dir: str = "./reports/output"
+        self,
+        sektionsergebnisse: list,
+        output_dir: str = "./reports/output",
+        token_stats: Optional[dict] = None,
+        stats_file: Optional[str] = None,
+        verbose: bool = False,
     ) -> dict[str, str]:
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -116,13 +121,19 @@ class BerichtGenerator:
         zusammenfassung = self._berechne_zusammenfassung(sektionsergebnisse)
 
         json_path = f"{output_dir}/{prefix}.json"
-        self._schreibe_json(sektionsergebnisse, zusammenfassung, json_path)
+        self._schreibe_json(
+            sektionsergebnisse, zusammenfassung, json_path, token_stats, stats_file, verbose
+        )
 
         md_path = f"{output_dir}/{prefix}.md"
-        self._schreibe_markdown(sektionsergebnisse, zusammenfassung, md_path)
+        self._schreibe_markdown(
+            sektionsergebnisse, zusammenfassung, md_path, token_stats, stats_file, verbose
+        )
 
         html_path = f"{output_dir}/{prefix}.html"
-        self._schreibe_html(sektionsergebnisse, zusammenfassung, html_path)
+        self._schreibe_html(
+            sektionsergebnisse, zusammenfassung, html_path, token_stats, stats_file, verbose
+        )
 
         return {"json": json_path, "markdown": md_path, "html": html_path}
 
@@ -205,7 +216,9 @@ class BerichtGenerator:
     # ------------------------------------------------------------------ #
     # JSON-Report
     # ------------------------------------------------------------------ #
-    def _schreibe_json(self, sektionsergebnisse, zusammenfassung, path):
+    def _schreibe_json(
+        self, sektionsergebnisse, zusammenfassung, path, token_stats=None, stats_file=None, verbose=False
+    ):
         report = {
             "meta": {
                 "institution": self.institution,
@@ -216,6 +229,8 @@ class BerichtGenerator:
                 "audit_trail": zusammenfassung["audit_trail"],
             },
             "zusammenfassung": zusammenfassung,
+            "token_stats": token_stats or {},
+            "stats_file": stats_file,
             "sektionen": [
                 {
                     "id": s.sektion_id,
@@ -233,8 +248,12 @@ class BerichtGenerator:
                             "empfehlungen": b.empfehlungen,
                             "quellen": b.quellen,
                             "confidence": b.confidence,
+                            "confidence_level": b.confidence_level,
+                            "confidence_guards": b.confidence_guards,
+                            "low_confidence_reasons": b.low_confidence_reasons,
                             "review_erforderlich": b.review_erforderlich,
                             "validierungshinweise": b.validierungshinweise,
+                            **({"token_usage": b.token_usage} if verbose else {}),
                         }
                         for b in s.befunde
                     ],
@@ -250,7 +269,9 @@ class BerichtGenerator:
     # ------------------------------------------------------------------ #
     # Markdown-Report
     # ------------------------------------------------------------------ #
-    def _schreibe_markdown(self, sektionsergebnisse, zusammenfassung, path):
+    def _schreibe_markdown(
+        self, sektionsergebnisse, zusammenfassung, path, token_stats=None, stats_file=None, verbose=False
+    ):
         z = zusammenfassung
         lines = [
             f"# {self.report_title} (simuliert)",
@@ -278,6 +299,19 @@ class BerichtGenerator:
             f"| 🔍 Review erforderlich | {z['review_erforderlich']} |",
             "",
         ]
+
+        if token_stats:
+            kosten = token_stats.get("kosten_schaetzung", {})
+            lines += [
+                "## Token-Stats",
+                "",
+                f"- Gesamt Tokens: `{token_stats.get('gesamt', {}).get('total', 0)}`",
+                f"- Input/Output: `{token_stats.get('gesamt', {}).get('input', 0)}` / `{token_stats.get('gesamt', {}).get('output', 0)}`",
+                f"- Kostenschätzung: `{kosten.get('total_cost', 0)} {kosten.get('currency', 'USD')}`",
+                f"- Pricing-Stand: `{kosten.get('pricing_timestamp', 'n/a')}`",
+                f"- Stats-Datei: `{stats_file or token_stats.get('stats_file', '')}`",
+                "",
+            ]
 
         # Nicht-prüfbar-Warnung
         if z["nicht_pruefbar_quote"] >= 30:
@@ -323,10 +357,28 @@ class BerichtGenerator:
                     "",
                     f"**Bewertung:** {emoji} `{b.bewertung.value.upper()}`{conf_str}{review_str}  ",
                     f"**Schweregrad:** {b.schweregrad}  ",
+                    f"**Confidence-Level:** `{b.confidence_level}`  ",
                     "",
                     f"{b.begruendung}",
                     "",
                 ]
+                if b.low_confidence_reasons:
+                    lines += [
+                        f"**Low-Confidence-Reasons:** `{', '.join(b.low_confidence_reasons)}`",
+                        "",
+                    ]
+                if b.confidence_guards:
+                    lines += [
+                        f"**Confidence-Guards:** `passed={b.confidence_guards.get('passed')}` | "
+                        f"`violations={', '.join(b.confidence_guards.get('violations', [])) or 'none'}`",
+                        "",
+                    ]
+                if verbose and b.token_usage:
+                    lines += [
+                        f"**Token-Usage:** input `{b.token_usage.get('input', 0)}` | "
+                        f"output `{b.token_usage.get('output', 0)}` | total `{b.token_usage.get('total', 0)}`",
+                        "",
+                    ]
                 if b.belegte_textstellen:
                     lines.append("**Belegte Textstellen:**")
                     for t in b.belegte_textstellen:
@@ -367,7 +419,9 @@ class BerichtGenerator:
     # ------------------------------------------------------------------ #
     # HTML-Report (druckfähig)
     # ------------------------------------------------------------------ #
-    def _schreibe_html(self, sektionsergebnisse, zusammenfassung, path):
+    def _schreibe_html(
+        self, sektionsergebnisse, zusammenfassung, path, token_stats=None, stats_file=None, verbose=False
+    ):
         z = zusammenfassung
         parts = [
             self._html_header(z),

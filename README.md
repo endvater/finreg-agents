@@ -49,6 +49,7 @@ Version 2 ist eine vollständige Überarbeitung, die fünf kritische Architektur
 | `nicht_prüfbar` wird ignoriert – 80% nicht prüfbar = "KONFORM" | **Evidenz-Warnungen**: Ab 30% nicht prüfbar wird die Gesamtbewertung eingeschränkt |
 | XSS im HTML-Report – Befund-Texte ungefiltert eingebettet | **html.escape()** für alle dynamischen Inhalte |
 | Kein Audit-Trail, kein Checkpoint | **Audit-Trail** (Modell, Katalog-Version) + **Checkpoint** nach jeder Sektion |
+| Naives Satz-Chunking verliert Regulatorik-Struktur | **RegulatoryParser** erzeugt strukturierte Chunks inkl. `regulatory_reference` |
 
 ### Weitere Verbesserungen in v2
 
@@ -107,6 +108,7 @@ finreg-agents/
 │
 ├── ingestion/
 │   ├── ingestor.py           ← Multi-Modal Document Ingestor
+│   ├── parser.py             ← RegulatoryParser (Artikel/§/Abs./Modul/Tz.-Chunking)
 │   └── interviews/           ← Beispiel-Fragebögen
 │
 ├── agents/
@@ -129,7 +131,12 @@ finreg-agents/
 Dokumente (PDF, Excel, Interview, Screenshot, Log)
         │
         ▼
-  [GwGIngestor]              Multi-Modal Ingestion, Chunking, Dedup
+  [GwGIngestor]              Multi-Modal Ingestion, Dedup
+        │
+        ├─ [RegulatoryParser] Struktur-Chunking (Artikel/§/Abs./Modul/Tz.)
+        │    └─ Jeder Chunk erhält `regulatory_reference` (z.B. "Modul AT 7.3, Tz. 1")
+        │
+        └─ Fallback: SentenceSplitter wenn keine Marker erkannt werden
         │
         ▼
   [VectorStoreIndex]         LlamaIndex + OpenAI Embeddings (Settings save/restore)
@@ -408,6 +415,21 @@ Jeder Befund erhält einen Confidence-Score (0.0–1.0), der aus vier Signalen b
 | > 0.70 | Befund geht in den Bericht |
 | > 30% Review in einer Sektion | **Sektions-Eskalation** empfohlen |
 
+### Confidence Guards (v1)
+
+Zusätzlich zum Score gelten Mindestqualitäts-Gates:
+
+| Guard | Schwelle | Wirkung bei Verstoß |
+|---|---|---|
+| `MIN_INPUT_TOKENS` | 300 | `review_erforderlich = true` |
+| `MIN_DISTINCT_SOURCES` | 2 | `review_erforderlich = true` |
+| `MIN_EVIDENCE_QUOTES` | 1 | `review_erforderlich = true` |
+
+Bei Guard-Verletzung:
+- `confidence_level` wird niemals `high` (maximal `medium`)
+- verletzte Guard-Codes landen in `low_confidence_reasons`
+- `confidence_guards` wird im JSON-Befund mit `passed`, `violations`, `metrics` ausgegeben
+
 ### Confidence-Anpassung durch SkeptikerAgent
 
 Wenn `--skeptiker` aktiv, wird der Score zusätzlich angepasst:
@@ -541,6 +563,7 @@ Jede Prüfung erzeugt drei Dateien im Ausgabeverzeichnis:
 | **JSON** | Maschinenlesbar, API-Integration, Weiterverarbeitung |
 | **Markdown** | Lesbar, Git-kompatibel, Review-Workflows |
 | **HTML** | Druckfähig, Präsentation, PDF-Konvertierung |
+| **run_stats.json** | Token- und Kostentransparenz pro Run |
 
 Alle Berichte enthalten:
 
@@ -551,11 +574,19 @@ Alle Berichte enthalten:
 - Fehlende-Evidenz-Hinweise (📄) aus Skeptiker-Review
 - Evidenz-Warnungen bei hohem `nicht_prüfbar`-Anteil
 - Audit-Trail mit Modell, Katalog-Version und Zeitstempel
+- Kompakten `token_stats`-Block + `stats_file`-Verweis auf `run_stats.json`
 
 Zwischenergebnisse werden nach jeder Sektion als Checkpoint gesichert:
 ```
 <output_dir>/.checkpoints/checkpoint_latest.json
 ```
+
+Token- und Kosten-Transparenz:
+```
+<output_dir>/run_stats.json
+```
+
+Standard-Reports bleiben schlank; mit `--verbose` werden pro Prüffeld zusätzliche Token-Details ausgegeben.
 
 ---
 

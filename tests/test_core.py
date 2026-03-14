@@ -14,6 +14,8 @@ from unittest.mock import MagicMock, patch
 
 from agents.pruef_agent import (
     compute_confidence,
+    confidence_level_from_score,
+    evaluate_confidence_guards,
     extract_json,
     validate_befund_structure,
     PrueferAgent,
@@ -89,6 +91,26 @@ class TestConfidenceScore:
             llm_confidence=1.5,
         )
         assert 0.0 <= score <= 1.0
+
+    def test_confidence_level_mapping(self):
+        assert confidence_level_from_score(0.85) == "high"
+        assert confidence_level_from_score(0.6) == "medium"
+        assert confidence_level_from_score(0.2) == "low"
+
+    def test_confidence_guards_fail_and_pass(self):
+        failed = evaluate_confidence_guards(
+            input_tokens=120, distinct_sources=1, evidence_quotes=0
+        )
+        assert failed["passed"] is False
+        assert "MIN_INPUT_TOKENS" in failed["violations"]
+        assert "MIN_DISTINCT_SOURCES" in failed["violations"]
+        assert "MIN_EVIDENCE_QUOTES" in failed["violations"]
+
+        passed = evaluate_confidence_guards(
+            input_tokens=420, distinct_sources=3, evidence_quotes=2
+        )
+        assert passed["passed"] is True
+        assert passed["violations"] == []
 
 
 # ------------------------------------------------------------------ #
@@ -596,3 +618,23 @@ class TestPipelineScopeValidation:
 
         with pytest.raises(ValueError, match="Keine Prüffelder wurden verarbeitet"):
             pipeline.run()
+
+
+class TestTokenStats:
+    def test_write_run_stats_contains_required_fields(self, tmp_path):
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            output_dir=str(tmp_path),
+            verbose=False,
+        )
+        pipeline._add_token_usage("pruefer", {"input": 1000, "output": 400, "total": 1400})
+        pipeline._add_token_usage("skeptiker", {"input": 200, "output": 100, "total": 300})
+        stats_file = pipeline._write_run_stats()
+
+        payload = json.loads(Path(stats_file).read_text(encoding="utf-8"))
+        assert payload["token_stats"]["version"] == "1.0"
+        assert payload["token_stats"]["gesamt"]["total"] == 1700
+        assert payload["token_stats"]["nach_agent"]["pruefer"]["input"] == 1000
+        assert "kosten_schaetzung" in payload
+        assert "pricing_timestamp" in payload["kosten_schaetzung"]
+        assert payload["stats_file"].endswith("run_stats.json")

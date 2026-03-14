@@ -57,6 +57,10 @@ class Befund:
     schweregrad: Optional[str] = None
     quellen: list[str] = field(default_factory=list)
     confidence: float = 0.0
+    confidence_level: str = "low"
+    confidence_guards: dict = field(default_factory=dict)
+    low_confidence_reasons: list[str] = field(default_factory=list)
+    token_usage: dict = field(default_factory=dict)
     review_erforderlich: bool = False
     validierungshinweise: list[str] = field(default_factory=list)
 
@@ -142,6 +146,13 @@ RETRIEVAL_SCORE_MIN = 0.35  # Unter diesem Wert: nicht_prüfbar
 CONFIDENCE_AUTO_REJECT = 0.4  # Unter diesem Wert: automatisch nicht_prüfbar
 CONFIDENCE_REVIEW_THRESHOLD = 0.7  # Unter diesem Wert: manuelles Review markieren
 SEKTION_REVIEW_ESCALATION = 0.3  # Ab diesem Anteil: Sektion eskalieren
+CONFIDENCE_HIGH_THRESHOLD = 0.8
+CONFIDENCE_MEDIUM_THRESHOLD = 0.5
+
+# Confidence Guards (Issue #28)
+MIN_INPUT_TOKENS = 300
+MIN_DISTINCT_SOURCES = 2
+MIN_EVIDENCE_QUOTES = 1
 
 # Retry-Konfiguration für API-Fehler
 LLM_MAX_RETRIES = 3
@@ -149,6 +160,13 @@ LLM_RETRY_BASE_DELAY = 2.0  # Sekunden, verdoppelt sich je Versuch
 
 # Regex für präzises Token-Splitting bei Dateinamen (Fuzzy-Matching-Fix)
 _FILENAME_SEP_RE = re.compile(r"[\s._\-/]+")
+
+
+def estimate_tokens(text: str) -> int:
+    """Pragmatische Token-Schätzung (~4 Zeichen pro Token)."""
+    if not text:
+        return 0
+    return max(1, len(text) // 4)
 
 
 def compute_confidence(
@@ -207,6 +225,38 @@ def compute_confidence(
         + 0.20 * llm_signal
     )
     return round(confidence, 3)
+
+
+def confidence_level_from_score(score: float) -> str:
+    if score >= CONFIDENCE_HIGH_THRESHOLD:
+        return "high"
+    if score >= CONFIDENCE_MEDIUM_THRESHOLD:
+        return "medium"
+    return "low"
+
+
+def evaluate_confidence_guards(
+    input_tokens: int,
+    distinct_sources: int,
+    evidence_quotes: int,
+) -> dict:
+    violations = []
+    if input_tokens < MIN_INPUT_TOKENS:
+        violations.append("MIN_INPUT_TOKENS")
+    if distinct_sources < MIN_DISTINCT_SOURCES:
+        violations.append("MIN_DISTINCT_SOURCES")
+    if evidence_quotes < MIN_EVIDENCE_QUOTES:
+        violations.append("MIN_EVIDENCE_QUOTES")
+
+    return {
+        "passed": not violations,
+        "violations": violations,
+        "metrics": {
+            "input_tokens": input_tokens,
+            "distinct_sources": distinct_sources,
+            "evidence_quotes": evidence_quotes,
+        },
+    }
 
 
 # ------------------------------------------------------------------ #
@@ -395,6 +445,10 @@ class PrueferAgent:
                 ),
                 schweregrad=prueffeld.get("schweregrad"),
                 confidence=0.0,
+                confidence_level="low",
+                confidence_guards=evaluate_confidence_guards(0, 0, 0),
+                low_confidence_reasons=["NO_ALLOWED_EVIDENCE"],
+                token_usage={"input": 0, "output": 0, "total": 0},
                 review_erforderlich=True,
                 validierungshinweise=[
                     "Automatisch nicht_prüfbar: Nur unzulässige Dokumenttypen im Retrieval"
@@ -421,6 +475,10 @@ class PrueferAgent:
                 ),
                 schweregrad=prueffeld.get("schweregrad"),
                 confidence=0.0,
+                confidence_level="low",
+                confidence_guards=evaluate_confidence_guards(0, 0, 0),
+                low_confidence_reasons=["LOW_RETRIEVAL_QUALITY"],
+                token_usage={"input": 0, "output": 0, "total": 0},
                 review_erforderlich=True,
                 validierungshinweise=[
                     "Automatisch nicht_prüfbar: Retrieval-Score unter Threshold"
@@ -438,6 +496,7 @@ class PrueferAgent:
 
         # 4. LLM-Bewertung
         llm_result = self._evaluate_with_llm(prueffeld, evidenz_text)
+        token_usage = llm_result.pop("_token_usage", {"input": 0, "output": 0, "total": 0})
 
         # 5. Strukturelle Validierung
         val_warnings = validate_befund_structure(
@@ -454,6 +513,15 @@ class PrueferAgent:
             gefundene_typen=retrieved_types,
             llm_confidence=llm_result.get("confidence_self", 0.5),
         )
+        confidence_level = confidence_level_from_score(confidence)
+
+        # 6b. Confidence Guards
+        guard_result = evaluate_confidence_guards(
+            input_tokens=token_usage.get("input", 0),
+            distinct_sources=len(retrieved_sources),
+            evidence_quotes=len(llm_result.get("belegte_textstellen", []) or []),
+        )
+        low_confidence_reasons = list(guard_result["violations"])
 
         # 7. Confidence-basierte Entscheidung
         bewertung_str = llm_result.get("bewertung", "nicht_prüfbar")
@@ -466,15 +534,27 @@ class PrueferAgent:
                 f"automatisch auf nicht_prüfbar gesetzt"
             )
             review_erforderlich = True
+            low_confidence_reasons.append("CONFIDENCE_AUTO_REJECT")
         elif confidence < CONFIDENCE_REVIEW_THRESHOLD:
             review_erforderlich = True
             val_warnings.append(
                 f"Review erforderlich: Confidence {confidence:.2f} < {CONFIDENCE_REVIEW_THRESHOLD}"
             )
+            low_confidence_reasons.append("CONFIDENCE_REVIEW_THRESHOLD")
+
+        if not guard_result["passed"]:
+            review_erforderlich = True
+            val_warnings.append(
+                f"Confidence-Guards verletzt: {', '.join(guard_result['violations'])}"
+            )
+            # Kein "high" bei Guard-Verletzung
+            if confidence_level == "high":
+                confidence_level = "medium"
 
         # Wenn Validierungswarnungen vorliegen → Review erzwingen
         if val_warnings:
             review_erforderlich = True
+        low_confidence_reasons = list(dict.fromkeys(low_confidence_reasons))
 
         return Befund(
             prueffeld_id=prueffeld["id"],
@@ -487,6 +567,10 @@ class PrueferAgent:
             schweregrad=prueffeld.get("schweregrad"),
             quellen=llm_result.get("quellen", []),
             confidence=confidence,
+            confidence_level=confidence_level,
+            confidence_guards=guard_result,
+            low_confidence_reasons=low_confidence_reasons,
+            token_usage=token_usage,
             review_erforderlich=review_erforderlich,
             validierungshinweise=val_warnings,
         )
@@ -566,6 +650,7 @@ class PrueferAgent:
 
 Bewerte dieses Prüffeld und antworte als JSON.
 """
+        prompt_input_tokens = estimate_tokens(self.system_prompt) + estimate_tokens(user_prompt)
         messages = [
             SystemMessage(content=self.system_prompt),
             HumanMessage(content=user_prompt),
@@ -575,7 +660,14 @@ Bewerte dieses Prüffeld und antworte als JSON.
         for attempt in range(LLM_MAX_RETRIES):
             try:
                 response = self.llm.invoke(messages)
-                return extract_json(response.content)
+                parsed = extract_json(response.content)
+                output_tokens = estimate_tokens(response.content)
+                parsed["_token_usage"] = {
+                    "input": prompt_input_tokens,
+                    "output": output_tokens,
+                    "total": prompt_input_tokens + output_tokens,
+                }
+                return parsed
             except json.JSONDecodeError as e:
                 # Parse-Fehler: Retry hilft hier nicht
                 return {
@@ -586,6 +678,7 @@ Bewerte dieses Prüffeld und antworte als JSON.
                     "empfehlungen": [],
                     "quellen": [],
                     "confidence_self": 0.0,
+                    "_token_usage": {"input": prompt_input_tokens, "output": 0, "total": prompt_input_tokens},
                 }
             except Exception as e:
                 last_exc = e
@@ -613,6 +706,7 @@ Bewerte dieses Prüffeld und antworte als JSON.
             "empfehlungen": [],
             "quellen": [],
             "confidence_self": 0.0,
+            "_token_usage": {"input": prompt_input_tokens, "output": 0, "total": prompt_input_tokens},
         }
 
 
