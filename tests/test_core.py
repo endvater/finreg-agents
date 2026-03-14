@@ -21,6 +21,7 @@ from agents.skeptiker_agent import (
 # ------------------------------------------------------------------ #
 
 from agents.pruef_agent import (
+    build_claim_annotations,
     compute_confidence,
     confidence_level_from_score,
     evaluate_confidence_guards,
@@ -248,6 +249,27 @@ class TestStructuralValidation:
         )
         assert not any("Unplausible Rechtszitate" in w for w in warnings)
 
+    def test_build_claim_annotations_status_and_provenance(self):
+        class _Node:
+            def __init__(self, metadata):
+                self.metadata = metadata
+
+        claims = build_claim_annotations(
+            llm_result={
+                "belegte_textstellen": ["Claim A"],
+                "begruendung": "Fallback",
+            },
+            nodes=[
+                _Node({"source": "a.pdf", "chunk_id": "c1", "page_label": "12"}),
+                _Node({"source": "b.pdf", "chunk_id": "c2", "page_label": "3"}),
+            ],
+            retrieved_sources={"a.pdf", "b.pdf"},
+        )
+
+        assert len(claims) == 1
+        assert claims[0]["status"] == "corroborated"
+        assert claims[0]["provenance_ids"] == ["P1", "P2"]
+
 
 # ------------------------------------------------------------------ #
 # Test: Sektionsergebnis
@@ -471,6 +493,30 @@ class TestSkeptikerAgent:
 
         assert merged.bewertung == Bewertung.DISPUTED
         assert merged.review_erforderlich is True
+
+    def test_merge_tags_claims_when_skeptiker_disagrees(self):
+        befund = self._make_befund(bewertung=Bewertung.KONFORM, confidence=0.8)
+        befund.claim_list = [
+            {
+                "claim_id": "C1",
+                "text": "Test-Claim",
+                "status": "single-sourced",
+                "provenance_ids": ["P1"],
+                "provenance": [{"id": "P1", "source": "doc.pdf"}],
+                "skeptiker_tag": "none",
+            }
+        ]
+        skeptiker = SkeptikerBefund(
+            prueffeld_id="S01-01",
+            original_bewertung=Bewertung.KONFORM,
+            original_confidence=0.8,
+            akzeptiert=False,
+            bewertung_empfehlung=Bewertung.NICHT_KONFORM,
+            einwaende=["Widerspruch"],
+            adjustierter_confidence=0.5,
+        )
+        merged = merge_befund_skeptiker(befund, skeptiker)
+        assert merged.claim_list[0]["skeptiker_tag"] == "disputed"
 
     def test_skeptiker_befund_dataclass(self):
         """SkeptikerBefund kann instanziiert werden."""

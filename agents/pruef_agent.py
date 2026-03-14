@@ -62,6 +62,7 @@ class Befund:
     confidence_guards: dict = field(default_factory=dict)
     low_confidence_reasons: list[str] = field(default_factory=list)
     token_usage: dict = field(default_factory=dict)
+    claim_list: list[dict] = field(default_factory=list)
     review_erforderlich: bool = False
     validierungshinweise: list[str] = field(default_factory=list)
 
@@ -420,6 +421,66 @@ def validate_befund_structure(
     return warnings
 
 
+def build_claim_annotations(
+    llm_result: dict,
+    nodes: list,
+    retrieved_sources: set[str],
+) -> list[dict]:
+    """
+    Leitet eine auditierbare Claim-Liste aus Textstellen und Retrieval-Metadaten ab.
+    """
+    raw_claims = [str(t).strip() for t in (llm_result.get("belegte_textstellen") or [])]
+    raw_claims = [c for c in raw_claims if c]
+    if not raw_claims:
+        begruendung = (llm_result.get("begruendung") or "").strip()
+        if begruendung:
+            raw_claims = [begruendung]
+    if not raw_claims:
+        return []
+
+    provenance = []
+    seen = set()
+    for node in nodes:
+        md = getattr(node, "metadata", {}) or {}
+        signature = (
+            str(md.get("source", "unbekannt")),
+            str(md.get("chunk_id", "")),
+            str(md.get("page_label", md.get("start_char_idx", ""))),
+        )
+        if signature in seen:
+            continue
+        seen.add(signature)
+        provenance.append(
+            {
+                "id": f"P{len(provenance) + 1}",
+                "source": signature[0],
+                "chunk_id": signature[1] or None,
+                "position": signature[2] or None,
+            }
+        )
+
+    source_count = len(retrieved_sources)
+    status = (
+        "corroborated"
+        if source_count >= 2
+        else "single-sourced"
+        if source_count == 1
+        else "unverified"
+    )
+    provenance_ids = [p["id"] for p in provenance]
+    return [
+        {
+            "claim_id": f"C{idx + 1}",
+            "text": claim,
+            "status": status,
+            "provenance_ids": provenance_ids,
+            "provenance": provenance,
+            "skeptiker_tag": "none",
+        }
+        for idx, claim in enumerate(raw_claims)
+    ]
+
+
 # ------------------------------------------------------------------ #
 # JSON-Extraktion (robust)
 # ------------------------------------------------------------------ #
@@ -667,6 +728,9 @@ class PrueferAgent:
             confidence_guards=guard_result,
             low_confidence_reasons=low_confidence_reasons,
             token_usage=token_usage,
+            claim_list=build_claim_annotations(
+                llm_result, good_nodes, retrieved_sources
+            ),
             review_erforderlich=review_erforderlich,
             validierungshinweise=val_warnings,
         )
@@ -963,6 +1027,11 @@ def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
         schweregrad=befund.schweregrad,
         quellen=befund.quellen,
         confidence=new_confidence,
+        confidence_level=befund.confidence_level,
+        confidence_guards=befund.confidence_guards,
+        low_confidence_reasons=befund.low_confidence_reasons,
+        token_usage=befund.token_usage,
+        claim_list=befund.claim_list,
         review_erforderlich=review_erforderlich,
         validierungshinweise=hinweise,
     )

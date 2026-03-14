@@ -491,6 +491,16 @@ def merge_befund_skeptiker(befund: Befund, skeptiker: SkeptikerBefund) -> Befund
         skeptiker.bewertung_empfehlung is None
         or skeptiker.bewertung_empfehlung != befund.bewertung
     )
+    claim_list = []
+    for claim in befund.claim_list:
+        enriched = dict(claim)
+        if not skeptiker.akzeptiert:
+            enriched["skeptiker_tag"] = "disputed"
+        elif skeptiker.einwaende:
+            enriched["skeptiker_tag"] = "flagged"
+        else:
+            enriched["skeptiker_tag"] = "accepted"
+        claim_list.append(enriched)
 
     return Befund(
         prueffeld_id=befund.prueffeld_id,
@@ -507,6 +517,7 @@ def merge_befund_skeptiker(befund: Befund, skeptiker: SkeptikerBefund) -> Befund
         confidence_guards=befund.confidence_guards,
         low_confidence_reasons=befund.low_confidence_reasons,
         token_usage=befund.token_usage,
+        claim_list=claim_list,
         review_erforderlich=review_erforderlich,
         validierungshinweise=hinweise,
     )
