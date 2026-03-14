@@ -340,6 +340,22 @@ class BerichtGenerator:
                 "generator_version": "finreg-agents v2.0",
                 "timestamp": datetime.now().isoformat(),
             },
+            "disputed_findings": [
+                {
+                    "id": b.prueffeld_id,
+                    "frage": b.frage,
+                    "sektion_id": next(
+                        (s.sektion_id for s in sektionsergebnisse if b in s.befunde),
+                        "unbekannt",
+                    ),
+                    "pruefer_bewertung": (b.disputed_positions or {}).get("pruefer", ""),
+                    "adversarial_bewertung": (b.disputed_positions or {}).get(
+                        "adversarial", ""
+                    ),
+                    "divergenz": (b.disputed_positions or {}).get("divergenz", 0),
+                }
+                for b in disputed
+            ],
         }
 
     # ------------------------------------------------------------------ #
@@ -364,6 +380,7 @@ class BerichtGenerator:
                 "audit_trail": zusammenfassung["audit_trail"],
             },
             "zusammenfassung": zusammenfassung,
+            "disputed_findings": zusammenfassung.get("disputed_findings", []),
             "token_stats": token_stats or {},
             "stats_file": stats_file,
             "sektionen": [
@@ -401,6 +418,7 @@ class BerichtGenerator:
                                 }
                                 for cp in getattr(b, "claim_provenance", [])
                             ],
+                            "disputed_positions": getattr(b, "disputed_positions", None),
                             **({"token_usage": b.token_usage} if verbose else {}),
                         }
                         for b in s.befunde
@@ -587,6 +605,24 @@ class BerichtGenerator:
                     lines.append(f"*Quellen: {', '.join(b.quellen)}*")
                 lines.append("---")
 
+        # Strittige Befunde
+        disputed_findings = z.get("disputed_findings", [])
+        if disputed_findings:
+            lines += [
+                "",
+                "## 🔀 Strittige Befunde",
+                "",
+                f"*{len(disputed_findings)} strittige Befunde mit wesentlicher Divergenz zwischen Prüfer und Adversarial Layer*",
+                "",
+                "| Prüffeld | Prüfer-Bewertung | Adversarial-Bewertung | Divergenz |",
+                "|---|---|---|---|",
+            ]
+            for df in disputed_findings:
+                lines.append(
+                    f"| {df['id']} | {df['pruefer_bewertung']} | {df['adversarial_bewertung']} | {df['divergenz']} |"
+                )
+            lines.append("")
+
         # Audit Trail
         lines += [
             "",
@@ -624,6 +660,8 @@ class BerichtGenerator:
             parts.append(self._html_token_stats(token_stats, stats_file))
         if z["kritische_befunde"]:
             parts.append(self._html_mangelkatalog(z))
+        if z.get("disputed_findings"):
+            parts.append(self._html_strittige_befunde(z))
         if z["nicht_pruefbar_quote"] >= 30:
             parts.append(self._html_evidenz_warnung(z))
         parts.append(self._html_detailbefunde(sektionsergebnisse))
@@ -919,6 +957,38 @@ class BerichtGenerator:
 </div>"""
             out += "</div>"
         return out
+
+    def _html_strittige_befunde(self, z) -> str:
+        disputed = z.get("disputed_findings", [])
+        rows = "".join(
+            f"<tr>"
+            f"<td style='padding:8px 12px;font-family:monospace;font-size:12px'>{_esc(df['id'])}</td>"
+            f"<td style='padding:8px 12px'>{_esc(df['pruefer_bewertung'])}</td>"
+            f"<td style='padding:8px 12px;color:#c0392b;font-weight:600'>{_esc(df['adversarial_bewertung'])}</td>"
+            f"<td style='padding:8px 12px;text-align:center;font-weight:700'>{_esc(str(df['divergenz']))}</td>"
+            f"</tr>"
+            for df in disputed
+        )
+        return f"""
+<div style="background:#fdebd0;border:1px solid #f0b27a;border-radius:8px;padding:20px;margin-bottom:32px;">
+  <h2 style="color:#d35400;margin-bottom:12px;font-size:15px">🔀 Strittige Befunde ({len(disputed)})</h2>
+  <p style="font-size:12px;color:#7d6608;margin-bottom:12px">
+    Befunde mit wesentlicher Divergenz zwischen Prüfer-Agent und Adversarial Layer.
+    Manuelle Überprüfung erforderlich.
+  </p>
+  <table style="width:100%;border-collapse:collapse;background:white;border-radius:6px;overflow:hidden;">
+    <thead>
+      <tr style="background:#f0b27a;color:#6e2f00;font-size:12px;font-weight:700">
+        <th style="padding:8px 12px;text-align:left">Prüffeld</th>
+        <th style="padding:8px 12px;text-align:left">Prüfer-Bewertung</th>
+        <th style="padding:8px 12px;text-align:left">Adversarial-Bewertung</th>
+        <th style="padding:8px 12px;text-align:center">Divergenz</th>
+      </tr>
+    </thead>
+    <tbody>{rows}</tbody>
+  </table>
+</div>
+"""
 
     def _html_audit_trail(self, z) -> str:
         at = z.get("audit_trail", {})

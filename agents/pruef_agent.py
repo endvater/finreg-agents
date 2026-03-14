@@ -70,6 +70,7 @@ class Befund:
     validierungshinweise: list[str] = field(default_factory=list)
     term_drift_warnings: list[str] = field(default_factory=list)
     claim_provenance: list[ClaimProvenance] = field(default_factory=list)
+    disputed_positions: Optional[dict] = None
 
 
 @dataclass
@@ -966,6 +967,8 @@ def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
     hinweise = list(befund.validierungshinweise)
     confidence_delta = 0.0
     review_erforderlich = befund.review_erforderlich
+    neue_bewertung = befund.bewertung
+    disputed_positions: Optional[dict] = None
 
     if divergenz <= 0:
         hinweise.append(
@@ -984,11 +987,27 @@ def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
     else:
         confidence_delta = _ADVERSARIAL_PENALTY.get(divergenz, _ADVERSARIAL_PENALTY[3])
         review_erforderlich = True
-        hinweise.append(
-            f"⚔️ Adversarial Divergenz ({divergenz}): "
-            f"{befund.bewertung.value} → {adv.adversarial_bewertung.value} "
-            f"→ Review erzwungen"
-        )
+
+        # Disputed-Status: divergenz >= 2 → wesentliche Uneinigkeit
+        if divergenz >= 2:
+            neue_bewertung = Bewertung.DISPUTED
+            review_erforderlich = True
+            disputed_positions = {
+                "pruefer": befund.bewertung.value,
+                "adversarial": adv.adversarial_bewertung.value,
+                "divergenz": divergenz,
+            }
+            hinweise.append(
+                f"⚔️ DISPUTED: Adversarial Divergenz ({divergenz}): "
+                f"{befund.bewertung.value} → {adv.adversarial_bewertung.value} "
+                f"→ Bewertung auf 'disputed' gesetzt, Review erzwungen"
+            )
+        else:
+            hinweise.append(
+                f"⚔️ Adversarial Divergenz ({divergenz}): "
+                f"{befund.bewertung.value} → {adv.adversarial_bewertung.value} "
+                f"→ Review erzwungen"
+            )
         for sw in adv.schwachstellen:
             hinweise.append(f"⚔️ Schwachstelle: {sw}")
         for fn in adv.fehlende_nachweise:
@@ -999,7 +1018,7 @@ def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
     return Befund(
         prueffeld_id=befund.prueffeld_id,
         frage=befund.frage,
-        bewertung=befund.bewertung,  # Originalbewertung bleibt erhalten
+        bewertung=neue_bewertung,
         begruendung=befund.begruendung,
         belegte_textstellen=befund.belegte_textstellen,
         empfehlungen=befund.empfehlungen,
@@ -1011,6 +1030,7 @@ def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
         validierungshinweise=hinweise,
         term_drift_warnings=befund.term_drift_warnings,
         claim_provenance=befund.claim_provenance,
+        disputed_positions=disputed_positions,
     )
 
 

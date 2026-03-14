@@ -26,6 +26,7 @@ import argparse
 import json
 import logging
 import random
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -47,6 +48,15 @@ from reports.bericht_generator import BerichtGenerator
 
 load_dotenv(override=True)
 logger = logging.getLogger(__name__)
+
+
+# ------------------------------------------------------------------ #
+# Custom Exceptions
+# ------------------------------------------------------------------ #
+class ReviewBudgetExceeded(Exception):
+    """Raised when the review budget has been reached during the pipeline run."""
+
+    pass
 
 
 # ------------------------------------------------------------------ #
@@ -90,12 +100,13 @@ class AuditPipeline:
         top_k: int = 8,
         verbose: bool = True,
         verbose_token_details: bool = False,
-        review_budget: int | None = None,
         evidence_relevance_filter: bool = False,
         skeptiker: bool = False,
         skeptiker_only_konform: bool = False,
         adversarial: bool = False,
         use_relevance_filter: bool = False,
+        review_budget: int = 0,
+        resume: bool = False,
     ):
         self.input_dir = input_dir
         self.institution = institution
@@ -113,8 +124,6 @@ class AuditPipeline:
         self.evidence_relevance_filter = evidence_relevance_filter
         self.skeptiker = skeptiker
         self.skeptiker_only_konform = skeptiker_only_konform
-        if self.review_budget is not None and self.review_budget < 1:
-            raise ValueError("review_budget muss >= 1 sein")
         self.run_token_stats = {
             "version": "1.0",
             "gesamt": {"input": 0, "output": 0, "total": 0},
@@ -126,6 +135,7 @@ class AuditPipeline:
         }
         self.adversarial = adversarial
         self.use_relevance_filter = use_relevance_filter
+        self.resume = resume
 
         # Katalogpfad auflösen
         base = Path(__file__).parent
@@ -308,8 +318,26 @@ class AuditPipeline:
         checkpoint_dir = Path(self.output_dir) / ".checkpoints"
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
+        # Resume: load completed section IDs from checkpoint
+        completed_sektion_ids: set[str] = set()
+        if self.resume:
+            completed_sektion_ids = self._load_completed_sektion_ids(checkpoint_dir)
+            if completed_sektion_ids:
+                self._log(
+                    f"   → Resume-Modus: {len(completed_sektion_ids)} bereits abgeschlossene Sektion(en) werden übersprungen."
+                )
+
+        review_counter = 0
+
         for sektion in katalog["pruefsektionen"]:
             if self.sektionen_filter and sektion["id"] not in self.sektionen_filter:
+                continue
+
+            # Resume: skip already-completed sections
+            if sektion["id"] in completed_sektion_ids:
+                self._log(
+                    f"\n  ⏭️  Überspringe bereits abgeschlossene Sektion: {sektion['id']}: {sektion['titel']}"
+                )
                 continue
 
             self._log(f"\n  📌 {sektion['id']}: {sektion['titel']}")
@@ -387,10 +415,35 @@ class AuditPipeline:
                         )
                         break
 
+                # Review-Budget-Tracking
+                if befund.review_erforderlich and self.review_budget > 0:
+                    review_counter += 1
+                    if review_counter >= self.review_budget:
+                        # Save partial section results before raising
+                        sektionsergebnisse.append(ergebnis)
+                        self._save_checkpoint(sektionsergebnisse, checkpoint_dir)
+                        checkpoint_path = checkpoint_dir / "checkpoint_latest.json"
+                        raise ReviewBudgetExceeded(
+                            f"Review-Budget von {self.review_budget} erreicht – Prüfung pausiert.\n"
+                            f"   Checkpoint gespeichert: {checkpoint_path}\n"
+                            f"   Weiter mit: python pipeline.py ... --resume"
+                        )
+
             # Sektions-Eskalation prüfen
             if ergebnis.review_quote >= SEKTION_REVIEW_ESCALATION:
                 self._log(
                     f"  ⚠️  Sektion {sektion['id']}: {ergebnis.review_quote:.0%} Review-Quote → Eskalation empfohlen"
+                )
+
+            # Disputed-Befunde-Eskalation
+            disputed_count = sum(
+                1 for b in ergebnis.befunde if b.bewertung.value == "disputed"
+            )
+            if disputed_count > 0:
+                logger.warning(
+                    "⚠️  Sektion %s: %d strittige Befunde – manuelle Eskalation empfohlen",
+                    sektion["id"],
+                    disputed_count,
                 )
 
             sektionsergebnisse.append(ergebnis)
@@ -524,6 +577,19 @@ class AuditPipeline:
                 )
         except Exception as e:
             logger.warning("Checkpoint-Fehler (Pipeline läuft weiter): %s", e)
+
+    def _load_completed_sektion_ids(self, checkpoint_dir: Path) -> set[str]:
+        """Loads already-completed section IDs from the latest checkpoint."""
+        checkpoint_path = checkpoint_dir / "checkpoint_latest.json"
+        if not checkpoint_path.exists():
+            logger.warning("Keine Checkpoint-Datei gefunden unter: %s", checkpoint_path)
+            return set()
+        try:
+            data = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+            return {entry["id"] for entry in data if "id" in entry}
+        except Exception as e:
+            logger.warning("Fehler beim Laden des Checkpoints: %s", e)
+            return set()
 
     def _add_token_usage(self, agent_name: str, usage: dict):
         input_tokens = int((usage or {}).get("input", 0))
@@ -767,6 +833,19 @@ Beispiele:
         help="Relevanz-Filter aktivieren: context_noise Chunks werden vor "
         "LLM-Auswertung herausgefiltert. Schreibt relevance_sampling.json.",
     )
+    parser.add_argument(
+        "--review-budget",
+        type=int,
+        default=0,
+        dest="review_budget",
+        help="Pausiert die Prüfung nach N Befunden mit review_erforderlich=True und speichert einen Checkpoint (0 = deaktiviert).",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        default=False,
+        help="Setzt eine pausierte Prüfung fort (liest den letzten Checkpoint und überspringt bereits abgeschlossene Sektionen).",
+    )
     args = parser.parse_args()
 
     pipeline = AuditPipeline(
@@ -789,8 +868,13 @@ Beispiele:
         skeptiker_only_konform=args.skeptiker_only_konform,
         adversarial=args.adversarial,
         use_relevance_filter=args.relevance_filter,
+        resume=args.resume,
     )
-    pipeline.run()
+    try:
+        pipeline.run()
+    except ReviewBudgetExceeded as exc:
+        print(f"\n⏸️  {exc}")
+        sys.exit(0)
 
 
 if __name__ == "__main__":
