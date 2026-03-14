@@ -487,11 +487,15 @@ def merge_befund_skeptiker(befund: Befund, skeptiker: SkeptikerBefund) -> Befund
         or not skeptiker.akzeptiert
         or len(skeptiker.einwaende) >= EINWAND_ESKALATION_THRESHOLD
     )
+    disputed = not skeptiker.akzeptiert and (
+        skeptiker.bewertung_empfehlung is None
+        or skeptiker.bewertung_empfehlung != befund.bewertung
+    )
 
     return Befund(
         prueffeld_id=befund.prueffeld_id,
         frage=befund.frage,
-        bewertung=befund.bewertung,  # Originalbewertung behalten!
+        bewertung=Bewertung.DISPUTED if disputed else befund.bewertung,
         begruendung=befund.begruendung,
         belegte_textstellen=befund.belegte_textstellen,
         empfehlungen=befund.empfehlungen,

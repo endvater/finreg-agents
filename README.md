@@ -724,7 +724,7 @@ Hinweise:
 
 - [x] ~~Skeptiker-Agent: Adversariales LLM-Review als optionaler Post-Processing-Layer~~ ✅ *v2.1*
 - [x] ~~Adversarial Prompting Layer: zweiter LLM-Pass mit umgekehrtem System-Prompt~~ ✅ *v2.2 – Issue #4*
-- [ ] Disagreement Resolution Protocol: `disputed`-Status + eigener Report-Abschnitt bei Prüfer-vs-Adversarial-Widerspruch *(Issue #2)*
+- [x] ~~Disagreement Resolution Protocol: `disputed`-Status + eigener Report-Abschnitt bei Prüfer-vs-Adversarial-Widerspruch~~ ✅ *v2.6 – Issue #2*
 - [ ] Context Drift Detection: Regulatory Term Preservation Layer in `bericht_generator.py` *(Issue #3)*
 - [ ] Per-Claim Provenance + Skeptic-Tagging: Claim-Level-Annotation mit Corroboration-Status *(Issue #6)*
 - [x] ~~Human Validation Cadence: `--review-budget N` Flag + Checkpoint-Resume~~ ✅ *v2.5 – Issue #1*

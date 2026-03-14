@@ -249,6 +249,7 @@ class AuditPipeline:
                     "teilkonform": "⚠️",
                     "nicht_konform": "🔴",
                     "nicht_prüfbar": "❓",
+                    "disputed": "⚖️",
                 }.get(befund.bewertung.value, "?")
 
                 conf_str = (

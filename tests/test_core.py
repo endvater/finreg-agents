@@ -455,6 +455,23 @@ class TestSkeptikerAgent:
         assert "Prozessnachweis fehlt" in hints
         assert "Audit-Trail" in hints
 
+    def test_merge_sets_disputed_when_skeptiker_disagrees(self):
+        befund = self._make_befund(bewertung=Bewertung.KONFORM, confidence=0.8)
+        skeptiker = SkeptikerBefund(
+            prueffeld_id="S01-01",
+            original_bewertung=Bewertung.KONFORM,
+            original_confidence=0.8,
+            akzeptiert=False,
+            bewertung_empfehlung=Bewertung.NICHT_KONFORM,
+            einwaende=["Wesentliche Kontrolllücke"],
+            adjustierter_confidence=0.5,
+        )
+
+        merged = merge_befund_skeptiker(befund, skeptiker)
+
+        assert merged.bewertung == Bewertung.DISPUTED
+        assert merged.review_erforderlich is True
+
     def test_skeptiker_befund_dataclass(self):
         """SkeptikerBefund kann instanziiert werden."""
         sb = SkeptikerBefund(
@@ -764,3 +781,32 @@ class TestBerichtGeneratorTokenStats:
         assert "Gesamt Tokens" in html
         assert "Pricing-Stand" in html
         assert "run_stats.json" in html
+
+    def test_summary_tracks_disputed_separately(self):
+        generator = BerichtGenerator()
+        sektion = Sektionsergebnis(sektion_id="S01", titel="Test")
+        sektion.befunde = [
+            Befund(
+                prueffeld_id="S01-01",
+                frage="?",
+                bewertung=Bewertung.KONFORM,
+                begruendung="ok",
+                confidence=0.8,
+            ),
+            Befund(
+                prueffeld_id="S01-02",
+                frage="?",
+                bewertung=Bewertung.DISPUTED,
+                begruendung="strittig",
+                confidence=0.6,
+                validierungshinweise=[
+                    "⚔️ Skeptiker widerspricht: Empfehlung 'nicht_konform'"
+                ],
+            ),
+        ]
+
+        z = generator._berechne_zusammenfassung([sektion])
+
+        assert z["disputed"] == 1
+        assert z["gewertete_prueffelder"] == 1
+        assert len(z["strittige_befunde"]) == 1
