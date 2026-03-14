@@ -29,6 +29,13 @@ from agents.pruef_agent import (
     Sektionsergebnis,
     Befund,
 )
+from agents.skeptiker_agent import (
+    SkeptikerAgent,
+    SkeptikerBefund,
+    merge_befund_skeptiker,
+    SKEPTIKER_MIN_CONFIDENCE,
+    SKEPTIKER_CONFIDENCE_PENALTY,
+)
 from pipeline import AuditPipeline
 
 
