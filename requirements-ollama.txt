@@ -1,0 +1,5 @@
+# Ollama Provider: Llama 3.3, Qwen2.5 etc. (lokal, kein API-Key)
+# Voraussetzung: Ollama unter http://localhost:11434 erreichbar
+# pip install -r requirements.txt -r requirements-ollama.txt
+langchain-ollama>=0.2.0
+llama-index-embeddings-ollama>=0.3.0

@@ -1,0 +1,4 @@
+# Google Gemini Provider: Gemini 2.0 Flash, 2.5 Pro + Google Embeddings
+# pip install -r requirements.txt -r requirements-gemini.txt
+langchain-google-genai>=2.0.0
+llama-index-embeddings-gemini>=0.3.0

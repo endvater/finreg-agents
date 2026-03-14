@@ -1,0 +1,4 @@
+# OpenAI Provider: GPT-4o, GPT-4o-mini, o3 + OpenAI Embeddings
+# pip install -r requirements.txt -r requirements-openai.txt
+langchain-openai>=0.2.0
+llama-index-embeddings-openai>=0.2.0

@@ -1,0 +1,4 @@
+# xAI Grok Provider: Grok-3, Grok-3 Mini (OpenAI-kompatibler Endpunkt)
+# pip install -r requirements.txt -r requirements-grok.txt
+# Benötigt nur langchain-openai + XAI_API_KEY
+langchain-openai>=0.2.0

@@ -1,0 +1,4 @@
+# Mistral AI Provider: Mistral Large, Mistral Small + Mistral Embeddings
+# pip install -r requirements.txt -r requirements-mistral.txt
+langchain-mistralai>=0.2.0
+llama-index-embeddings-mistralai>=0.2.0
