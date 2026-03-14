@@ -248,6 +248,34 @@ class TestStructuralValidation:
         )
         assert not any("Unplausible Rechtszitate" in w for w in warnings)
 
+    def test_context_drift_warning_when_norm_ref_missing(self):
+        warnings = validate_befund_structure(
+            llm_result={
+                "bewertung": "teilkonform",
+                "quellen": ["doc.pdf"],
+                "belegte_textstellen": ["Interne Sicherungsmaßnahmen sind vorhanden."],
+                "begruendung": "Es gibt Sicherungsmaßnahmen, Details bleiben unklar.",
+            },
+            retrieved_sources={"doc.pdf"},
+            regulatorik="gwg",
+            evidence_text="Evidenz mit § 15 Abs. 2 GwG und weiteren Details.",
+        )
+        assert any("Context-Drift-Verdacht" in w for w in warnings)
+
+    def test_context_drift_not_flagged_when_norm_ref_preserved(self):
+        warnings = validate_befund_structure(
+            llm_result={
+                "bewertung": "konform",
+                "quellen": ["doc.pdf"],
+                "belegte_textstellen": ["§ 15 Abs. 2 GwG wird umgesetzt."],
+                "begruendung": "Die Vorgaben aus § 15 Abs. 2 GwG sind erfüllt.",
+            },
+            retrieved_sources={"doc.pdf"},
+            regulatorik="gwg",
+            evidence_text="Evidenz mit § 15 Abs. 2 GwG und Umsetzungsbeschreibung.",
+        )
+        assert not any("Context-Drift-Verdacht" in w for w in warnings)
+
 
 # ------------------------------------------------------------------ #
 # Test: Sektionsergebnis
