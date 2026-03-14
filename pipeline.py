@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -80,6 +81,7 @@ class AuditPipeline:
         sektionen_filter: list = None,
         top_k: int = 8,
         verbose: bool = True,
+        verbose_token_details: bool = False,
         skeptiker: bool = False,
         skeptiker_only_konform: bool = False,
         adversarial: bool = False,
@@ -95,9 +97,19 @@ class AuditPipeline:
         self.sektionen_filter = sektionen_filter
         self.top_k = top_k
         self.verbose = verbose
+        self.verbose_token_details = verbose_token_details
         self.skeptiker = skeptiker
         self.skeptiker_only_konform = skeptiker_only_konform
         self.adversarial = adversarial
+        self.run_token_stats = {
+            "version": "1.0",
+            "gesamt": {"input": 0, "output": 0, "total": 0},
+            "nach_agent": {
+                "pruefer": {"input": 0, "output": 0, "total": 0},
+                "skeptiker": {"input": 0, "output": 0, "total": 0},
+            },
+            "details": [],
+        }
 
         # Katalogpfad auflösen
         base = Path(__file__).parent
@@ -234,6 +246,7 @@ class AuditPipeline:
                 t0 = time.time()
                 befund = agent.pruefe_feld(feld)
                 dauer = time.time() - t0
+                self._add_token_usage("pruefer", befund.token_usage)
 
                 status_icon = {
                     "konform": "✅",
@@ -242,11 +255,14 @@ class AuditPipeline:
                     "nicht_prüfbar": "❓",
                 }.get(befund.bewertung.value, "?")
 
-                conf_str = f" | Conf: {befund.confidence:.0%}"
+                conf_str = (
+                    f" | Conf: {befund.confidence:.0%} ({befund.confidence_level})"
+                )
                 review_str = " | 🔍 REVIEW" if befund.review_erforderlich else ""
                 self._log(
                     f"       → {status_icon} {befund.bewertung.value.upper()}{conf_str}{review_str} ({dauer:.1f}s)"
                 )
+                self._add_detail_stat(sektion["id"], feld["id"], befund)
 
                 if befund.validierungshinweise:
                     for hint in befund.validierungshinweise:
@@ -270,6 +286,7 @@ class AuditPipeline:
                             f" {len(skeptiker_result.einwaende)} Hinweis(e) ({dauer_sk:.1f}s)"
                         )
                     befund = merge_befund_skeptiker(befund, skeptiker_result)
+                    self._add_token_usage("skeptiker", skeptiker_result.token_usage)
 
                 ergebnis.befunde.append(befund)
                 gepruefte_felder += 1
@@ -300,9 +317,13 @@ class AuditPipeline:
             model=self.model,
             katalog_version=katalog_version,
         )
+        stats_file, costs = self._write_run_stats()
         report_paths = generator.generiere_alle_berichte(
             sektionsergebnisse=sektionsergebnisse,
             output_dir=self.output_dir,
+            token_stats=self._token_stats_summary(stats_file, costs),
+            stats_file=stats_file,
+            verbose=self.verbose_token_details,
         )
 
         # ── Zusammenfassung ──────────────────────────────────────────────
@@ -344,6 +365,96 @@ class AuditPipeline:
             )
         except Exception as e:
             logger.warning("Checkpoint-Fehler (Pipeline läuft weiter): %s", e)
+
+    def _add_token_usage(self, agent_name: str, usage: dict):
+        input_tokens = int((usage or {}).get("input", 0))
+        output_tokens = int((usage or {}).get("output", 0))
+        total_tokens = int((usage or {}).get("total", input_tokens + output_tokens))
+
+        agent_bucket = self.run_token_stats["nach_agent"].setdefault(
+            agent_name, {"input": 0, "output": 0, "total": 0}
+        )
+        agent_bucket["input"] += input_tokens
+        agent_bucket["output"] += output_tokens
+        agent_bucket["total"] += total_tokens
+        self.run_token_stats["gesamt"]["input"] += input_tokens
+        self.run_token_stats["gesamt"]["output"] += output_tokens
+        self.run_token_stats["gesamt"]["total"] += total_tokens
+
+    def _add_detail_stat(self, sektion_id: str, prueffeld_id: str, befund):
+        self.run_token_stats["details"].append(
+            {
+                "sektion": sektion_id,
+                "prueffeld": prueffeld_id,
+                "confidence": befund.confidence,
+                "confidence_level": befund.confidence_level,
+                "review_erforderlich": befund.review_erforderlich,
+                "token_usage": befund.token_usage,
+                "confidence_guards": befund.confidence_guards,
+            }
+        )
+
+    def _estimate_costs(self) -> dict:
+        # V1-Schätzung: konservatives Dummy-Pricing pro 1k Tokens.
+        pricing = {
+            "pruefer": {"input_per_1k": 0.003, "output_per_1k": 0.015},
+            "skeptiker": {"input_per_1k": 0.003, "output_per_1k": 0.015},
+            "currency": "USD",
+        }
+        details = {}
+        total_cost = 0.0
+        for agent_name, usage in self.run_token_stats["nach_agent"].items():
+            rates = pricing.get(agent_name, pricing["pruefer"])
+            in_cost = (usage["input"] / 1000.0) * rates["input_per_1k"]
+            out_cost = (usage["output"] / 1000.0) * rates["output_per_1k"]
+            agent_cost = round(in_cost + out_cost, 6)
+            details[agent_name] = {
+                "input_cost": round(in_cost, 6),
+                "output_cost": round(out_cost, 6),
+                "total_cost": agent_cost,
+            }
+            total_cost += agent_cost
+        return {
+            "currency": pricing["currency"],
+            "total_cost": round(total_cost, 6),
+            "nach_agent": details,
+            "pricing_timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    def _write_run_stats(self) -> tuple[str, dict]:
+        out_dir = Path(self.output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        stats_path = out_dir / "run_stats.json"
+        costs = self._estimate_costs()
+        payload = {
+            "token_stats": {
+                "version": self.run_token_stats["version"],
+                "gesamt": self.run_token_stats["gesamt"],
+                "nach_agent": self.run_token_stats["nach_agent"],
+            },
+            "kosten_schaetzung": costs,
+            "stats_file": str(stats_path),
+        }
+        if self.verbose_token_details:
+            payload["details"] = self.run_token_stats["details"]
+
+        stats_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        return str(stats_path), costs
+
+    def _token_stats_summary(self, stats_file: str, costs: dict) -> dict:
+        return {
+            "version": self.run_token_stats["version"],
+            "gesamt": self.run_token_stats["gesamt"],
+            "nach_agent": self.run_token_stats["nach_agent"],
+            "kosten_schaetzung": {
+                "currency": costs["currency"],
+                "total_cost": costs["total_cost"],
+                "pricing_timestamp": costs["pricing_timestamp"],
+            },
+            "stats_file": stats_file,
+        }
 
     def _log(self, msg: str):
         if self.verbose:
@@ -410,6 +521,18 @@ Beispiele:
     )
     parser.add_argument("--top-k", type=int, default=8, help="RAG-Chunks pro Prüffrage")
     parser.add_argument(
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="Ausführliche Token-Detailstatistik in Reports und run_stats.json",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        default=False,
+        help="Unterdrückt Fortschrittsausgabe auf der Konsole",
+    )
+    parser.add_argument(
         "--skeptiker",
         action="store_true",
         default=False,
@@ -448,6 +571,8 @@ Beispiele:
         local_embeddings=args.local_embeddings,
         sektionen_filter=args.sektionen,
         top_k=args.top_k,
+        verbose=not args.quiet,
+        verbose_token_details=args.verbose,
         skeptiker=args.skeptiker,
         skeptiker_only_konform=args.skeptiker_only_konform,
         adversarial=args.adversarial,

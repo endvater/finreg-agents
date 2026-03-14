@@ -28,6 +28,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from agents.pruef_agent import (
     Befund,
     Bewertung,
+    confidence_level_from_score,
+    estimate_tokens,
     extract_json,
 )
 
@@ -112,6 +114,7 @@ class SkeptikerBefund:
 
     # Angepasster Confidence-Score
     adjustierter_confidence: float = 0.0
+    token_usage: dict = field(default_factory=dict)
 
     # Rohe LLM-Antwort
     skeptiker_raw: dict = field(default_factory=dict)
@@ -270,6 +273,9 @@ class SkeptikerAgent:
 Bei einer '{befund.bewertung.value}'-Bewertung – bist du damit einverstanden?
 Antworte als JSON.
 """
+        prompt_input_tokens = estimate_tokens(
+            SKEPTIKER_SYSTEM_PROMPT
+        ) + estimate_tokens(user_prompt)
         messages = [
             SystemMessage(content=SKEPTIKER_SYSTEM_PROMPT),
             HumanMessage(content=user_prompt),
@@ -281,7 +287,14 @@ Antworte als JSON.
         for attempt in range(SKEPTIKER_MAX_RETRIES):
             try:
                 response = self.llm.invoke(messages)
-                return extract_json(response.content)
+                parsed = extract_json(response.content)
+                output_tokens = estimate_tokens(response.content)
+                parsed["_token_usage"] = {
+                    "input": prompt_input_tokens,
+                    "output": output_tokens,
+                    "total": prompt_input_tokens + output_tokens,
+                }
+                return parsed
             except _json.JSONDecodeError as e:
                 # Parse-Fehler → kein Retry sinnvoll
                 logger.warning(
@@ -296,6 +309,11 @@ Antworte als JSON.
                     "nachforderung_empfohlen": False,
                     "fehlende_evidenz": [],
                     "begruendung": "Skeptiker-Antwort konnte nicht geparst werden.",
+                    "_token_usage": {
+                        "input": prompt_input_tokens,
+                        "output": 0,
+                        "total": prompt_input_tokens,
+                    },
                 }
             except Exception as e:
                 last_exc = e
@@ -329,10 +347,16 @@ Antworte als JSON.
             "nachforderung_empfohlen": False,
             "fehlende_evidenz": [],
             "begruendung": "Skeptiker-Review konnte nicht durchgeführt werden.",
+            "_token_usage": {
+                "input": prompt_input_tokens,
+                "output": 0,
+                "total": prompt_input_tokens,
+            },
         }
 
     def _build_skeptiker_befund(self, befund: Befund, result: dict) -> SkeptikerBefund:
         """Baut den SkeptikerBefund aus dem LLM-Ergebnis."""
+        token_usage = result.pop("_token_usage", {"input": 0, "output": 0, "total": 0})
         akzeptiert = _to_bool(result.get("akzeptiert", True), True)
         einwaende = _to_str_list(result.get("einwaende", []))
         staerken = _to_str_list(result.get("staerken", []))
@@ -370,6 +394,7 @@ Antworte als JSON.
             nachforderung_empfohlen=nachforderung_empfohlen,
             fehlende_evidenz=fehlende_evidenz,
             adjustierter_confidence=adjustierter_confidence,
+            token_usage=token_usage,
             skeptiker_raw=result,
         )
 
@@ -382,6 +407,7 @@ Antworte als JSON.
             akzeptiert=True,
             bewertung_empfehlung=None,
             adjustierter_confidence=befund.confidence,
+            token_usage={"input": 0, "output": 0, "total": 0},
         )
 
     def reviewe_sektionsergebnis(
@@ -470,6 +496,10 @@ def merge_befund_skeptiker(befund: Befund, skeptiker: SkeptikerBefund) -> Befund
         schweregrad=befund.schweregrad,
         quellen=befund.quellen,
         confidence=skeptiker.adjustierter_confidence,  # Angepasste Confidence
+        confidence_level=confidence_level_from_score(skeptiker.adjustierter_confidence),
+        confidence_guards=befund.confidence_guards,
+        low_confidence_reasons=befund.low_confidence_reasons,
+        token_usage=befund.token_usage,
         review_erforderlich=review_erforderlich,
         validierungshinweise=hinweise,
     )
