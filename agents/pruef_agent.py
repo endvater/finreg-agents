@@ -21,7 +21,7 @@ import time
 
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
-from langchain_anthropic import ChatAnthropic
+from agents.llm_factory import build_llm
 from langchain_core.messages import HumanMessage, SystemMessage
 
 logger = logging.getLogger(__name__)
@@ -474,14 +474,15 @@ class PrueferAgent:
         self,
         index: VectorStoreIndex,
         regulatorik: str = "gwg",
-        model: str = "claude-sonnet-4-5-20250514",
+        provider: str = "anthropic",
+        model: str | None = None,
         top_k: int = 8,
         temperature: float = 0.1,
         retrieval_score_min: float = RETRIEVAL_SCORE_MIN,
         adversarial: bool = False,
     ):
         self.retriever = VectorIndexRetriever(index=index, similarity_top_k=top_k)
-        self.llm = ChatAnthropic(model=model, temperature=temperature, max_tokens=2048)
+        self.llm = build_llm(provider=provider, model=model, temperature=temperature)
         self.regulatorik = regulatorik
         self.retrieval_score_min = retrieval_score_min
         self.adversarial = adversarial

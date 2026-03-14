@@ -1,0 +1,3 @@
+# Cohere Provider: Command R+, Command A
+# pip install -r requirements.txt -r requirements-cohere.txt
+langchain-cohere>=0.3.0

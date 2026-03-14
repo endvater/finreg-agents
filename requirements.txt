@@ -1,25 +1,42 @@
-# FinRegAgents v2 – Dependencies
+# FinRegAgents v2 – Core Dependencies
+#
+# Basis-Installation (Anthropic + lokale Embeddings, kein OpenAI-Key nötig):
+#   pip install -r requirements.txt
+#
+# Optionale Provider-Extras:
+#   pip install -r requirements-openai.txt   # OpenAI GPT-4o + Embeddings
+#   pip install -r requirements-gemini.txt   # Google Gemini + Embeddings
+#   pip install -r requirements-mistral.txt  # Mistral Large + Embeddings
+#   pip install -r requirements-cohere.txt   # Cohere Command R+
+#   pip install -r requirements-grok.txt     # xAI Grok-3 (OpenAI-kompatibel)
+#   pip install -r requirements-ollama.txt   # Ollama lokal + Embeddings
+#   pip install -r requirements-all.txt      # Alle Provider
 
-# LlamaIndex Core (Retrieval + Index)
+# ── LlamaIndex Core (Retrieval + Index) ──────────────────────────────
 llama-index-core>=0.11.0
 llama-index-readers-file>=0.2.0
-llama-index-embeddings-openai>=0.2.0
 
-# LangChain (LLM-Prompting)
-langchain-anthropic>=0.3.0
+# ── LangChain Core ────────────────────────────────────────────────────
 langchain-core>=0.3.0
 
-# Dokumenten-Verarbeitung
+# ── Anthropic (Standard-Provider) ────────────────────────────────────
+langchain-anthropic>=0.3.0
+
+# ── Lokale Embeddings (Fallback, kein API-Key nötig) ─────────────────
+llama-index-embeddings-fastembed>=0.2.0
+fastembed>=0.3.0
+
+# ── Dokumenten-Verarbeitung ───────────────────────────────────────────
 pypdf>=4.0.0
 pandas>=2.0.0
 openpyxl>=3.1.0
 
-# Utilities
+# ── Utilities ─────────────────────────────────────────────────────────
 python-dotenv>=1.0.0
 pyyaml>=6.0
 tqdm>=4.66.0
 
-# Testing & Linting
+# ── Testing & Linting ─────────────────────────────────────────────────
 pytest>=8.0.0
 ruff>=0.4.0
 streamlit>=1.30.0

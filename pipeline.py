@@ -25,7 +25,6 @@ Oder als Python-Modul:
 import argparse
 import json
 import logging
-import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -36,6 +35,12 @@ from llama_index.core import VectorStoreIndex, Settings
 from ingestion.ingestor import GwGIngestor
 from agents.pruef_agent import PrueferAgent, Sektionsergebnis, SEKTION_REVIEW_ESCALATION
 from agents.skeptiker_agent import SkeptikerAgent, merge_befund_skeptiker
+from agents.llm_factory import list_providers, default_model
+from agents.embedding_factory import (
+    build_embedding,
+    list_embedding_providers,
+    default_embedding_model,
+)
 from reports.bericht_generator import BerichtGenerator
 
 load_dotenv(override=True)
@@ -75,9 +80,10 @@ class AuditPipeline:
         regulatorik: str = "gwg",
         catalog_path: str = None,
         output_dir: str = "./reports/output",
-        model: str = "claude-sonnet-4-5-20250514",
-        embedding_model: str = "text-embedding-3-small",
-        local_embeddings: bool = False,
+        provider: str = "anthropic",
+        model: str | None = None,
+        embedding_provider: str | None = None,
+        embedding_model: str | None = None,
         sektionen_filter: list = None,
         top_k: int = 8,
         verbose: bool = True,
@@ -90,10 +96,10 @@ class AuditPipeline:
         self.institution = institution
         self.regulatorik = regulatorik
         self.output_dir = output_dir
-        self.model = model
-        self.embedding_model = embedding_model
-        # Lokale Embeddings: explizit gesetzt oder Auto-Fallback wenn kein OPENAI_API_KEY
-        self.local_embeddings = local_embeddings or not os.environ.get("OPENAI_API_KEY")
+        self.provider = provider
+        self.model = model or default_model(provider)
+        self.embedding_provider = embedding_provider  # None → Auto-Detect in factory
+        self.embedding_model = embedding_model  # None → Provider-Default in factory
         self.sektionen_filter = sektionen_filter
         self.top_k = top_k
         self.verbose = verbose
@@ -110,6 +116,15 @@ class AuditPipeline:
             "details": [],
         }
         self.adversarial = adversarial
+        self.run_token_stats = {
+            "version": "1.0",
+            "gesamt": {"input": 0, "output": 0, "total": 0},
+            "nach_agent": {
+                "pruefer": {"input": 0, "output": 0, "total": 0},
+                "skeptiker": {"input": 0, "output": 0, "total": 0},
+            },
+            "details": [],
+        }
 
         # Katalogpfad auflösen
         base = Path(__file__).parent
@@ -131,6 +146,7 @@ class AuditPipeline:
         self._log("🚀 FinRegAgents Pipeline v2 gestartet")
         self._log(f"   Regulatorik: {label}")
         self._log(f"   Institut:    {self.institution}")
+        self._log(f"   Provider:    {self.provider}")
         self._log(f"   Modell:      {self.model}")
         self._log(f"   Katalog:     {self.catalog_path}")
         self._log("")
@@ -149,36 +165,17 @@ class AuditPipeline:
 
         # ── Schritt 2: Vektorindex ───────────────────────────────────────
         self._log("\n🔍 Schritt 2/4: Vektorindex aufbauen")
-        embed_model = None
-        if self.local_embeddings:
-            try:
-                from llama_index.embeddings.fastembed import FastEmbedEmbedding
-            except ModuleNotFoundError:
-                logger.warning(
-                    "FastEmbed nicht installiert; Fallback auf OpenAI-Embeddings."
-                )
-            else:
-                embed_model = FastEmbedEmbedding(model_name="BAAI/bge-small-en-v1.5")
-                self._log("   → Embedding: FastEmbed BAAI/bge-small-en-v1.5 (lokal)")
-
-        if embed_model is None:
-            from llama_index.embeddings.openai import OpenAIEmbedding
-
-            try:
-                embed_model = OpenAIEmbedding(model=self.embedding_model)
-            except Exception as exc:
-                if not os.environ.get("OPENAI_API_KEY"):
-                    raise RuntimeError(
-                        "Kein Embedding-Modell verfügbar: FastEmbed ist nicht "
-                        "installiert und OPENAI_API_KEY fehlt. "
-                        "Bitte entweder `pip install llama-index-embeddings-fastembed` "
-                        "ausführen oder OPENAI_API_KEY setzen."
-                    ) from exc
-                raise
-            self._log(f"   → Embedding: OpenAI {self.embedding_model}")
-        # Settings temporär setzen und danach wiederherstellen (save/restore).
-        # Beim ersten Aufruf ohne konfigurierten Key schlägt der Getter fehl →
-        # _prev_embed auf None setzen und Settings nach dem Lauf zurücksetzen.
+        embed_model = build_embedding(
+            provider=self.embedding_provider,
+            model=self.embedding_model,
+        )
+        ep = self.embedding_provider or "auto"
+        em = self.embedding_model or default_embedding_model(
+            self.embedding_provider or "openai"
+        )
+        self._log(f"   → Embedding: {ep} / {em}")
+        # Settings temporär setzen und danach wiederherstellen, damit kein
+        # dauerhafter globaler State entsteht (wichtig bei mehreren Pipeline-Instanzen)
         try:
             _prev_embed = Settings.embed_model
         except Exception:
@@ -192,7 +189,7 @@ class AuditPipeline:
             if _prev_embed is not None:
                 Settings.embed_model = _prev_embed
             else:
-                Settings._embed_model = None  # zurück auf "nicht konfiguriert"
+                Settings._embed_model = None
         self._log("   → Index fertig")
 
         # ── Schritt 3: Prüfkatalog laden & Prüfung durchführen ──────────
@@ -203,6 +200,7 @@ class AuditPipeline:
         agent = PrueferAgent(
             index=index,
             regulatorik=self.regulatorik,
+            provider=self.provider,
             model=self.model,
             top_k=self.top_k,
             adversarial=self.adversarial,
@@ -215,6 +213,7 @@ class AuditPipeline:
         if self.skeptiker:
             self._log("   → Skeptiker-Agent aktiviert ⚔️")
             skeptiker_agent = SkeptikerAgent(
+                provider=self.provider,
                 model=self.model,
                 only_konform=self.skeptiker_only_konform,
             )
@@ -491,6 +490,10 @@ Beispiele:
   python pipeline.py --input ./docs --regulatorik wphg --model claude-opus-4-5
   python pipeline.py --input ./docs --regulatorik gwg --adversarial
   python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
+  python pipeline.py --input ./docs --regulatorik wphg --provider openai --model gpt-4o
+  python pipeline.py --input ./docs --regulatorik gwg --provider gemini --model gemini-2.0-flash
+  python pipeline.py --input ./docs --regulatorik gwg --provider ollama --model llama3.3
+  python pipeline.py --input ./docs --regulatorik gwg --provider mistral --embedding-provider mistral
         """,
     )
     parser.add_argument(
@@ -512,9 +515,34 @@ Beispiele:
         "--catalog", default=None, help="Eigener Katalog (überschreibt --regulatorik)"
     )
     parser.add_argument(
+        "--provider",
+        default="anthropic",
+        choices=list_providers(),
+        help=(
+            "LLM-Provider (Default: anthropic). "
+            f"Verfügbar: {', '.join(list_providers())}"
+        ),
+    )
+    parser.add_argument(
         "--model",
-        default="claude-sonnet-4-5-20250514",
-        help="Anthropic-Modell (Default: Sonnet für Kosteneffizienz)",
+        default=None,
+        help="Modellname (Default: Provider-spezifisch, z.B. claude-sonnet-4-6 / gpt-4o / gemini-2.0-flash)",
+    )
+    parser.add_argument(
+        "--embedding-provider",
+        default=None,
+        dest="embedding_provider",
+        choices=list_embedding_providers() + [None],
+        help=(
+            "Embedding-Provider (Default: auto – openai wenn Key vorhanden, sonst fastembed). "
+            f"Verfügbar: {', '.join(list_embedding_providers())}"
+        ),
+    )
+    parser.add_argument(
+        "--embedding-model",
+        default=None,
+        dest="embedding_model",
+        help="Embedding-Modellname (Default: Provider-spezifisch)",
     )
     parser.add_argument(
         "--sektionen", nargs="*", help="Nur diese Sektionen prüfen (z.B. S01 S02)"
@@ -567,8 +595,10 @@ Beispiele:
         regulatorik=args.regulatorik,
         catalog_path=args.catalog,
         output_dir=args.output,
+        provider=args.provider,
         model=args.model,
-        local_embeddings=args.local_embeddings,
+        embedding_provider=args.embedding_provider,
+        embedding_model=args.embedding_model,
         sektionen_filter=args.sektionen,
         top_k=args.top_k,
         verbose=not args.quiet,

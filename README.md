@@ -525,6 +525,21 @@ Wenn `--adversarial` aktiv, wird der Score vor dem Skeptiker-Pass angepasst:
 | 2 (wesentlich strenger) | −0.15 | ja (erzwungen) |
 | ≥ 3 (maximal strenger) | −0.20 | ja (erzwungen) |
 
+### Confidence Guards (v1)
+
+Zusätzlich zum Score gelten Mindestqualitäts-Gates:
+
+| Guard | Schwelle | Wirkung bei Verstoß |
+|---|---|---|
+| `MIN_INPUT_TOKENS` | 300 | `review_erforderlich = true` |
+| `MIN_DISTINCT_SOURCES` | 2 | `review_erforderlich = true` |
+| `MIN_EVIDENCE_QUOTES` | 1 | `review_erforderlich = true` |
+
+Bei Guard-Verletzung:
+- `confidence_level` wird niemals `high` (maximal `medium`)
+- verletzte Guard-Codes landen in `low_confidence_reasons`
+- `confidence_guards` wird im JSON-Befund mit `passed`, `violations`, `metrics` ausgegeben
+
 ### Confidence-Anpassung durch SkeptikerAgent
 
 Wenn `--skeptiker` aktiv, wird der Score zusätzlich angepasst:
