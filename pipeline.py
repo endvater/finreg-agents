@@ -93,6 +93,7 @@ class AuditPipeline:
         self.sektionen_filter = sektionen_filter
         self.top_k = top_k
         self.verbose = verbose
+        self.verbose_token_details = verbose_token_details
         self.skeptiker = skeptiker
         self.skeptiker_only_konform = skeptiker_only_konform
         self.run_token_stats = {
@@ -279,7 +280,7 @@ class AuditPipeline:
             output_dir=self.output_dir,
             token_stats=self._token_stats_summary(stats_file, costs),
             stats_file=stats_file,
-            verbose=self.verbose,
+            verbose=self.verbose_token_details,
         )
 
         # ── Zusammenfassung ──────────────────────────────────────────────
@@ -360,8 +361,9 @@ class AuditPipeline:
         details = {}
         total_cost = 0.0
         for agent_name, usage in self.run_token_stats["nach_agent"].items():
-            in_cost = (usage["input"] / 1000.0) * pricing[agent_name]["input_per_1k"]
-            out_cost = (usage["output"] / 1000.0) * pricing[agent_name]["output_per_1k"]
+            rates = pricing.get(agent_name, pricing["pruefer"])
+            in_cost = (usage["input"] / 1000.0) * rates["input_per_1k"]
+            out_cost = (usage["output"] / 1000.0) * rates["output_per_1k"]
             agent_cost = round(in_cost + out_cost, 6)
             details[agent_name] = {
                 "input_cost": round(in_cost, 6),
@@ -390,7 +392,7 @@ class AuditPipeline:
             "kosten_schaetzung": costs,
             "stats_file": str(stats_path),
         }
-        if self.verbose:
+        if self.verbose_token_details:
             payload["details"] = self.run_token_stats["details"]
 
         stats_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -475,7 +477,13 @@ Beispiele:
         "--verbose",
         action="store_true",
         default=False,
-        help="Ausführliche Detailausgabe inkl. Token-Detailstatistik",
+        help="Ausführliche Token-Detailstatistik in Reports und run_stats.json",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        default=False,
+        help="Unterdrückt Fortschrittsausgabe auf der Konsole",
     )
     parser.add_argument(
         "--skeptiker",
@@ -500,7 +508,8 @@ Beispiele:
         model=args.model,
         sektionen_filter=args.sektionen,
         top_k=args.top_k,
-        verbose=args.verbose,
+        verbose=not args.quiet,
+        verbose_token_details=args.verbose,
         skeptiker=args.skeptiker,
         skeptiker_only_konform=args.skeptiker_only_konform,
     )

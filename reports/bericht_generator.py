@@ -433,6 +433,8 @@ class BerichtGenerator:
             parts.append(self._html_mangelkatalog(z))
         if z["nicht_pruefbar_quote"] >= 30:
             parts.append(self._html_evidenz_warnung(z))
+        if token_stats:
+            parts.append(self._html_token_stats(token_stats, stats_file))
         parts.append(self._html_detailbefunde(sektionsergebnisse))
         parts.append(self._html_audit_trail(z))
         parts.append(self._html_footer())
@@ -514,6 +516,12 @@ class BerichtGenerator:
   .mangel-item {{ padding: 6px 0; border-bottom: 1px solid #fadbd8;
                   font-size: 12px; color: #34495e; }}
   .mangel-item:last-child {{ border-bottom: none; }}
+  .token-box {{ background: #eef6ff; border: 1px solid #d1e7ff; border-radius: 8px;
+                padding: 16px 20px; margin-bottom: 24px; }}
+  .token-box h2 {{ color: #1a3a5c; margin-bottom: 10px; font-size: 14px; }}
+  .token-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 14px; }}
+  .token-item {{ font-size: 12px; color: #2c3e50; }}
+  .token-label {{ color: #5d6d7e; font-weight: 600; }}
   .audit-trail {{ background: #f8f9fa; border-radius: 8px; padding: 16px 20px;
                   margin-top: 32px; font-size: 12px; }}
   .audit-trail h2 {{ font-size: 14px; color: #1a3a5c; margin-bottom: 8px; }}
@@ -563,20 +571,20 @@ class BerichtGenerator:
 </div>
 """
 
-    def _html_token_stats(self, token_stats: dict, stats_file: str) -> str:
-        kosten = token_stats.get("kosten_schaetzung", {})
+    def _html_token_stats(self, token_stats: dict, stats_file: Optional[str]) -> str:
         gesamt = token_stats.get("gesamt", {})
-        sf = stats_file or token_stats.get("stats_file", "")
+        kosten = token_stats.get("kosten_schaetzung", {})
+        stats_ref = stats_file or token_stats.get("stats_file", "")
         return f"""
-<div class="audit-trail">
+<div class="token-box">
   <h2>Token-Stats</h2>
-  <table>
-    <tr><td>Gesamt Tokens</td><td>{gesamt.get("total", 0)}</td></tr>
-    <tr><td>Input / Output</td><td>{gesamt.get("input", 0)} / {gesamt.get("output", 0)}</td></tr>
-    <tr><td>Kostenschätzung</td><td>{kosten.get("total_cost", 0)} {kosten.get("currency", "USD")}</td></tr>
-    <tr><td>Pricing-Stand</td><td>{kosten.get("pricing_timestamp", "n/a")}</td></tr>
-    <tr><td>Stats-Datei</td><td>{_esc(sf)}</td></tr>
-  </table>
+  <div class="token-grid">
+    <div class="token-item"><span class="token-label">Gesamt Tokens:</span> {_esc(gesamt.get("total", 0))}</div>
+    <div class="token-item"><span class="token-label">Input / Output:</span> {_esc(gesamt.get("input", 0))} / {_esc(gesamt.get("output", 0))}</div>
+    <div class="token-item"><span class="token-label">Kostenschätzung:</span> {_esc(kosten.get("total_cost", 0))} {_esc(kosten.get("currency", "USD"))}</div>
+    <div class="token-item"><span class="token-label">Pricing-Stand:</span> {_esc(kosten.get("pricing_timestamp", "n/a"))}</div>
+    <div class="token-item"><span class="token-label">Stats-Datei:</span> {_esc(stats_ref)}</div>
+  </div>
 </div>
 """
 

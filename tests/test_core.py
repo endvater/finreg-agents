@@ -31,6 +31,7 @@ from agents.skeptiker_agent import (
     SKEPTIKER_CONFIDENCE_PENALTY,
 )
 from pipeline import AuditPipeline
+from reports.bericht_generator import BerichtGenerator
 
 
 class TestConfidenceScore:
@@ -638,3 +639,54 @@ class TestTokenStats:
         assert "kosten_schaetzung" in payload
         assert "pricing_timestamp" in payload["kosten_schaetzung"]
         assert payload["stats_file"].endswith("run_stats.json")
+
+    def test_add_token_usage_creates_dynamic_agent_bucket(self, tmp_path):
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            output_dir=str(tmp_path),
+            verbose=False,
+        )
+        pipeline._add_token_usage(
+            "adversarial", {"input": 150, "output": 50, "total": 200}
+        )
+
+        assert pipeline.run_token_stats["nach_agent"]["adversarial"]["input"] == 150
+        assert pipeline.run_token_stats["gesamt"]["total"] == 200
+
+    def test_token_stats_summary_reuses_identical_cost_timestamp(self, tmp_path):
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            output_dir=str(tmp_path),
+            verbose=False,
+        )
+        pipeline._add_token_usage("pruefer", {"input": 100, "output": 40, "total": 140})
+
+        stats_file, persisted_costs = pipeline._write_run_stats()
+        summary = pipeline._token_stats_summary(stats_file, persisted_costs)
+        payload = json.loads(Path(stats_file).read_text(encoding="utf-8"))
+
+        assert (
+            payload["kosten_schaetzung"]["pricing_timestamp"]
+            == summary["kosten_schaetzung"]["pricing_timestamp"]
+        )
+
+
+class TestBerichtGeneratorTokenStats:
+    def test_html_token_stats_block_rendered(self):
+        generator = BerichtGenerator()
+        token_stats = {
+            "gesamt": {"input": 100, "output": 40, "total": 140},
+            "kosten_schaetzung": {
+                "total_cost": 0.0123,
+                "currency": "USD",
+                "pricing_timestamp": "2026-03-14T10:00:00+00:00",
+            },
+            "stats_file": "reports/output/run_stats.json",
+        }
+
+        html = generator._html_token_stats(token_stats, None)
+
+        assert "Token-Stats" in html
+        assert "Gesamt Tokens" in html
+        assert "Pricing-Stand" in html
+        assert "run_stats.json" in html
