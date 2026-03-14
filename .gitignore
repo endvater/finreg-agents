@@ -35,3 +35,4 @@ chroma_db/
 *.swp
 .DS_Store
 streamlit_tmp_docs/
+.claude/
