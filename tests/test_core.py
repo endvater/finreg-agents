@@ -8,6 +8,14 @@ import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from agents.skeptiker_agent import (
+    SkeptikerAgent,
+    SkeptikerBefund,
+    merge_befund_skeptiker,
+    SKEPTIKER_MIN_CONFIDENCE,
+    SKEPTIKER_CONFIDENCE_PENALTY,
+)
+
 # ------------------------------------------------------------------ #
 # Test: Confidence-Berechnung
 # ------------------------------------------------------------------ #
@@ -22,13 +30,6 @@ from agents.pruef_agent import (
     Bewertung,
     Sektionsergebnis,
     Befund,
-)
-from agents.skeptiker_agent import (
-    SkeptikerAgent,
-    SkeptikerBefund,
-    merge_befund_skeptiker,
-    SKEPTIKER_MIN_CONFIDENCE,
-    SKEPTIKER_CONFIDENCE_PENALTY,
 )
 from pipeline import AuditPipeline
 from reports.bericht_generator import BerichtGenerator
@@ -592,7 +593,7 @@ class TestPipelineScopeValidation:
     @patch("pipeline.BerichtGenerator")
     @patch("pipeline.PrueferAgent")
     @patch("pipeline.VectorStoreIndex")
-    @patch("pipeline.OpenAIEmbedding")
+    @patch("llama_index.embeddings.openai.OpenAIEmbedding")
     @patch("pipeline.Settings")
     @patch("pipeline.GwGIngestor")
     def test_run_raises_if_no_fields_processed(
