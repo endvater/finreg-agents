@@ -193,6 +193,11 @@ def _resolve_provider(provider: str | None) -> str:
 
 
 def _require_env(var: str, provider: str) -> None:
+    if var == "GOOGLE_API_KEY" and not os.environ.get(var):
+        gemini_key = os.environ.get("GEMINI_API_KEY")
+        if gemini_key:
+            os.environ[var] = gemini_key
+            logger.info("GEMINI_API_KEY erkannt – als GOOGLE_API_KEY übernommen.")
     if not os.environ.get(var):
         raise EnvironmentError(
             f"Umgebungsvariable '{var}' fehlt für Embedding-Provider '{provider}'. "
