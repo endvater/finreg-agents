@@ -29,6 +29,8 @@ def init_session_state():
         st.session_state.review_actions = {}
     if "reprompt_notes" not in st.session_state:
         st.session_state.reprompt_notes = {}
+    if "previous_run_stats" not in st.session_state:
+        st.session_state.previous_run_stats = None
 
 
 init_session_state()
@@ -84,6 +86,37 @@ def _load_run_stats(report_payload: dict | None) -> dict | None:
     if not stats_path.exists():
         return None
     return _read_json_file(str(stats_path))
+
+
+def _current_run_key(report_payload: dict | None) -> str:
+    if not report_payload:
+        return "run-unbekannt"
+    meta = report_payload.get("meta", {})
+    ts = (
+        meta.get("audit_trail", {}).get("timestamp")
+        or meta.get("pruefungsdatum")
+        or "run-unbekannt"
+    )
+    return str(ts)
+
+
+def _review_action_key(run_key: str, befund_id: str) -> str:
+    return f"{run_key}:{befund_id}"
+
+
+def _summarize_actions(run_key: str) -> dict:
+    decisions = {"approved": 0, "rejected": 0, "reprompt": 0}
+    for key, val in st.session_state.review_actions.items():
+        if not key.startswith(f"{run_key}:"):
+            continue
+        decision = val.get("decision")
+        if decision in decisions:
+            decisions[decision] += 1
+    return decisions
+
+
+def _to_number(value):
+    return value if isinstance(value, (int, float)) else 0
 
 
 # --- UI Sidebar ---
@@ -204,6 +237,12 @@ with setup_tab:
     ):
         st.session_state.logs = []
         st.session_state.reports = None
+        st.session_state.review_actions = {}
+        st.session_state.reprompt_notes = {}
+        existing_stats = OUTPUT_DIR / "run_stats.json"
+        st.session_state.previous_run_stats = (
+            _read_json_file(str(existing_stats)) if existing_stats.exists() else None
+        )
         os.environ["PIPELINE_RUNNING"] = "1"
 
         log_placeholder = st.empty()
@@ -250,6 +289,7 @@ with result_tab:
     if not reports:
         st.info("Noch keine Ergebnisse vorhanden. Starte eine Prüfung im ersten Tab.")
     else:
+        run_key = _current_run_key(report_payload)
         (
             overview_subtab,
             queue_subtab,
@@ -283,6 +323,7 @@ with result_tab:
                 st.json(summary)
             else:
                 st.warning("JSON-Report konnte nicht geladen werden.")
+            st.caption(f"Run-ID: {run_key}")
 
         with queue_subtab:
             queue_items = [
@@ -298,11 +339,90 @@ with result_tab:
             st.caption(
                 f"{len(queue_items)} Befunde in der Review-Queue (confidence-basiert sortiert)."
             )
+            action_stats = _summarize_actions(run_key)
+            q1, q2, q3, q4 = st.columns(4)
+            q1.metric("Queue gesamt", len(queue_items))
+            q2.metric("Approved", action_stats["approved"])
+            q3.metric("Rejected", action_stats["rejected"])
+            q4.metric("Re-Prompt", action_stats["reprompt"])
+
+            filter_col1, filter_col2, filter_col3 = st.columns([2, 2, 2])
+            levels = sorted(
+                {str(i.get("confidence_level", "low")) for i in queue_items}
+            ) or ["low", "medium", "high"]
+            selected_levels = filter_col1.multiselect(
+                "Confidence-Level",
+                options=levels,
+                default=levels,
+            )
+            sektionen = sorted({str(i.get("sektion_id", "")) for i in queue_items})
+            selected_sektion = filter_col2.selectbox(
+                "Sektion",
+                options=["Alle"] + sektionen,
+                index=0,
+            )
+            decision_filter = filter_col3.selectbox(
+                "Review-Status",
+                options=["Alle", "Offen", "Approved", "Rejected", "Re-Prompt"],
+                index=0,
+            )
+
+            filtered_queue = []
+            for item in queue_items:
+                if item.get("confidence_level", "low") not in selected_levels:
+                    continue
+                if (
+                    selected_sektion != "Alle"
+                    and item.get("sektion_id") != selected_sektion
+                ):
+                    continue
+                befund_id = item.get("id", "unbekannt")
+                action_key = _review_action_key(run_key, befund_id)
+                decision = (
+                    st.session_state.review_actions.get(action_key, {}).get("decision")
+                    or "offen"
+                )
+                if decision_filter == "Offen" and decision != "offen":
+                    continue
+                if decision_filter == "Approved" and decision != "approved":
+                    continue
+                if decision_filter == "Rejected" and decision != "rejected":
+                    continue
+                if decision_filter == "Re-Prompt" and decision != "reprompt":
+                    continue
+                filtered_queue.append(item)
+
+            st.caption(f"Gefilterte Befunde: {len(filtered_queue)}")
+            if st.button("Review-Entscheidungen zurücksetzen"):
+                st.session_state.review_actions = {
+                    k: v
+                    for k, v in st.session_state.review_actions.items()
+                    if not k.startswith(f"{run_key}:")
+                }
+                st.session_state.reprompt_notes = {}
+                st.rerun()
+
+            export_payload = {
+                "run_key": run_key,
+                "decisions": [
+                    {"befund_id": k.split(":", 1)[1], **v}
+                    for k, v in st.session_state.review_actions.items()
+                    if k.startswith(f"{run_key}:")
+                ],
+            }
+            st.download_button(
+                "Review-Entscheidungen exportieren (JSON)",
+                data=json.dumps(export_payload, ensure_ascii=False, indent=2),
+                file_name=f"review_queue_{run_key.replace(':', '_')}.json",
+                mime="application/json",
+            )
+
             if not queue_items:
                 st.success("Keine offenen Review-Befunde im aktuellen Run.")
-            for item in queue_items:
+            for item in filtered_queue:
                 befund_id = item.get("id", "unbekannt")
-                action = st.session_state.review_actions.get(befund_id)
+                action_key = _review_action_key(run_key, befund_id)
+                action = st.session_state.review_actions.get(action_key)
                 with st.expander(
                     f"{befund_id} · {item.get('frage', '')[:90]}",
                     expanded=False,
@@ -324,12 +444,12 @@ with result_tab:
 
                     c1, c2, c3 = st.columns(3)
                     if c1.button("Approve", key=f"approve_{befund_id}"):
-                        st.session_state.review_actions[befund_id] = {
+                        st.session_state.review_actions[action_key] = {
                             "decision": "approved",
                             "timestamp": datetime.now().isoformat(timespec="seconds"),
                         }
                     if c2.button("Reject", key=f"reject_{befund_id}"):
-                        st.session_state.review_actions[befund_id] = {
+                        st.session_state.review_actions[action_key] = {
                             "decision": "rejected",
                             "timestamp": datetime.now().isoformat(timespec="seconds"),
                         }
@@ -345,7 +465,7 @@ with result_tab:
                     if c3.button(
                         "Re-Prompt markieren", key=f"reprompt_btn_{befund_id}"
                     ):
-                        st.session_state.review_actions[befund_id] = {
+                        st.session_state.review_actions[action_key] = {
                             "decision": "reprompt",
                             "timestamp": datetime.now().isoformat(timespec="seconds"),
                             "note": note,
@@ -355,6 +475,17 @@ with result_tab:
             if not flat_befunde:
                 st.info("Noch keine Befunddaten verfügbar.")
             else:
+                preview_rows = [
+                    {
+                        "id": b.get("id"),
+                        "sektion": b.get("sektion_id"),
+                        "bewertung": b.get("bewertung"),
+                        "confidence": round(float(b.get("confidence", 0.0)), 3),
+                        "review": b.get("review_erforderlich"),
+                    }
+                    for b in flat_befunde
+                ]
+                st.dataframe(preview_rows, use_container_width=True, height=220)
                 labels = [
                     f"{b.get('id', '?')} · {b.get('sektion_id', '')} · {b.get('frage', '')[:70]}"
                     for b in flat_befunde
@@ -424,6 +555,24 @@ with result_tab:
                 stats_file = stats_payload.get("stats_file")
                 if stats_file:
                     st.caption(f"Stats-Datei: {stats_file}")
+
+                previous = st.session_state.previous_run_stats or {}
+                prev_token_stats = previous.get("token_stats", {})
+                if prev_token_stats:
+                    prev_total = _to_number(
+                        prev_token_stats.get("gesamt", {}).get("total")
+                    )
+                    curr_total = _to_number(gesamt.get("total"))
+                    prev_cost = _to_number(
+                        prev_token_stats.get("kosten_schaetzung", {}).get("total_cost")
+                    )
+                    curr_cost = _to_number(costs.get("total_cost"))
+                    st.markdown("#### Delta zum vorherigen Run")
+                    d1, d2 = st.columns(2)
+                    d1.metric("Δ Total Tokens", curr_total - prev_total)
+                    d2.metric("Δ Kosten (USD)", f"{curr_cost - prev_cost:.4f}")
+                else:
+                    st.caption("Kein vorheriger Run für Delta-Vergleich verfügbar.")
 
             st.markdown("### Live-Logs (letzte 30 Zeilen)")
             if st.session_state.logs:
