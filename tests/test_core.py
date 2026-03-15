@@ -663,6 +663,56 @@ class TestPrueferAgentTypeScoping:
         assert len(dropped) == 1
         assert dropped[0]["reason"] == "MARKETING_PHRASE"
 
+    def test_adversarial_pass_is_executed_and_merged(self):
+        agent = PrueferAgent.__new__(PrueferAgent)
+        agent.retrieval_score_min = 0.35
+        agent.regulatorik = "gwg"
+        agent.adversarial = True
+        agent.evidence_relevance_filter = False
+        agent._retrieve_evidence = MagicMock(
+            return_value=[
+                _FakeNode(
+                    0.9,
+                    {"input_type": "pdf", "source": "policy.pdf"},
+                    "Gemäß § 5 GwG ...",
+                )
+            ]
+        )
+        agent._format_evidence = MagicMock(return_value="evidenz")
+        agent._evaluate_with_llm = MagicMock(
+            return_value={
+                "bewertung": "konform",
+                "begruendung": "Formal vorhanden.",
+                "belegte_textstellen": ["Kontrolle dokumentiert."],
+                "mangel_text": None,
+                "empfehlungen": [],
+                "quellen": ["policy.pdf"],
+                "confidence_self": 0.9,
+                "_token_usage": {"input": 1000, "output": 100, "total": 1100},
+            }
+        )
+        agent._adversarial_evaluate = MagicMock(
+            return_value=AdversarialErgebnis(
+                prueffeld_id="S01-01",
+                adversarial_bewertung=Bewertung.NICHT_KONFORM,
+                schwachstellen=["Wirksamkeitsnachweis fehlt"],
+                fehlende_nachweise=["Audit-Trail"],
+            )
+        )
+
+        befund = agent.pruefe_feld(
+            {
+                "id": "S01-01",
+                "frage": "Ist ein IKS dokumentiert?",
+                "input_typen": ["pdf"],
+                "schweregrad": "wesentlich",
+            }
+        )
+
+        agent._adversarial_evaluate.assert_called_once()
+        assert befund.bewertung == Bewertung.DISPUTED
+        assert befund.review_erforderlich is True
+
 
 # ------------------------------------------------------------------ #
 # Test: Katalog-Validierung

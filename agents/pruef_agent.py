@@ -154,6 +154,52 @@ Antworte AUSSCHLIESSLICH als valides JSON mit dieser Struktur:
 }}
 """
 
+# ------------------------------------------------------------------ #
+# Adversarial Prompting Layer
+# ------------------------------------------------------------------ #
+
+ADVERSARIAL_SYSTEM_PROMPTS = {
+    "gwg": """Du bist ein kritischer Gutachter, der Schwachstellen in Geldwäscheprüfungen aufdeckt.
+Deine Aufgabe: Finde alle Gründe, warum die geprüfte Compliance-Anforderung NICHT oder nur unzureichend erfüllt sein könnte.
+Prüfrahmen: GwG 2017 i.d.F. 2024, §25h KWG, BaFin AuA GwG, AMLA-Leitlinien.""",
+    "dora": """Du bist ein kritischer Gutachter, der Schwachstellen in DORA-Prüfungen aufdeckt.
+Deine Aufgabe: Finde alle Gründe, warum die geprüfte Resilienz-Anforderung NICHT oder nur unzureichend erfüllt sein könnte.
+Prüfrahmen: DORA (EU) 2022/2554, RTS ICT Risk, RTS Incident Reporting, TIBER-EU.""",
+    "marisk": """Du bist ein kritischer Gutachter, der Schwachstellen in MaRisk-Prüfungen aufdeckt.
+Deine Aufgabe: Finde alle Gründe, warum die geprüfte Risikomanagement-Anforderung NICHT oder nur unzureichend erfüllt sein könnte.
+Prüfrahmen: MaRisk 2023 (AT/BT), §25a KWG, EBA-Leitlinien.""",
+    "wphg": """Du bist ein kritischer Gutachter, der Schwachstellen in WpHG/MaComp-Prüfungen aufdeckt.
+Deine Aufgabe: Finde alle Gründe, warum die geprüfte Compliance-Anforderung NICHT oder nur unzureichend erfüllt sein könnte.
+Prüfrahmen: WpHG, MaComp, MAR (EU) Nr. 596/2014, MiFID II.""",
+}
+
+ADVERSARIAL_PROMPT_TEMPLATE = """{regulatorik_kontext}
+
+Deine Aufgabe (adversarial):
+1. Analysiere dieselben Dokumentenausschnitte wie ein normaler Prüfer
+2. Beantworte die Prüffrage – aber aus der Perspektive eines kritischen Gegenspielers
+3. Bewerte gemäß: konform | teilkonform | nicht_konform | nicht_prüfbar
+4. Identifiziere aktiv Schwachstellen und Gegenargumente
+5. Benenne fehlende oder unzureichende Nachweise konkret
+6. Schätze deine Sicherheit ein (confidence_self: 0.0 bis 1.0)
+
+Wichtige Grundsätze (adversarial):
+- Bevorzuge strengere Bewertungen bei Ambiguität
+- Formale Dokumente ohne Prozessnachweis gelten als unzureichend
+- Fehlende Audit-Trails, Schulungsnachweise oder Tests sind Mängel
+- Zitiere NUR Quellen aus der bereitgestellten Evidenz – erfinde keine
+
+Antworte AUSSCHLIESSLICH als valides JSON mit dieser Struktur:
+{{
+  "bewertung": "konform|teilkonform|nicht_konform|nicht_prüfbar",
+  "begruendung": "Kritische Würdigung der Evidenz (3-5 Sätze)",
+  "schwachstellen": ["Schwachstelle 1", "Schwachstelle 2"],
+  "fehlende_nachweise": ["Fehlender Nachweis 1", "..."],
+  "quellen": ["datei.pdf"],
+  "confidence_self": 0.75
+}}
+"""
+
 
 # ------------------------------------------------------------------ #
 # Confidence-Berechnung
@@ -577,15 +623,16 @@ class PrueferAgent:
         self.relevance_filter_stats = Counter()
         self.relevance_filter_drops = []
 
-        if self.adversarial:
-            logger.warning(
-                "Adversarial-Flag gesetzt, aber in dieser Agent-Version nicht aktiv "
-                "implementiert; es wird der Standard-Prüfpass verwendet."
-            )
-
         # System-Prompt für die gewählte Regulatorik
         kontext = SYSTEM_PROMPTS.get(regulatorik, SYSTEM_PROMPTS["gwg"])
         self.system_prompt = SYSTEM_PROMPT_TEMPLATE.format(regulatorik_kontext=kontext)
+        if self.adversarial:
+            adv_kontext = ADVERSARIAL_SYSTEM_PROMPTS.get(
+                regulatorik, ADVERSARIAL_SYSTEM_PROMPTS["gwg"]
+            )
+            self.adversarial_system_prompt = ADVERSARIAL_PROMPT_TEMPLATE.format(
+                regulatorik_kontext=adv_kontext
+            )
 
     def pruefe_feld(self, prueffeld: dict) -> Befund:
         """Hauptmethode: Prüft ein einzelnes Prüffeld und gibt einen Befund zurück."""
@@ -681,6 +728,9 @@ class PrueferAgent:
         token_usage = llm_result.pop(
             "_token_usage", {"input": 0, "output": 0, "total": 0}
         )
+        adv_ergebnis: Optional[AdversarialErgebnis] = None
+        if self.adversarial:
+            adv_ergebnis = self._adversarial_evaluate(prueffeld, evidenz_text)
 
         # 5. Strukturelle Validierung
         val_warnings = validate_befund_structure(
@@ -796,6 +846,8 @@ class PrueferAgent:
             term_drift_warnings=drift_warnings,
             claim_provenance=claim_prov,
         )
+        if adv_ergebnis is not None:
+            befund = _merge_adversarial(befund, adv_ergebnis)
         return befund
 
     # ------------------------------------------------------------------ #
@@ -887,6 +939,70 @@ class PrueferAgent:
     # ------------------------------------------------------------------ #
     # LLM-Bewertung
     # ------------------------------------------------------------------ #
+
+    def _adversarial_evaluate(
+        self, prueffeld: dict, evidenz_text: str
+    ) -> AdversarialErgebnis:
+        """Zweiter Pass mit kritisch-adversarialem Prompt auf identischer Evidenz."""
+        rg = prueffeld.get("rechtsgrundlagen", [])
+        if isinstance(rg, list):
+            rg_str = ", ".join(rg)
+        else:
+            rg_str = str(rg)
+
+        user_prompt = f"""## PRÜFFELD (adversarial): {prueffeld["id"]}
+**Frage:** {prueffeld["frage"]}
+**Rechtsgrundlage:** {rg_str}
+**Erwartete Evidenz:** {", ".join(prueffeld.get("erwartete_evidenz", []))}
+**Schweregrad:** {prueffeld.get("schweregrad", "unbekannt")}
+**Bewertungskriterien:** {prueffeld.get("bewertungskriterien", "")}
+
+{evidenz_text}
+
+Finde alle Schwachstellen. Antworte als JSON.
+"""
+        messages = [
+            SystemMessage(content=self.adversarial_system_prompt),
+            HumanMessage(content=user_prompt),
+        ]
+
+        result = {
+            "bewertung": "nicht_prüfbar",
+            "schwachstellen": [],
+            "fehlende_nachweise": [],
+        }
+        for attempt in range(LLM_MAX_RETRIES):
+            try:
+                response = self.llm.invoke(messages)
+                result = extract_json(response.content)
+                break
+            except json.JSONDecodeError:
+                logger.warning(
+                    "Adversarial-Antwort für %s nicht parsebar; fallback auf nicht_prüfbar",
+                    prueffeld["id"],
+                )
+                break
+            except Exception as e:
+                if attempt < LLM_MAX_RETRIES - 1:
+                    time.sleep(LLM_RETRY_BASE_DELAY * (2**attempt))
+                else:
+                    logger.warning(
+                        "Adversarial-Pass für %s fehlgeschlagen: %s",
+                        prueffeld["id"],
+                        e,
+                    )
+
+        try:
+            adv_bewertung = Bewertung(result.get("bewertung", "nicht_prüfbar"))
+        except ValueError:
+            adv_bewertung = Bewertung.NICHT_PRUEFBAR
+
+        return AdversarialErgebnis(
+            prueffeld_id=prueffeld["id"],
+            adversarial_bewertung=adv_bewertung,
+            schwachstellen=result.get("schwachstellen", []),
+            fehlende_nachweise=result.get("fehlende_nachweise", []),
+        )
 
     def _evaluate_with_llm(self, prueffeld: dict, evidenz_text: str) -> dict:
         """Sendet Prüffrage + Evidenz an das LLM und parst das JSON-Ergebnis."""
@@ -1057,6 +1173,11 @@ def _merge_adversarial(befund: Befund, adv: AdversarialErgebnis) -> Befund:
         schweregrad=befund.schweregrad,
         quellen=befund.quellen,
         confidence=new_confidence,
+        confidence_level=befund.confidence_level,
+        confidence_guards=befund.confidence_guards,
+        low_confidence_reasons=befund.low_confidence_reasons,
+        token_usage=befund.token_usage,
+        claim_list=befund.claim_list,
         review_erforderlich=review_erforderlich,
         validierungshinweise=hinweise,
         term_drift_warnings=befund.term_drift_warnings,
