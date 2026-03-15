@@ -475,7 +475,7 @@ with setup_tab:
                     elif ext in ["txt", "log"]:
                         target_dir = "logs"
 
-                    file_path = TMP_DOC_DIR / target_dir / f.name
+                    file_path = TMP_DOC_DIR / target_dir / Path(f.name).name
                     with open(file_path, "wb") as out_f:
                         out_f.write(f.getbuffer())
 
