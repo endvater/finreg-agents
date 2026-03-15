@@ -32,7 +32,7 @@ pandas>=2.0.0
 openpyxl>=3.1.0
 
 # ── Sicherheits-Pins (CVE-Fixes) ──────────────────────────────────────
-pillow>=12.1.1  # CVE-2026-25990
+pillow>=10.3.0,<12.0  # TODO: Update auf >=12.1.1 wenn fastembed kompatibel (CVE-2026-25990)
 
 # ── Utilities ─────────────────────────────────────────────────────────
 python-dotenv>=1.0.0
