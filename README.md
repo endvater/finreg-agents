@@ -320,6 +320,36 @@ Der Skeptiker verdoppelt die LLM-Aufrufe ungefähr (+1 Aufruf pro aktivem Prüff
 
 ## Quickstart
 
+### 0. Docker Quickstart (kein langes Setup)
+
+Wenn du ohne lokale Python-Installation direkt starten willst:
+
+```bash
+git clone https://github.com/endvater/finreg-agents.git
+cd finreg-agents
+cp .env.example .env 2>/dev/null || true
+docker compose up --build
+```
+
+Wenn keine `.env.example` vorhanden ist, lege einfach eine `.env` mit deinen API-Keys an.
+
+Danach läuft die GUI unter:
+
+- `http://localhost:9000`
+
+Nützlich:
+
+```bash
+# Container im Hintergrund starten
+docker compose up --build -d
+
+# Logs ansehen
+docker compose logs -f
+
+# Stoppen
+docker compose down
+```
+
 ### 1. Installation (empfohlen: Python 3.12)
 
 ```bash
