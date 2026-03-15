@@ -50,7 +50,10 @@ class GwGIngestor:
         )
 
         # New: Regulatory parser that splits by structural markers
-        self.regulatory_parser = RegulatoryParser(fallback_chunk_size=chunk_size)
+        self.regulatory_parser = RegulatoryParser(
+            fallback_chunk_size=chunk_size,
+            fallback_chunk_overlap=chunk_overlap,
+        )
 
         self.pdf_reader = PDFReader()
         self._seen_hashes: set[str] = set()

@@ -337,6 +337,25 @@ class TestSektionsergebnis:
 
 
 class TestInterviewIngestion:
+    def test_regulatory_parser_receives_chunk_overlap(self):
+        from ingestion import ingestor as ingestor_module
+
+        calls = {}
+
+        class _DummyParser:
+            def __init__(self, fallback_chunk_size, fallback_chunk_overlap):
+                calls["size"] = fallback_chunk_size
+                calls["overlap"] = fallback_chunk_overlap
+
+        original = ingestor_module.RegulatoryParser
+        ingestor_module.RegulatoryParser = _DummyParser
+        try:
+            ingestor_module.GwGIngestor(chunk_size=777, chunk_overlap=55)
+        finally:
+            ingestor_module.RegulatoryParser = original
+
+        assert calls == {"size": 777, "overlap": 55}
+
     def test_dict_format_with_fragen_antworten(self):
         from ingestion.ingestor import GwGIngestor
 
