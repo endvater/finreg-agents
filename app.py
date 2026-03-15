@@ -502,12 +502,16 @@ with setup_tab:
 
     st.divider()
 
-    # Für Non-OpenAI-LLMs standardmäßig lokale Embeddings erzwingen, um
-    # Quota-/Billing-Abhängigkeiten bei OpenAI zu vermeiden.
-    if provider != "openai":
-        embedding_provider = "fastembed"
-    else:
+    # Embeddings pro Provider:
+    # - openai: optional lokal oder OpenAI
+    # - gemini: native Gemini-Embeddings
+    # - alle anderen: lokal (fastembed), um OpenAI-Quota zu vermeiden
+    if provider == "openai":
         embedding_provider = "fastembed" if use_local_embeddings else "openai"
+    elif provider == "gemini":
+        embedding_provider = "gemini"
+    else:
+        embedding_provider = "fastembed"
     provider_key_ok = True if required_key_env is None else bool(provider_key)
     if provider == "ollama":
         provider_key_ok = bool(ollama_host)
