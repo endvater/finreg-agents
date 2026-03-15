@@ -3,6 +3,8 @@ import os
 import json
 import shutil
 import logging
+import csv
+import io
 from pathlib import Path
 from datetime import datetime
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
@@ -34,6 +36,8 @@ def init_session_state():
         st.session_state.reprompt_notes = {}
     if "previous_run_stats" not in st.session_state:
         st.session_state.previous_run_stats = None
+    if "run_history" not in st.session_state:
+        st.session_state.run_history = []
 
 
 init_session_state()
@@ -169,7 +173,7 @@ def _find_source_path(source_name: str) -> str | None:
     return None
 
 
-def _render_pdf_preview(path: str, height: int = 650):
+def _render_pdf_preview(path: str):
     pdf_bytes = Path(path).read_bytes()
     st.download_button(
         "📥 PDF öffnen / herunterladen",
@@ -203,6 +207,33 @@ def _extract_timeline(logs: list[str]) -> list[dict]:
             icon = "✅"
         events.append({"icon": icon, "message": msg})
     return events[-40:]
+
+
+def _append_run_history(report_paths: dict):
+    json_path = report_paths.get("json")
+    if not json_path or not Path(json_path).exists():
+        return
+    payload = _read_json_file(json_path) or {}
+    run_key = _current_run_key(payload)
+    token_stats = (_load_run_stats(payload) or {}).get("token_stats", {})
+    if not token_stats:
+        return
+    entry = {
+        "run_key": run_key,
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "institution": (payload.get("meta") or {}).get("institution", ""),
+        "regulatorik": (payload.get("meta") or {})
+        .get("audit_trail", {})
+        .get("regulatorik", ""),
+        "token_stats": token_stats,
+    }
+    existing = {
+        e.get("run_key"): idx for idx, e in enumerate(st.session_state.run_history)
+    }
+    if run_key in existing:
+        st.session_state.run_history[existing[run_key]] = entry
+    else:
+        st.session_state.run_history.append(entry)
 
 
 # --- UI Sidebar ---
@@ -360,6 +391,7 @@ with setup_tab:
             try:
                 report_paths = pipeline.run()
                 st.session_state.reports = report_paths
+                _append_run_history(report_paths)
                 st.success("Prüfung erfolgreich abgeschlossen!")
             except Exception as e:
                 st.error(f"Fehler während der Prüfung: {str(e)}")
@@ -535,6 +567,36 @@ with result_tab:
                 file_name=f"review_queue_{run_key.replace(':', '_')}.json",
                 mime="application/json",
             )
+            csv_rows = []
+            for item in filtered_queue:
+                befund_id = item.get("id", "")
+                action_key = _review_action_key(run_key, befund_id)
+                action = st.session_state.review_actions.get(action_key, {})
+                csv_rows.append(
+                    {
+                        "run_key": run_key,
+                        "sektion": item.get("sektion_id", ""),
+                        "befund_id": befund_id,
+                        "frage": item.get("frage", ""),
+                        "bewertung": item.get("bewertung", ""),
+                        "confidence_level": item.get("confidence_level", ""),
+                        "confidence": item.get("confidence", 0.0),
+                        "review_decision": action.get("decision", "offen"),
+                        "review_timestamp": action.get("timestamp", ""),
+                        "reprompt_note": action.get("note", ""),
+                    }
+                )
+            csv_buffer = io.StringIO()
+            if csv_rows:
+                writer = csv.DictWriter(csv_buffer, fieldnames=list(csv_rows[0].keys()))
+                writer.writeheader()
+                writer.writerows(csv_rows)
+            st.download_button(
+                "Queue-Übersicht exportieren (CSV)",
+                data=csv_buffer.getvalue(),
+                file_name=f"review_queue_{run_key.replace(':', '_')}.csv",
+                mime="text/csv",
+            )
 
             if not queue_items:
                 st.success("Keine offenen Review-Befunde im aktuellen Run.")
@@ -674,7 +736,7 @@ with result_tab:
                             p = Path(source_path)
                             if p.suffix.lower() == ".pdf":
                                 with st.expander("PDF-Vorschau öffnen", expanded=False):
-                                    _render_pdf_preview(source_path, height=520)
+                                    _render_pdf_preview(source_path)
                             else:
                                 with st.expander(
                                     "Datei-Inhalt (Textvorschau)", expanded=False
@@ -758,6 +820,66 @@ with result_tab:
                         st.dataframe(delta_rows, use_container_width=True)
                 else:
                     st.caption("Kein vorheriger Run für Delta-Vergleich verfügbar.")
+
+                history = st.session_state.run_history or []
+                if history:
+                    st.markdown("### Run-Historie Vergleich (A/B)")
+                    options = []
+                    for h in history:
+                        ts = h.get("timestamp", "")
+                        rk = h.get("run_key", "")
+                        inst = h.get("institution", "")
+                        options.append(f"{rk} | {inst} | {ts}")
+                    if options:
+                        col_a, col_b = st.columns(2)
+                        idx_b = len(options) - 1
+                        idx_a = max(0, idx_b - 1)
+                        run_a_label = col_a.selectbox(
+                            "Run A",
+                            options=options,
+                            index=idx_a,
+                            key="run_compare_a",
+                        )
+                        run_b_label = col_b.selectbox(
+                            "Run B",
+                            options=options,
+                            index=idx_b,
+                            key="run_compare_b",
+                        )
+                        run_a = history[options.index(run_a_label)]
+                        run_b = history[options.index(run_b_label)]
+                        a_stats = run_a.get("token_stats", {})
+                        b_stats = run_b.get("token_stats", {})
+                        a_total = _to_number(a_stats.get("gesamt", {}).get("total"))
+                        b_total = _to_number(b_stats.get("gesamt", {}).get("total"))
+                        a_cost = _to_number(
+                            a_stats.get("kosten_schaetzung", {}).get("total_cost")
+                        )
+                        b_cost = _to_number(
+                            b_stats.get("kosten_schaetzung", {}).get("total_cost")
+                        )
+                        c_a, c_b = st.columns(2)
+                        c_a.metric("Δ Tokens (B - A)", b_total - a_total)
+                        c_b.metric("Δ Kosten (B - A)", f"{b_cost - a_cost:.4f}")
+                        ab_delta = _agent_delta_rows(b_stats, a_stats)
+                        if ab_delta:
+                            st.markdown("#### Delta pro Agent (B vs A)")
+                            st.dataframe(ab_delta, use_container_width=True)
+                        history_rows = [
+                            {
+                                "run_key": h.get("run_key"),
+                                "timestamp": h.get("timestamp"),
+                                "institution": h.get("institution"),
+                                "total_tokens": _to_number(
+                                    h.get("token_stats", {})
+                                    .get("gesamt", {})
+                                    .get("total")
+                                ),
+                            }
+                            for h in history
+                        ]
+                        st.markdown("#### Historie")
+                        st.dataframe(history_rows, use_container_width=True)
 
             st.markdown("### Live-Logs (letzte 30 Zeilen)")
             if st.session_state.logs:
