@@ -8,6 +8,7 @@ import io
 from pathlib import Path
 from datetime import datetime
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
+from agents.llm_factory import PROVIDER_DEFAULTS
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,54 @@ st.set_page_config(
 # --- Constants & State ---
 TMP_DOC_DIR = Path("./streamlit_tmp_docs")
 OUTPUT_DIR = Path("./reports/output")
+
+# --- Provider / Model Konfiguration ---
+PROVIDER_LABELS = {
+    "anthropic": "Anthropic (Claude)",
+    "openai": "OpenAI (GPT)",
+    "gemini": "Google (Gemini)",
+    "mistral": "Mistral AI",
+    "cohere": "Cohere",
+    "grok": "xAI (Grok)",
+    "ollama": "Ollama (lokal)",
+}
+
+PROVIDER_MODELS = {
+    "anthropic": [
+        "claude-sonnet-4-6",
+        "claude-sonnet-4-5-20250514",
+        "claude-opus-4-5",
+        "claude-haiku-4-5-20251001",
+    ],
+    "openai": ["gpt-4o", "gpt-4o-mini", "o3", "o3-mini"],
+    "gemini": ["gemini-2.0-flash", "gemini-2.5-pro"],
+    "mistral": ["mistral-large-latest", "mistral-small-latest"],
+    "cohere": ["command-r-plus", "command-a"],
+    "grok": ["grok-3", "grok-3-mini"],
+    "ollama": [],  # Freie Eingabe
+}
+
+# Env-Variable je Provider (None = kein Key nötig)
+PROVIDER_API_KEY_ENV = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "gemini": "GOOGLE_API_KEY",
+    "mistral": "MISTRAL_API_KEY",
+    "cohere": "COHERE_API_KEY",
+    "grok": "XAI_API_KEY",
+    "ollama": None,
+}
+
+# Embedding-Provider der automatisch zum LLM-Provider passt (None = OpenAI oder fastembed)
+PROVIDER_EMBEDDING_AUTO = {
+    "anthropic": None,
+    "openai": "openai",
+    "gemini": "gemini",
+    "mistral": "mistral",
+    "cohere": None,
+    "grok": None,
+    "ollama": "ollama",
+}
 
 
 def init_session_state():
@@ -390,21 +439,41 @@ with st.sidebar:
     st.markdown("KI-Agenten für regulatorische Prüfungen")
 
     st.header("Konfiguration")
-    api_key_anthropic = st.text_input(
-        "Anthropic API Key",
-        type="password",
-        value=os.environ.get("ANTHROPIC_API_KEY", ""),
-    )
-    api_key_openai = st.text_input(
-        "OpenAI API Key (Embeddings)",
-        type="password",
-        value=os.environ.get("OPENAI_API_KEY", ""),
+
+    # --- LLM Provider ---
+    provider = st.selectbox(
+        "LLM Provider",
+        options=list(PROVIDER_LABELS.keys()),
+        format_func=lambda x: PROVIDER_LABELS[x],
+        index=0,
     )
 
-    if api_key_anthropic:
-        os.environ["ANTHROPIC_API_KEY"] = api_key_anthropic
-    if api_key_openai:
-        os.environ["OPENAI_API_KEY"] = api_key_openai
+    # API Key für gewählten Provider
+    api_key_env = PROVIDER_API_KEY_ENV[provider]
+    llm_api_key = ""
+    if api_key_env:
+        llm_api_key = st.text_input(
+            f"API Key ({PROVIDER_LABELS[provider]})",
+            type="password",
+            value=os.environ.get(api_key_env, ""),
+        )
+        if llm_api_key:
+            os.environ[api_key_env] = llm_api_key
+
+    # OpenAI Key für Embeddings (wenn Provider kein eigenes Embedding hat)
+    embedding_provider = PROVIDER_EMBEDDING_AUTO[provider]
+    api_key_openai = ""
+    if embedding_provider is None:
+        api_key_openai = st.text_input(
+            "OpenAI API Key (Embeddings)",
+            type="password",
+            value=os.environ.get("OPENAI_API_KEY", ""),
+        )
+        if api_key_openai:
+            os.environ["OPENAI_API_KEY"] = api_key_openai
+            embedding_provider = "openai"
+        else:
+            embedding_provider = "fastembed"
 
     st.divider()
 
@@ -416,9 +485,18 @@ with st.sidebar:
     )
 
     with st.expander("Erweiterte Einstellungen"):
-        model = st.selectbox(
-            "Modell", ["claude-sonnet-4-5-20250514", "claude-opus-4-5"]
-        )
+        # Modell-Auswahl je Provider
+        model_options = PROVIDER_MODELS.get(provider, [])
+        if model_options:
+            model = st.selectbox("Modell", model_options)
+        else:
+            # Ollama: freie Eingabe
+            model = st.text_input(
+                "Modell (Ollama)",
+                value=PROVIDER_DEFAULTS[provider]["model"],
+                help="z.B. llama3.3, qwen2.5:72b, mistral",
+            )
+
         top_k = st.slider("RAG Chunks (Top-K)", min_value=3, max_value=20, value=8)
         skeptiker = st.checkbox(
             "Skeptiker-Agent aktivieren ⚔️",
@@ -491,9 +569,13 @@ with setup_tab:
 
     st.divider()
 
-    can_run = bool(input_dir) and bool(api_key_anthropic) and bool(api_key_openai)
+    llm_key_ok = api_key_env is None or bool(llm_api_key)
+    can_run = bool(input_dir) and llm_key_ok
     if not can_run:
-        st.info("Bitte API Keys setzen und gültiges Dokumentenverzeichnis wählen.")
+        if not input_dir:
+            st.info("Bitte ein gültiges Dokumentenverzeichnis wählen.")
+        else:
+            st.info(f"Bitte API Key für {PROVIDER_LABELS[provider]} setzen.")
 
     if st.button(
         "🚀 Prüfung starten",
@@ -518,7 +600,9 @@ with setup_tab:
                 institution=institution,
                 regulatorik=regulatorik,
                 output_dir=str(OUTPUT_DIR),
+                provider=provider,
                 model=model,
+                embedding_provider=embedding_provider,
                 top_k=top_k,
                 skeptiker=skeptiker,
                 skeptiker_only_konform=skeptiker_only_konform,
