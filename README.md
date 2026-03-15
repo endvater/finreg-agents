@@ -327,15 +327,17 @@ Wenn du ohne lokale Python-Installation direkt starten willst:
 ```bash
 git clone https://github.com/endvater/finreg-agents.git
 cd finreg-agents
-cp .env.example .env 2>/dev/null || true
+cp .env.example .env
 docker compose up --build
 ```
 
-Wenn keine `.env.example` vorhanden ist, lege einfach eine `.env` mit deinen API-Keys an.
+Der Container lädt API-Keys über `.env` (siehe `.env.example`).
 
 Danach läuft die GUI unter:
 
 - `http://localhost:9000`
+
+> **Warnung:** Das `0.0.0.0`-Binding ist nur für lokale Nutzung bzw. Trusted-Netze gedacht. Für öffentliche Deployments die App nur hinter Reverse Proxy + Auth betreiben.
 
 Nützlich:
 
