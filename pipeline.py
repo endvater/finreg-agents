@@ -720,7 +720,7 @@ Beispiele:
   python pipeline.py --input ./docs --regulatorik gwg --adversarial
   python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
   python pipeline.py --input ./docs --regulatorik wphg --provider openai --model gpt-4o
-  python pipeline.py --input ./docs --regulatorik gwg --provider gemini --model gemini-2.0-flash
+  python pipeline.py --input ./docs --regulatorik gwg --provider gemini --model gemini-3.1-pro-001
   python pipeline.py --input ./docs --regulatorik gwg --provider ollama --model llama3.3
   python pipeline.py --input ./docs --regulatorik gwg --provider mistral --embedding-provider mistral
         """,
@@ -755,7 +755,7 @@ Beispiele:
     parser.add_argument(
         "--model",
         default=None,
-        help="Modellname (Default: Provider-spezifisch, z.B. claude-sonnet-4-6 / gpt-4o / gemini-2.0-flash)",
+        help="Modellname (Default: Provider-spezifisch, z.B. claude-sonnet-4-6 / gpt-4o / gemini-3.1-pro-001)",
     )
     parser.add_argument(
         "--embedding-provider",

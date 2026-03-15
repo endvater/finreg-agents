@@ -4,7 +4,7 @@ FinRegAgents – LLM Factory
 Unterstützte Provider:
   anthropic  – Claude Sonnet / Opus / Haiku  (Standard)
   openai     – GPT-4o, GPT-4o-mini, o3
-  gemini     – Gemini 2.0 Flash, 2.5 Pro
+  gemini     – Gemini 3.1 Pro, 2.5 Pro
   mistral    – Mistral Large, Mistral Small
   cohere     – Command R+, Command A
   grok       – Grok-3, Grok-3 Mini  (OpenAI-kompatibler Endpunkt)
@@ -13,7 +13,7 @@ Unterstützte Provider:
 Verwendung:
     from agents.llm_factory import build_llm, PROVIDER_DEFAULTS
 
-    llm = build_llm("gemini", model="gemini-2.0-flash", temperature=0.1)
+    llm = build_llm("gemini", model="gemini-3.1-pro-001", temperature=0.1)
     llm = build_llm("ollama", model="llama3.3")
 """
 
@@ -39,7 +39,7 @@ PROVIDER_DEFAULTS: dict[str, dict[str, Any]] = {
         "max_tokens": 2048,
     },
     "gemini": {
-        "model": "gemini-2.0-flash",
+        "model": "gemini-3.1-pro-001",
         "max_tokens": 2048,
     },
     "mistral": {
