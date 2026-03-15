@@ -336,7 +336,8 @@ Der Container lädt API-Keys über `.env` (siehe `.env.example`).
 Danach läuft die GUI unter:
 
 - `http://localhost:9000`
-- Hinweis: `0.0.0.0`-Binding ist für lokale Nutzung/Trusted-Netz gedacht. Für öffentliche Deployments nur hinter Reverse Proxy + Auth betreiben.
+
+> **Warnung:** Das `0.0.0.0`-Binding ist nur für lokale Nutzung bzw. Trusted-Netze gedacht. Für öffentliche Deployments die App nur hinter Reverse Proxy + Auth betreiben.
 
 Nützlich:
 
