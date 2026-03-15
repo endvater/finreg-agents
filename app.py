@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import datetime
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
 from ui_drift import build_befund_index, build_drift_rows
+from agents.llm_factory import list_providers, default_model
 
 logger = logging.getLogger(__name__)
 
@@ -363,19 +364,42 @@ with st.sidebar:
     st.markdown("KI-Agenten für regulatorische Prüfungen")
 
     st.header("Konfiguration")
-    api_key_anthropic = st.text_input(
-        "Anthropic API Key",
-        type="password",
-        value=os.environ.get("ANTHROPIC_API_KEY", ""),
+    provider = st.selectbox(
+        "LLM-Provider",
+        options=list_providers(),
+        index=list_providers().index("anthropic")
+        if "anthropic" in list_providers()
+        else 0,
+        format_func=lambda p: p.upper(),
     )
+
+    provider_key_env = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "gemini": "GOOGLE_API_KEY",
+        "mistral": "MISTRAL_API_KEY",
+        "cohere": "COHERE_API_KEY",
+        "grok": "XAI_API_KEY",
+        "ollama": None,
+    }
+    required_key_env = provider_key_env.get(provider)
+    provider_key = ""
+    if required_key_env:
+        provider_key = st.text_input(
+            f"{provider.upper()} API Key",
+            type="password",
+            value=os.environ.get(required_key_env, ""),
+        )
+        if provider_key:
+            os.environ[required_key_env] = provider_key
+    else:
+        st.caption("Für OLLAMA ist kein API-Key erforderlich.")
+
     api_key_openai = st.text_input(
-        "OpenAI API Key (Embeddings)",
+        "OpenAI API Key (optional für Embeddings)",
         type="password",
         value=os.environ.get("OPENAI_API_KEY", ""),
     )
-
-    if api_key_anthropic:
-        os.environ["ANTHROPIC_API_KEY"] = api_key_anthropic
     if api_key_openai:
         os.environ["OPENAI_API_KEY"] = api_key_openai
 
@@ -389,9 +413,7 @@ with st.sidebar:
     )
 
     with st.expander("Erweiterte Einstellungen"):
-        model = st.selectbox(
-            "Modell", ["claude-sonnet-4-5-20250514", "claude-opus-4-5"]
-        )
+        model = st.text_input("Modell", value=default_model(provider))
         top_k = st.slider("RAG Chunks (Top-K)", min_value=3, max_value=20, value=8)
         use_local_embeddings = st.checkbox(
             "Lokale Embeddings nutzen (FastEmbed, kein OpenAI-Budget nötig)",
@@ -473,12 +495,12 @@ with setup_tab:
     st.divider()
 
     embedding_provider = "fastembed" if use_local_embeddings else None
-    openai_ok = bool(api_key_openai) or use_local_embeddings
-    can_run = bool(input_dir) and bool(api_key_anthropic) and openai_ok
+    provider_key_ok = True if required_key_env is None else bool(provider_key)
+    can_run = bool(input_dir) and provider_key_ok
     if not can_run:
         st.info(
-            "Bitte Anthropic-Key setzen und gültiges Dokumentenverzeichnis wählen. "
-            "OpenAI-Key ist nur nötig, wenn lokale Embeddings deaktiviert sind."
+            "Bitte den API-Key für den gewählten Provider setzen "
+            "und ein gültiges Dokumentenverzeichnis wählen."
         )
 
     if st.button(
@@ -504,6 +526,7 @@ with setup_tab:
                 institution=institution,
                 regulatorik=regulatorik,
                 output_dir=str(OUTPUT_DIR),
+                provider=provider,
                 model=model,
                 embedding_provider=embedding_provider,
                 top_k=top_k,
