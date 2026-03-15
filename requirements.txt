@@ -24,7 +24,7 @@ langchain-anthropic>=0.3.0
 
 # ── Lokale Embeddings (Fallback, kein API-Key nötig) ─────────────────
 llama-index-embeddings-fastembed>=0.2.0
-fastembed>=0.3.0
+fastembed>=0.3.0,<0.8.0  # 0.8.0+ nicht verfügbar für Python 3.12
 
 # ── Dokumenten-Verarbeitung ───────────────────────────────────────────
 pypdf>=4.0.0
@@ -32,7 +32,9 @@ pandas>=2.0.0
 openpyxl>=3.1.0
 
 # ── Sicherheits-Pins (CVE-Fixes) ──────────────────────────────────────
-pillow>=10.3.0,<12.0  # TODO: Update auf >=12.1.1 wenn fastembed kompatibel (CVE-2026-25990)
+# TODO: CVE-2026-25990 erfordert pillow>=12.1.1, aber fastembed<0.8.0 erfordert pillow<12.0
+# Entferne die <12.0 Beschränkung wenn fastembed 0.8.0+ verfügbar ist
+pillow>=10.3.0,<12.0.0
 
 # ── Utilities ─────────────────────────────────────────────────────────
 python-dotenv>=1.0.0

@@ -19,6 +19,8 @@ from pathlib import Path
 from collections import Counter
 from typing import TYPE_CHECKING, Optional
 
+from agents.provenance import CorroborationStatus
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -75,6 +77,97 @@ def _esc(text: str) -> str:
     if text is None:
         return ""
     return html.escape(str(text))
+
+
+# Provenance status display mappings
+_PROV_EMOJI = {
+    CorroborationStatus.CORROBORATED: "✅",
+    CorroborationStatus.SINGLE_SOURCED: "⚠️",
+    CorroborationStatus.UNVERIFIED: "❓",
+}
+_PROV_LABEL_MD = {
+    CorroborationStatus.CORROBORATED: "belegt (2+ Quellen)",
+    CorroborationStatus.SINGLE_SOURCED: "Einzelquelle",
+    CorroborationStatus.UNVERIFIED: "unbelegt",
+}
+_PROV_COLOR_HTML = {
+    CorroborationStatus.CORROBORATED: "#27ae60",
+    CorroborationStatus.SINGLE_SOURCED: "#e67e22",
+    CorroborationStatus.UNVERIFIED: "#7f8c8d",
+}
+_PROV_BG_HTML = {
+    CorroborationStatus.CORROBORATED: "#eafaf1",
+    CorroborationStatus.SINGLE_SOURCED: "#fef9e7",
+    CorroborationStatus.UNVERIFIED: "#f2f3f4",
+}
+
+
+def _esc_md(text: str) -> str:
+    """Escape pipe chars in Markdown table cells."""
+    return str(text).replace("|", "\\|")
+
+
+def _render_provenance_markdown(claim_provenance: list) -> list[str]:
+    """Render a compact provenance table in Markdown."""
+    if not claim_provenance:
+        return []
+    lines = [
+        "**Aussagen-Provenance:**",
+        "",
+        "| ID | Aussage | Status |",
+        "|---|---|---|",
+    ]
+    for cp in claim_provenance:
+        emoji = _PROV_EMOJI.get(cp.status, "❓")
+        label = _PROV_LABEL_MD.get(cp.status, cp.status.value)
+        claim_short = (
+            cp.claim_text[:80] + "…" if len(cp.claim_text) > 80 else cp.claim_text
+        )
+        lines.append(
+            f'| `{cp.provenance_id}` | "{_esc_md(claim_short)}" | {emoji} {label} |'
+        )
+    lines.append("")
+    return lines
+
+
+def _render_provenance_html(claim_provenance: list) -> str:
+    """Render a compact provenance table in HTML."""
+    if not claim_provenance:
+        return ""
+    rows = ""
+    for cp in claim_provenance:
+        emoji = _PROV_EMOJI.get(cp.status, "❓")
+        label = _PROV_LABEL_MD.get(cp.status, cp.status.value)
+        color = _PROV_COLOR_HTML.get(cp.status, "#7f8c8d")
+        bg = _PROV_BG_HTML.get(cp.status, "#f2f3f4")
+        claim_short = (
+            cp.claim_text[:80] + "…" if len(cp.claim_text) > 80 else cp.claim_text
+        )
+        rows += (
+            f"<tr>"
+            f'<td style="font-family:monospace;font-size:11px;white-space:nowrap">'
+            f"{_esc(cp.provenance_id)}</td>"
+            f'<td style="font-size:12px">&ldquo;{_esc(claim_short)}&rdquo;</td>'
+            f'<td><span style="background:{bg};color:{color};padding:2px 8px;'
+            f'border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap">'
+            f"{emoji} {_esc(label)}</span></td>"
+            f"</tr>"
+        )
+    return (
+        '<div style="margin:8px 0">'
+        '<strong style="font-size:12px;color:#555">Aussagen-Provenance:</strong>'
+        '<table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:12px">'
+        "<thead><tr>"
+        '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ecf0f1;'
+        'color:#7f8c8d;font-size:10px">ID</th>'
+        '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ecf0f1;'
+        'color:#7f8c8d;font-size:10px">Aussage</th>'
+        '<th style="text-align:left;padding:4px 8px;border-bottom:1px solid #ecf0f1;'
+        'color:#7f8c8d;font-size:10px">Status</th>'
+        "</tr></thead>"
+        f"<tbody>{rows}</tbody>"
+        "</table></div>"
+    )
 
 
 class BerichtGenerator:
@@ -247,6 +340,24 @@ class BerichtGenerator:
                 "generator_version": "finreg-agents v2.0",
                 "timestamp": datetime.now().isoformat(),
             },
+            "disputed_findings": [
+                {
+                    "id": b.prueffeld_id,
+                    "frage": b.frage,
+                    "sektion_id": next(
+                        (s.sektion_id for s in sektionsergebnisse if b in s.befunde),
+                        "unbekannt",
+                    ),
+                    "pruefer_bewertung": (b.disputed_positions or {}).get(
+                        "pruefer", ""
+                    ),
+                    "adversarial_bewertung": (b.disputed_positions or {}).get(
+                        "adversarial", ""
+                    ),
+                    "divergenz": (b.disputed_positions or {}).get("divergenz", 0),
+                }
+                for b in strittig
+            ],
         }
 
     # ------------------------------------------------------------------ #
@@ -271,6 +382,7 @@ class BerichtGenerator:
                 "audit_trail": zusammenfassung["audit_trail"],
             },
             "zusammenfassung": zusammenfassung,
+            "disputed_findings": zusammenfassung.get("disputed_findings", []),
             "token_stats": token_stats or {},
             "stats_file": stats_file,
             "sektionen": [
@@ -296,6 +408,21 @@ class BerichtGenerator:
                             "claim_list": b.claim_list,
                             "review_erforderlich": b.review_erforderlich,
                             "validierungshinweise": b.validierungshinweise,
+                            "term_drift_warnings": getattr(
+                                b, "term_drift_warnings", []
+                            ),
+                            "claim_provenance": [
+                                {
+                                    "provenance_id": cp.provenance_id,
+                                    "claim_text": cp.claim_text,
+                                    "status": cp.status.value,
+                                    "source_chunk_ids": cp.source_chunk_ids,
+                                }
+                                for cp in getattr(b, "claim_provenance", [])
+                            ],
+                            "disputed_positions": getattr(
+                                b, "disputed_positions", None
+                            ),
                             **({"token_usage": b.token_usage} if verbose else {}),
                         }
                         for b in s.befunde
@@ -452,6 +579,9 @@ class BerichtGenerator:
                         f"output `{b.token_usage.get('output', 0)}` | total `{b.token_usage.get('total', 0)}`",
                         "",
                     ]
+                claim_prov = getattr(b, "claim_provenance", [])
+                if claim_prov:
+                    lines += _render_provenance_markdown(claim_prov)
                 if b.belegte_textstellen:
                     lines.append("**Belegte Textstellen:**")
                     for t in b.belegte_textstellen:
@@ -469,9 +599,33 @@ class BerichtGenerator:
                     for v in b.validierungshinweise:
                         lines.append(f"- ⚡ {v}")
                     lines.append("")
+                term_drift = getattr(b, "term_drift_warnings", [])
+                if term_drift:
+                    lines.append("**Term-Drift-Warnungen:**")
+                    for w in term_drift:
+                        lines.append(f"- 🌊 {w}")
+                    lines.append("")
                 if b.quellen:
                     lines.append(f"*Quellen: {', '.join(b.quellen)}*")
                 lines.append("---")
+
+        # Strittige Befunde
+        disputed_findings = z.get("disputed_findings", [])
+        if disputed_findings:
+            lines += [
+                "",
+                "## 🔀 Strittige Befunde",
+                "",
+                f"*{len(disputed_findings)} strittige Befunde mit wesentlicher Divergenz zwischen Prüfer und Adversarial Layer*",
+                "",
+                "| Prüffeld | Prüfer-Bewertung | Adversarial-Bewertung | Divergenz |",
+                "|---|---|---|---|",
+            ]
+            for df in disputed_findings:
+                lines.append(
+                    f"| {df['id']} | {df['pruefer_bewertung']} | {df['adversarial_bewertung']} | {df['divergenz']} |"
+                )
+            lines.append("")
 
         # Audit Trail
         lines += [
@@ -510,6 +664,8 @@ class BerichtGenerator:
             parts.append(self._html_token_stats(token_stats, stats_file))
         if z["kritische_befunde"]:
             parts.append(self._html_mangelkatalog(z))
+        if z.get("disputed_findings"):
+            parts.append(self._html_strittige_befunde(z))
         if z["nicht_pruefbar_quote"] >= 30:
             parts.append(self._html_evidenz_warnung(z))
         parts.append(self._html_detailbefunde(sektionsergebnisse))
@@ -767,11 +923,19 @@ class BerichtGenerator:
                     )
                     val_html = f'<div class="validation-hints"><strong>Validierung:</strong>{items}</div>'
 
+                drift_html = ""
+                term_drift = getattr(b, "term_drift_warnings", [])
+                if term_drift:
+                    items = "".join(f"<div>🌊 {_esc(w)}</div>" for w in term_drift)
+                    drift_html = f'<div class="validation-hints"><strong>Term-Drift-Warnungen:</strong>{items}</div>'
+
                 quellen_html = (
                     f'<div class="quellen">Quellen: {_esc(", ".join(b.quellen))}</div>'
                     if b.quellen
                     else ""
                 )
+
+                prov_html = _render_provenance_html(getattr(b, "claim_provenance", []))
 
                 out += f"""
 <div class="befund-card">
@@ -786,15 +950,49 @@ class BerichtGenerator:
   </div>
   <div class="befund-body">
     <div class="begruendung">{_esc(b.begruendung)}</div>
+    {prov_html}
     {textstellen_html}
     {mangel_html}
     {empf_html}
     {val_html}
+    {drift_html}
     {quellen_html}
   </div>
 </div>"""
             out += "</div>"
         return out
+
+    def _html_strittige_befunde(self, z) -> str:
+        disputed = z.get("disputed_findings", [])
+        rows = "".join(
+            f"<tr>"
+            f"<td style='padding:8px 12px;font-family:monospace;font-size:12px'>{_esc(df['id'])}</td>"
+            f"<td style='padding:8px 12px'>{_esc(df['pruefer_bewertung'])}</td>"
+            f"<td style='padding:8px 12px;color:#c0392b;font-weight:600'>{_esc(df['adversarial_bewertung'])}</td>"
+            f"<td style='padding:8px 12px;text-align:center;font-weight:700'>{_esc(str(df['divergenz']))}</td>"
+            f"</tr>"
+            for df in disputed
+        )
+        return f"""
+<div style="background:#fdebd0;border:1px solid #f0b27a;border-radius:8px;padding:20px;margin-bottom:32px;">
+  <h2 style="color:#d35400;margin-bottom:12px;font-size:15px">🔀 Strittige Befunde ({len(disputed)})</h2>
+  <p style="font-size:12px;color:#7d6608;margin-bottom:12px">
+    Befunde mit wesentlicher Divergenz zwischen Prüfer-Agent und Adversarial Layer.
+    Manuelle Überprüfung erforderlich.
+  </p>
+  <table style="width:100%;border-collapse:collapse;background:white;border-radius:6px;overflow:hidden;">
+    <thead>
+      <tr style="background:#f0b27a;color:#6e2f00;font-size:12px;font-weight:700">
+        <th style="padding:8px 12px;text-align:left">Prüffeld</th>
+        <th style="padding:8px 12px;text-align:left">Prüfer-Bewertung</th>
+        <th style="padding:8px 12px;text-align:left">Adversarial-Bewertung</th>
+        <th style="padding:8px 12px;text-align:center">Divergenz</th>
+      </tr>
+    </thead>
+    <tbody>{rows}</tbody>
+  </table>
+</div>
+"""
 
     def _html_audit_trail(self, z) -> str:
         at = z.get("audit_trail", {})

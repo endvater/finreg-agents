@@ -22,17 +22,19 @@ from agents.skeptiker_agent import (
 # ------------------------------------------------------------------ #
 
 from agents.pruef_agent import (
+    AdversarialErgebnis,
+    Befund,
+    Bewertung,
+    PrueferAgent,
+    Sektionsergebnis,
+    _merge_adversarial,
     compute_confidence,
     confidence_level_from_score,
     evaluate_confidence_guards,
     extract_json,
     validate_befund_structure,
-    PrueferAgent,
-    Bewertung,
-    Sektionsergebnis,
-    Befund,
 )
-from pipeline import AuditPipeline
+from pipeline import AuditPipeline, ReviewBudgetExceeded
 from reports.bericht_generator import BerichtGenerator
 
 
@@ -862,6 +864,105 @@ class TestTokenStats:
         )
 
 
+# ------------------------------------------------------------------ #
+# Test: Term Drift Checker
+# ------------------------------------------------------------------ #
+
+
+class TestTermDriftChecker:
+    def test_term_drift_detects_phantom_citation(self):
+        """Befund cites '§ 15 GwG' but chunks don't contain it → warning."""
+        from agents.term_checker import TermDriftChecker
+
+        checker = TermDriftChecker()
+        warnings = checker.check_befund(
+            befund_text="Gemäß § 15 GwG sind verstärkte Sorgfaltspflichten einzuhalten.",
+            regulatorik="gwg",
+            retrieved_chunks=[
+                "Die allgemeinen Sorgfaltspflichten ergeben sich aus § 10 GwG.",
+                "Risikoanalysen sind regelmäßig zu aktualisieren.",
+            ],
+        )
+        assert len(warnings) > 0
+        assert any("§ 15 GwG" in w or "Phantom" in w for w in warnings)
+
+    def test_term_drift_no_warning_when_citation_present(self):
+        """Citation appears in chunks → no phantom warning."""
+        from agents.term_checker import TermDriftChecker
+
+        checker = TermDriftChecker()
+        warnings = checker.check_befund(
+            befund_text="Gemäß § 15 GwG sind verstärkte Sorgfaltspflichten einzuhalten.",
+            regulatorik="gwg",
+            retrieved_chunks=[
+                "§ 15 GwG regelt die verstärkten Sorgfaltspflichten bei erhöhtem Risiko.",
+                "Weitere Vorschriften ergeben sich aus dem KWG.",
+            ],
+        )
+        assert warnings == []
+
+    def test_term_drift_empty_befund(self):
+        """Empty befund text → no warnings."""
+        from agents.term_checker import TermDriftChecker
+
+        checker = TermDriftChecker()
+        warnings = checker.check_befund(
+            befund_text="",
+            regulatorik="gwg",
+            retrieved_chunks=["Irgendein Chunk-Inhalt"],
+        )
+        assert warnings == []
+
+
+# ------------------------------------------------------------------ #
+# Test: Evidence Relevance Classifier (Issue #29)
+# ------------------------------------------------------------------ #
+
+
+class TestEvidenceRelevanceClassifier:
+    def setup_method(self):
+        from ingestion.relevance_classifier import EvidenceRelevanceClassifier
+
+        self.classifier = EvidenceRelevanceClassifier()
+
+    def test_classifier_keeps_regulatory_anchor(self):
+        """Text with '§ 10 GwG' must never be classified as noise."""
+        from ingestion.relevance_classifier import ChunkCategory
+
+        category, drop_reason = self.classifier.classify(
+            "Gemäß § 10 GwG sind allgemeine Sorgfaltspflichten zu beachten."
+        )
+        assert category != ChunkCategory.CONTEXT_NOISE
+        assert drop_reason is None
+
+    def test_classifier_drops_marketing(self):
+        """Text with 'Willkommen bei unserer Bank' should be context_noise."""
+        from ingestion.relevance_classifier import ChunkCategory
+
+        category, drop_reason = self.classifier.classify(
+            "Willkommen bei unserer Bank. Wir freuen uns über Ihren Besuch."
+        )
+        assert category == ChunkCategory.CONTEXT_NOISE
+
+    def test_classifier_keeps_control_evidence(self):
+        """Text with 'wurde dokumentiert am 01.01.2025' should be control_evidence."""
+        from ingestion.relevance_classifier import ChunkCategory
+
+        category, drop_reason = self.classifier.classify(
+            "Die Maßnahme wurde dokumentiert am 01.01.2025 durch die Compliance-Abteilung."
+        )
+        assert category == ChunkCategory.CONTROL_EVIDENCE
+        assert drop_reason is None
+
+    def test_classifier_reason_code(self):
+        """Dropped chunks must have a non-None drop_reason."""
+        from ingestion.relevance_classifier import ChunkCategory
+
+        category, drop_reason = self.classifier.classify("Impressum")
+        assert category == ChunkCategory.CONTEXT_NOISE
+        assert drop_reason is not None
+
+
 class TestBerichtGeneratorTokenStats:
     def test_html_token_stats_block_rendered(self):
         generator = BerichtGenerator()
@@ -910,3 +1011,316 @@ class TestBerichtGeneratorTokenStats:
         assert z["disputed"] == 1
         assert z["gewertete_prueffelder"] == 1
         assert len(z["strittige_befunde"]) == 1
+
+
+# ------------------------------------------------------------------ #
+# Test: Per-Claim Provenance (Issue #6)
+# ------------------------------------------------------------------ #
+
+
+class _FakeNodeWithScore:
+    """Minimal fake NodeWithScore for provenance tests."""
+
+    def __init__(self, node_id: str, text: str):
+        self.node = _FakeNodeInner(node_id, text)
+
+    def get_content(self):
+        return self.node.text
+
+
+class _FakeNodeInner:
+    def __init__(self, node_id: str, text: str):
+        self.node_id = node_id
+        self.text = text
+
+
+class TestAnnotateClaims:
+    def _make_node(self, node_id: str, text: str) -> _FakeNodeWithScore:
+        return _FakeNodeWithScore(node_id, text)
+
+    def test_annotate_claims_corroborated(self):
+        """Sentence with keywords present in 2+ chunks → CORROBORATED."""
+        from agents.provenance import CorroborationStatus, annotate_claims
+
+        # Sentence with distinctive keywords (>3 chars, not stopwords)
+        sentence = (
+            "Die Geldwäschepräventionsmaßnahmen wurden vollständig dokumentiert "
+            "und regelmäßig überprüft."
+        )
+        # Both chunks contain overlapping keywords from the sentence
+        chunk_text = (
+            "Geldwäschepräventionsmaßnahmen wurden dokumentiert und überprüft "
+            "durch Compliance vollständig regelmäßig"
+        )
+        nodes = [
+            self._make_node("chunk-001", chunk_text),
+            self._make_node("chunk-002", chunk_text + " weitere Informationen"),
+        ]
+        results = annotate_claims(sentence, nodes)
+
+        assert len(results) == 1
+        assert results[0].status == CorroborationStatus.CORROBORATED
+        assert len(results[0].source_chunk_ids) >= 2
+
+    def test_annotate_claims_single_sourced(self):
+        """Keywords found in exactly 1 chunk → SINGLE_SOURCED."""
+        from agents.provenance import CorroborationStatus, annotate_claims
+
+        sentence = (
+            "Risikoklassifizierung wurde ordnungsgemäß durchgeführt und "
+            "vollständig dokumentiert."
+        )
+        # Only one chunk matches
+        matching_chunk = (
+            "Risikoklassifizierung wurde ordnungsgemäß durchgeführt "
+            "vollständig dokumentiert"
+        )
+        non_matching_chunk = "Hierbei handelt es sich um einen unrelated Inhalt."
+        nodes = [
+            self._make_node("chunk-001", matching_chunk),
+            self._make_node("chunk-002", non_matching_chunk),
+        ]
+        results = annotate_claims(sentence, nodes)
+
+        assert len(results) == 1
+        assert results[0].status == CorroborationStatus.SINGLE_SOURCED
+        assert len(results[0].source_chunk_ids) == 1
+
+    def test_annotate_claims_unverified(self):
+        """Keywords found in no chunk → UNVERIFIED."""
+        from agents.provenance import CorroborationStatus, annotate_claims
+
+        sentence = (
+            "Qualitätssicherungsmaßnahmen wurden vollständig implementiert "
+            "und regelmäßig bewertet."
+        )
+        # Chunks contain completely different content
+        nodes = [
+            self._make_node("chunk-001", "Allgemeine Verwaltungsvorschriften"),
+            self._make_node("chunk-002", "Unrelated content about something else"),
+        ]
+        results = annotate_claims(sentence, nodes)
+
+        assert len(results) == 1
+        assert results[0].status == CorroborationStatus.UNVERIFIED
+        assert results[0].source_chunk_ids == []
+
+    def test_provenance_id_format(self):
+        """Provenance IDs are formatted as C001, C002, ..."""
+        from agents.provenance import annotate_claims
+
+        # Multiple sentences separated by ". "
+        text = (
+            "Die erste Maßnahme wurde vollständig dokumentiert und überprüft. "
+            "Die zweite Kontrollmaßnahme wurde ebenfalls implementiert und getestet. "
+            "Eine dritte Sicherheitsmaßnahme wurde regelmäßig bewertet und validiert."
+        )
+        nodes = []  # No nodes → all unverified, but IDs should still be formatted
+        results = annotate_claims(text, nodes)
+
+        assert len(results) >= 2
+        assert results[0].provenance_id == "C001"
+        assert results[1].provenance_id == "C002"
+        if len(results) >= 3:
+            assert results[2].provenance_id == "C003"
+
+    def test_short_sentences_filtered(self):
+        """Sentences shorter than 20 chars are excluded."""
+        from agents.provenance import annotate_claims
+
+        text = (
+            "Kurz. Dies ist eine ausreichend lange Aussage für die Provenance-Analyse."
+        )
+        nodes = []
+        results = annotate_claims(text, nodes)
+
+        # "Kurz" should be filtered (< 20 chars), only the long sentence remains
+        assert all(len(r.claim_text) >= 20 for r in results)
+
+    def test_empty_befund_text(self):
+        """Empty befund text returns empty list."""
+        from agents.provenance import annotate_claims
+
+        results = annotate_claims("", [])
+        assert results == []
+
+    def test_no_nodes_returns_unverified(self):
+        """No retrieved nodes → all claims unverified."""
+        from agents.provenance import CorroborationStatus, annotate_claims
+
+        text = "Diese Aussage kann nicht durch Dokumente belegt werden ohne Chunks."
+        results = annotate_claims(text, [])
+
+        assert len(results) == 1
+        assert results[0].status == CorroborationStatus.UNVERIFIED
+
+
+# ------------------------------------------------------------------ #
+# Test: Disagreement Resolution Protocol (Issue #2)
+# ------------------------------------------------------------------ #
+
+
+def _make_befund_for_disputed(bewertung: Bewertung, confidence: float = 0.8) -> Befund:
+    return Befund(
+        prueffeld_id="S01-01",
+        frage="Ist ein IKS dokumentiert?",
+        bewertung=bewertung,
+        begruendung="Begründung.",
+        confidence=confidence,
+        review_erforderlich=False,
+    )
+
+
+def _make_adv_ergebnis(bewertung: Bewertung) -> AdversarialErgebnis:
+    return AdversarialErgebnis(
+        prueffeld_id="S01-01",
+        adversarial_bewertung=bewertung,
+        schwachstellen=["Schwachstelle A"],
+        fehlende_nachweise=["Nachweis B"],
+    )
+
+
+class TestDisputedStatus:
+    def test_disputed_status_set_on_high_divergence(self):
+        """divergenz=3 (konform→nicht_prüfbar) → bewertung=disputed"""
+        befund = _make_befund_for_disputed(Bewertung.KONFORM)
+        adv = _make_adv_ergebnis(Bewertung.NICHT_PRUEFBAR)
+        result = _merge_adversarial(befund, adv)
+        assert result.bewertung == Bewertung.DISPUTED
+
+    def test_disputed_status_set_on_divergenz_2(self):
+        """divergenz=2 (konform→nicht_konform) → bewertung=disputed"""
+        befund = _make_befund_for_disputed(Bewertung.KONFORM)
+        adv = _make_adv_ergebnis(Bewertung.NICHT_KONFORM)
+        result = _merge_adversarial(befund, adv)
+        assert result.bewertung == Bewertung.DISPUTED
+
+    def test_disputed_positions_populated(self):
+        """disputed_positions dict hat pruefer/adversarial/divergenz keys"""
+        befund = _make_befund_for_disputed(Bewertung.KONFORM)
+        adv = _make_adv_ergebnis(Bewertung.NICHT_PRUEFBAR)
+        result = _merge_adversarial(befund, adv)
+        assert result.disputed_positions is not None
+        assert "pruefer" in result.disputed_positions
+        assert "adversarial" in result.disputed_positions
+        assert "divergenz" in result.disputed_positions
+        assert result.disputed_positions["pruefer"] == "konform"
+        assert result.disputed_positions["adversarial"] == "nicht_prüfbar"
+        assert result.disputed_positions["divergenz"] == 3
+
+    def test_disputed_not_set_on_low_divergence(self):
+        """divergenz=1 (konform→teilkonform) → kein disputed"""
+        befund = _make_befund_for_disputed(Bewertung.KONFORM)
+        adv = _make_adv_ergebnis(Bewertung.TEILKONFORM)
+        result = _merge_adversarial(befund, adv)
+        assert result.bewertung != Bewertung.DISPUTED
+        assert result.disputed_positions is None
+
+    def test_disputed_sets_review_erforderlich(self):
+        """Bei disputed-Status ist review_erforderlich immer True"""
+        befund = _make_befund_for_disputed(Bewertung.KONFORM, confidence=0.9)
+        adv = _make_adv_ergebnis(Bewertung.NICHT_KONFORM)
+        result = _merge_adversarial(befund, adv)
+        assert result.bewertung == Bewertung.DISPUTED
+        assert result.review_erforderlich is True
+
+    def test_no_disputed_when_adversarial_confirms(self):
+        """Adversarial bestätigt → kein disputed"""
+        befund = _make_befund_for_disputed(Bewertung.NICHT_KONFORM)
+        adv = _make_adv_ergebnis(Bewertung.NICHT_KONFORM)
+        result = _merge_adversarial(befund, adv)
+        assert result.bewertung == Bewertung.NICHT_KONFORM
+        assert result.disputed_positions is None
+
+
+# ------------------------------------------------------------------ #
+# Test: Review-Budget und Resume
+# ------------------------------------------------------------------ #
+
+
+def _make_befund_with_review(review_erforderlich: bool) -> Befund:
+    return Befund(
+        prueffeld_id="S01-01",
+        frage="Testfrage?",
+        bewertung=Bewertung.TEILKONFORM,
+        begruendung="Teilweise ok.",
+        review_erforderlich=review_erforderlich,
+    )
+
+
+class TestReviewBudget:
+    @patch("pipeline.BerichtGenerator")
+    @patch("pipeline.PrueferAgent")
+    @patch("pipeline.VectorStoreIndex")
+    @patch("pipeline.build_embedding")
+    @patch("pipeline.Settings")
+    @patch("pipeline.GwGIngestor")
+    def test_review_budget_pauses_pipeline(
+        self,
+        mock_ingestor_cls,
+        mock_settings,
+        _mock_embedding,
+        mock_vector_store_index,
+        mock_pruefer_cls,
+        _mock_bericht_cls,
+        tmp_path,
+    ):
+        """Pipeline raises ReviewBudgetExceeded when review budget is reached."""
+        mock_ingestor = MagicMock()
+        mock_ingestor.ingest_directory.return_value = [object()]
+        mock_ingestor_cls.return_value = mock_ingestor
+        mock_vector_store_index.from_documents.return_value = MagicMock()
+        mock_settings.embed_model = None
+
+        # Create mock agent that returns 3 befunde with review_erforderlich=True
+        mock_agent = MagicMock()
+        mock_agent.pruefe_feld.side_effect = [
+            _make_befund_with_review(True),
+            _make_befund_with_review(True),
+            _make_befund_with_review(True),
+        ]
+        mock_pruefer_cls.return_value = mock_agent
+
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            regulatorik="gwg",
+            output_dir=str(tmp_path),
+            verbose=False,
+            review_budget=2,
+        )
+
+        with pytest.raises(ReviewBudgetExceeded):
+            pipeline.run()
+
+        # Checkpoint should have been saved
+        checkpoint_path = tmp_path / ".checkpoints" / "checkpoint_latest.json"
+        assert checkpoint_path.exists()
+
+    def test_load_completed_sektion_ids(self, tmp_path):
+        """_load_completed_sektion_ids reads section IDs from checkpoint file."""
+        checkpoint_dir = tmp_path / ".checkpoints"
+        checkpoint_dir.mkdir(parents=True)
+        checkpoint_path = checkpoint_dir / "checkpoint_latest.json"
+
+        import json as _json
+
+        mock_checkpoint = [
+            {"id": "S01", "titel": "Sektion 1", "befunde": []},
+            {"id": "S02", "titel": "Sektion 2", "befunde": []},
+        ]
+        checkpoint_path.write_text(
+            _json.dumps(mock_checkpoint, ensure_ascii=False), encoding="utf-8"
+        )
+
+        pipeline = AuditPipeline(
+            input_dir="demo",
+            regulatorik="gwg",
+            output_dir=str(tmp_path),
+            verbose=False,
+            resume=True,
+        )
+
+        completed = pipeline._load_completed_sektion_ids(checkpoint_dir)
+        assert "S01" in completed
+        assert "S02" in completed
+        assert len(completed) == 2
