@@ -2,11 +2,12 @@ import streamlit as st
 import os
 import json
 import shutil
-import base64
+import logging
 from pathlib import Path
 from datetime import datetime
-import streamlit.components.v1 as components
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
+
+logger = logging.getLogger(__name__)
 
 # --- Streamlit config ---
 st.set_page_config(
@@ -41,7 +42,8 @@ init_session_state()
 def _read_json_file(path: str) -> dict | None:
     try:
         return json.loads(Path(path).read_text(encoding="utf-8"))
-    except Exception:
+    except Exception as e:
+        logger.warning("JSON konnte nicht gelesen werden (%s): %s", path, e)
         return None
 
 
@@ -151,7 +153,17 @@ def _find_source_path(source_name: str) -> str | None:
     input_dir = st.session_state.get("input_dir") or ""
     if not input_dir or not Path(input_dir).exists():
         return None
-    for file in Path(input_dir).rglob("*"):
+    base = Path(input_dir)
+    max_depth = 5
+    max_files = 3000
+    scanned = 0
+    for file in base.rglob("*"):
+        if scanned >= max_files:
+            logger.warning("Source-Scan abgebrochen nach %d Dateien", max_files)
+            break
+        if len(file.relative_to(base).parts) > max_depth:
+            continue
+        scanned += 1
         if file.is_file() and file.name == source_name:
             return str(file)
     return None
@@ -159,12 +171,15 @@ def _find_source_path(source_name: str) -> str | None:
 
 def _render_pdf_preview(path: str, height: int = 650):
     pdf_bytes = Path(path).read_bytes()
-    encoded = base64.b64encode(pdf_bytes).decode("utf-8")
-    iframe = (
-        f'<iframe src="data:application/pdf;base64,{encoded}" '
-        f'width="100%" height="{height}" type="application/pdf"></iframe>'
+    st.download_button(
+        "📥 PDF öffnen / herunterladen",
+        data=pdf_bytes,
+        file_name=Path(path).name,
+        mime="application/pdf",
     )
-    components.html(iframe, height=height + 10, scrolling=True)
+    st.caption(
+        "Hinweis: Inline-PDF ist browserabhängig blockiert; Download/Öffnen ist stabil."
+    )
 
 
 def _extract_timeline(logs: list[str]) -> list[dict]:
@@ -471,6 +486,9 @@ with result_tab:
                     if not k.startswith(f"{run_key}:")
                 }
                 st.session_state.reprompt_notes = {}
+                for k in list(st.session_state.keys()):
+                    if k.startswith("reprompt_"):
+                        del st.session_state[k]
                 st.rerun()
 
             import_file = st.file_uploader(
@@ -506,7 +524,7 @@ with result_tab:
             export_payload = {
                 "run_key": run_key,
                 "decisions": [
-                    {"befund_id": k.split(":", 1)[1], **v}
+                    {"befund_id": k[len(run_key) + 1 :], **v}
                     for k, v in st.session_state.review_actions.items()
                     if k.startswith(f"{run_key}:")
                 ],
@@ -555,9 +573,10 @@ with result_tab:
                             "timestamp": datetime.now().isoformat(timespec="seconds"),
                         }
                     reprompt_key = f"reprompt_{befund_id}"
-                    st.session_state.reprompt_notes.setdefault(
-                        reprompt_key, "Bitte prüfe den Befund erneut mit Fokus auf ..."
-                    )
+                    if reprompt_key not in st.session_state:
+                        st.session_state[reprompt_key] = (
+                            "Bitte prüfe den Befund erneut mit Fokus auf ..."
+                        )
                     note = st.text_area(
                         "Re-Prompt-Anweisung",
                         key=reprompt_key,
