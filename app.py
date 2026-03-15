@@ -393,6 +393,14 @@ with st.sidebar:
             "Modell", ["claude-sonnet-4-5-20250514", "claude-opus-4-5"]
         )
         top_k = st.slider("RAG Chunks (Top-K)", min_value=3, max_value=20, value=8)
+        use_local_embeddings = st.checkbox(
+            "Lokale Embeddings nutzen (FastEmbed, kein OpenAI-Budget nötig)",
+            value=True,
+            help=(
+                "Empfohlen bei OpenAI-Quota-Fehlern. "
+                "Deaktivieren nur, wenn OpenAI-Embeddings explizit gewünscht sind."
+            ),
+        )
         skeptiker = st.checkbox(
             "Skeptiker-Agent aktivieren ⚔️",
             value=False,
@@ -464,9 +472,14 @@ with setup_tab:
 
     st.divider()
 
-    can_run = bool(input_dir) and bool(api_key_anthropic) and bool(api_key_openai)
+    embedding_provider = "fastembed" if use_local_embeddings else None
+    openai_ok = bool(api_key_openai) or use_local_embeddings
+    can_run = bool(input_dir) and bool(api_key_anthropic) and openai_ok
     if not can_run:
-        st.info("Bitte API Keys setzen und gültiges Dokumentenverzeichnis wählen.")
+        st.info(
+            "Bitte Anthropic-Key setzen und gültiges Dokumentenverzeichnis wählen. "
+            "OpenAI-Key ist nur nötig, wenn lokale Embeddings deaktiviert sind."
+        )
 
     if st.button(
         "🚀 Prüfung starten",
@@ -492,6 +505,7 @@ with setup_tab:
                 regulatorik=regulatorik,
                 output_dir=str(OUTPUT_DIR),
                 model=model,
+                embedding_provider=embedding_provider,
                 top_k=top_k,
                 skeptiker=skeptiker,
                 skeptiker_only_konform=skeptiker_only_konform,
@@ -516,6 +530,13 @@ with setup_tab:
                 st.success("Prüfung erfolgreich abgeschlossen!")
             except Exception as e:
                 st.error(f"Fehler während der Prüfung: {str(e)}")
+                msg = str(e).lower()
+                if "insufficient_quota" in msg or "exceeded your current quota" in msg:
+                    st.info(
+                        "OpenAI-Quota erreicht. Empfehlung: "
+                        "In 'Erweiterte Einstellungen' lokale Embeddings aktivieren "
+                        "oder OpenAI-Billing/Quota erhöhen."
+                    )
             finally:
                 os.environ["PIPELINE_RUNNING"] = "0"
 
