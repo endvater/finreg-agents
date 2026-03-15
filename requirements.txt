@@ -24,8 +24,7 @@ langchain-anthropic>=0.3.0
 
 # ── Lokale Embeddings (Fallback, kein API-Key nötig) ─────────────────
 llama-index-embeddings-fastembed>=0.2.0
-fastembed>=0.3.0,<0.8.0; python_version < "3.12"
-fastembed>=0.8.0; python_version >= "3.12"
+fastembed>=0.3.0,<0.8.0  # 0.8.0+ nicht verfügbar für Python 3.12
 
 # ── Dokumenten-Verarbeitung ───────────────────────────────────────────
 pypdf>=4.0.0
