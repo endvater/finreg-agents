@@ -249,6 +249,34 @@ class TestStructuralValidation:
         )
         assert not any("Unplausible Rechtszitate" in w for w in warnings)
 
+    def test_context_drift_warning_when_norm_ref_missing(self):
+        warnings = validate_befund_structure(
+            llm_result={
+                "bewertung": "teilkonform",
+                "quellen": ["doc.pdf"],
+                "belegte_textstellen": ["Interne Sicherungsmaßnahmen sind vorhanden."],
+                "begruendung": "Es gibt Sicherungsmaßnahmen, Details bleiben unklar.",
+            },
+            retrieved_sources={"doc.pdf"},
+            regulatorik="gwg",
+            evidence_text="Evidenz mit § 15 Abs. 2 GwG und weiteren Details.",
+        )
+        assert any("Context-Drift-Verdacht" in w for w in warnings)
+
+    def test_context_drift_not_flagged_when_norm_ref_preserved(self):
+        warnings = validate_befund_structure(
+            llm_result={
+                "bewertung": "konform",
+                "quellen": ["doc.pdf"],
+                "belegte_textstellen": ["§ 15 Abs. 2 GwG wird umgesetzt."],
+                "begruendung": "Die Vorgaben aus § 15 Abs. 2 GwG sind erfüllt.",
+            },
+            retrieved_sources={"doc.pdf"},
+            regulatorik="gwg",
+            evidence_text="Evidenz mit § 15 Abs. 2 GwG und Umsetzungsbeschreibung.",
+        )
+        assert not any("Context-Drift-Verdacht" in w for w in warnings)
+
 
 # ------------------------------------------------------------------ #
 # Test: Sektionsergebnis
@@ -472,6 +500,30 @@ class TestSkeptikerAgent:
 
         assert merged.bewertung == Bewertung.DISPUTED
         assert merged.review_erforderlich is True
+
+    def test_merge_tags_claims_when_skeptiker_disagrees(self):
+        befund = self._make_befund(bewertung=Bewertung.KONFORM, confidence=0.8)
+        befund.claim_list = [
+            {
+                "claim_id": "C1",
+                "text": "Test-Claim",
+                "status": "single-sourced",
+                "provenance_ids": ["P1"],
+                "provenance": [{"id": "P1", "source": "doc.pdf"}],
+                "skeptiker_tag": "none",
+            }
+        ]
+        skeptiker = SkeptikerBefund(
+            prueffeld_id="S01-01",
+            original_bewertung=Bewertung.KONFORM,
+            original_confidence=0.8,
+            akzeptiert=False,
+            bewertung_empfehlung=Bewertung.NICHT_KONFORM,
+            einwaende=["Widerspruch"],
+            adjustierter_confidence=0.5,
+        )
+        merged = merge_befund_skeptiker(befund, skeptiker)
+        assert merged.claim_list[0]["skeptiker_tag"] == "disputed"
 
     def test_skeptiker_befund_dataclass(self):
         """SkeptikerBefund kann instanziiert werden."""

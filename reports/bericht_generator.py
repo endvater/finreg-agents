@@ -293,6 +293,7 @@ class BerichtGenerator:
                             "confidence_level": b.confidence_level,
                             "confidence_guards": b.confidence_guards,
                             "low_confidence_reasons": b.low_confidence_reasons,
+                            "claim_list": b.claim_list,
                             "review_erforderlich": b.review_erforderlich,
                             "validierungshinweise": b.validierungshinweise,
                             **({"token_usage": b.token_usage} if verbose else {}),
@@ -428,6 +429,17 @@ class BerichtGenerator:
                         f"**Low-Confidence-Reasons:** `{', '.join(b.low_confidence_reasons)}`",
                         "",
                     ]
+                if b.claim_list:
+                    lines.append("**Claim-Provenance:**")
+                    for c in b.claim_list:
+                        status = c.get("status", "unverified")
+                        tag = c.get("skeptiker_tag", "none")
+                        pid = ", ".join(c.get("provenance_ids", [])) or "n/a"
+                        lines.append(
+                            f"- `{c.get('claim_id', 'C?')}` [{status}] [{tag}] "
+                            f"{c.get('text', '')} _(prov: {pid})_"
+                        )
+                    lines.append("")
                 if b.confidence_guards:
                     lines += [
                         f"**Confidence-Guards:** `passed={b.confidence_guards.get('passed')}` | "
