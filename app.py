@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # --- Streamlit config ---
 st.set_page_config(
-    page_title="FinRegAgents v2",
+    page_title="FinRegAgents v2.4",
     page_icon="🏦",
     layout="wide",
 )
@@ -46,6 +46,132 @@ def init_session_state():
 
 
 init_session_state()
+
+
+def _inject_design_system():
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+        :root {
+            --fg-title: #0f172a;
+            --fg-body: #1e293b;
+            --brand-ink: #0b3954;
+            --brand-accent: #1f6f8b;
+            --brand-soft: #e8f2f6;
+            --panel: #f8fafc;
+            --line: #dbe6ef;
+        }
+
+        .stApp {
+            font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+            color: var(--fg-body);
+            background:
+                radial-gradient(1200px 500px at -20% -10%, #dff3ff 0%, transparent 55%),
+                radial-gradient(1000px 500px at 120% -20%, #e5f4ee 0%, transparent 50%),
+                #f4f7fb;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: "Space Grotesk", "IBM Plex Sans", sans-serif !important;
+            color: var(--fg-title);
+            letter-spacing: -0.015em;
+        }
+
+        /* Keep contrast for content text without overriding interactive widgets. */
+        .stApp [data-testid="stMarkdownContainer"],
+        .stApp [data-testid="stMarkdownContainer"] p,
+        .stApp [data-testid="stMarkdownContainer"] li,
+        .stApp [data-testid="stMarkdownContainer"] small {
+            color: var(--fg-body);
+        }
+
+        .stApp [data-testid="stMarkdownContainer"] h1,
+        .stApp [data-testid="stMarkdownContainer"] h2,
+        .stApp [data-testid="stMarkdownContainer"] h3,
+        .stApp [data-testid="stMarkdownContainer"] h4 {
+            color: var(--fg-title);
+        }
+
+        /* Ensure good contrast on dark interactive controls. */
+        .stApp button,
+        .stApp [role="tab"],
+        .stApp [data-baseweb="tag"] {
+            color: inherit;
+        }
+
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #ffffff 0%, #f5f9fc 100%);
+            border-right: 1px solid var(--line);
+        }
+
+        [data-testid="stSidebar"] .stMarkdown h1,
+        [data-testid="stSidebar"] .stMarkdown h2,
+        [data-testid="stSidebar"] .stMarkdown h3 {
+            color: #0d334a;
+        }
+
+        [data-testid="stMetric"] {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+
+        .finreg-hero {
+            background: linear-gradient(120deg, #0b3954 0%, #1f6f8b 52%, #4ca4c7 100%);
+            border-radius: 18px;
+            padding: 22px 24px;
+            color: #f8fdff;
+            margin: 4px 0 14px 0;
+            box-shadow: 0 10px 30px rgba(11, 57, 84, 0.2);
+        }
+
+        .finreg-hero h1 {
+            margin: 0 0 6px 0;
+            color: #ffffff !important;
+            font-size: 2rem;
+        }
+
+        .finreg-hero p {
+            margin: 0;
+            font-size: 1.02rem;
+            opacity: 0.95;
+        }
+
+        .finreg-chiprow {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .finreg-chip {
+            font-size: 0.78rem;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .finreg-hero,
+        .finreg-hero p,
+        .finreg-hero span {
+            color: #f8fdff !important;
+        }
+
+        .block-container {
+            padding-top: 1.25rem;
+            max-width: 1320px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+_inject_design_system()
 
 
 def _read_json_file(path: str) -> dict | None:
@@ -365,7 +491,7 @@ def _append_run_history(report_paths: dict):
 
 # --- UI Sidebar ---
 with st.sidebar:
-    st.title("🏦 FinRegAgents v2")
+    st.title("🏦 FinRegAgents v2.4")
     st.markdown("KI-Agenten für regulatorische Prüfungen")
 
     st.header("Konfiguration")
@@ -448,6 +574,20 @@ with st.sidebar:
         )
 
 # --- UI Main Area ---
+st.markdown(
+    """
+    <section class="finreg-hero">
+      <h1>FinRegAgents v2.4</h1>
+      <p>Regulatorische Prüfungen mit klarer Evidenz, Guardrails und nachvollziehbaren Entscheidungen.</p>
+      <div class="finreg-chiprow">
+        <span class="finreg-chip">Streamlit Control Center</span>
+        <span class="finreg-chip">Skeptiker & Adversarial Ready</span>
+        <span class="finreg-chip">Audit-Trail inklusive</span>
+      </div>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("Prüfungszentrale")
 
 setup_tab, result_tab = st.tabs(["📄 Dokumente & Start", "📊 Ergebnisse"])
