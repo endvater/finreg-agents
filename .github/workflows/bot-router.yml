@@ -1,0 +1,101 @@
+name: Bot Router (GitHub App)
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, labeled, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Pull Request number"
+        required: true
+        type: string
+      bot:
+        description: "Target bot"
+        required: true
+        type: choice
+        options:
+          - codex
+          - claude
+          - gemini
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  route:
+    if: github.event_name == 'workflow_dispatch' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1 # v1
+        with:
+          app-id: ${{ secrets.FINREG_APP_ID }}
+          private-key: ${{ secrets.FINREG_APP_PRIVATE_KEY }}
+
+      - name: Resolve target bot
+        id: bot
+        uses: actions/github-script@v7 # v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            if (context.eventName === "workflow_dispatch") {
+              core.setOutput("name", "${{ github.event.inputs.bot }}");
+              core.setOutput("pr_number", "${{ github.event.inputs.pr_number }}");
+              return;
+            }
+
+            const labels = context.payload.pull_request.labels.map((l) => l.name.toLowerCase());
+            const map = {
+              "bot:codex": "codex",
+              "bot:claude": "claude",
+              "bot:gemini": "gemini",
+            };
+
+            const selected = labels.find((label) => map[label]);
+            if (!selected) {
+              core.info("No bot label found (expected: bot:codex, bot:claude, bot:gemini).");
+              core.setOutput("name", "");
+            } else {
+              core.setOutput("name", map[selected]);
+            }
+            core.setOutput("pr_number", String(context.payload.pull_request.number));
+
+      - name: Skip when no bot label is set
+        if: steps.bot.outputs.name == ''
+        run: echo "No bot selected. Add one label: bot:codex, bot:claude or bot:gemini."
+
+      - name: Dispatch bot request
+        if: steps.bot.outputs.name != ''
+        uses: actions/github-script@v7 # v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const prNumber = Number("${{ steps.bot.outputs.pr_number }}");
+            const bot = "${{ steps.bot.outputs.name }}";
+            await github.request("POST /repos/{owner}/{repo}/dispatches", {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              event_type: "bot_requested",
+              client_payload: {
+                pr_number: prNumber,
+                bot: bot,
+                sender: context.actor
+              }
+            });
+
+      - name: Post PR comment
+        if: steps.bot.outputs.name != '' && github.event_name != 'workflow_dispatch'
+        uses: actions/github-script@v7 # v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const bot = "${{ steps.bot.outputs.name }}";
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `Bot routing aktiv: **${bot}** wurde angefordert.\n\nNächster Schritt: Worker-Workflow verarbeitet \`repository_dispatch:bot_requested\`.`
+            });
