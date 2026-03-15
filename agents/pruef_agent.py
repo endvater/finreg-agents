@@ -643,7 +643,9 @@ class PrueferAgent:
 
         # 4. LLM-Bewertung
         llm_result = self._evaluate_with_llm(prueffeld, evidenz_text)
-        token_usage = llm_result.pop("_token_usage", {"input": 0, "output": 0, "total": 0})
+        token_usage = llm_result.pop(
+            "_token_usage", {"input": 0, "output": 0, "total": 0}
+        )
 
         # 5. Strukturelle Validierung
         val_warnings = validate_befund_structure(
@@ -722,7 +724,9 @@ class PrueferAgent:
             confidence_guards=guard_result,
             low_confidence_reasons=low_confidence_reasons,
             token_usage=token_usage,
-            claim_list=build_claim_annotations(llm_result, good_nodes, retrieved_sources),
+            claim_list=build_claim_annotations(
+                llm_result, good_nodes, retrieved_sources
+            ),
             review_erforderlich=review_erforderlich,
             validierungshinweise=val_warnings,
         )
@@ -836,7 +840,9 @@ class PrueferAgent:
 
 Bewerte dieses Prüffeld und antworte als JSON.
 """
-        prompt_input_tokens = estimate_tokens(self.system_prompt) + estimate_tokens(user_prompt)
+        prompt_input_tokens = estimate_tokens(self.system_prompt) + estimate_tokens(
+            user_prompt
+        )
         messages = [
             SystemMessage(content=self.system_prompt),
             HumanMessage(content=user_prompt),
@@ -864,7 +870,11 @@ Bewerte dieses Prüffeld und antworte als JSON.
                     "empfehlungen": [],
                     "quellen": [],
                     "confidence_self": 0.0,
-                    "_token_usage": {"input": prompt_input_tokens, "output": 0, "total": prompt_input_tokens},
+                    "_token_usage": {
+                        "input": prompt_input_tokens,
+                        "output": 0,
+                        "total": prompt_input_tokens,
+                    },
                 }
             except Exception as e:
                 last_exc = e
@@ -892,7 +902,11 @@ Bewerte dieses Prüffeld und antworte als JSON.
             "empfehlungen": [],
             "quellen": [],
             "confidence_self": 0.0,
-            "_token_usage": {"input": prompt_input_tokens, "output": 0, "total": prompt_input_tokens},
+            "_token_usage": {
+                "input": prompt_input_tokens,
+                "output": 0,
+                "total": prompt_input_tokens,
+            },
         }
 
 
