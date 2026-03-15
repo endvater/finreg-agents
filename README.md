@@ -418,6 +418,7 @@ python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
 | `--sektionen` | alle | Nur diese Sektionen prüfen (z.B. `S01 S02`) |
 | `--top-k` | `8` | RAG-Chunks pro Prüffrage |
 | `--review-budget` | — | Stoppt nach N review-markierten Befunden und schreibt Checkpoint-Metadaten |
+| `--evidence-relevance-filter` | aus | Spike-Preprocessor: droppt `context_noise`-Chunks mit Guardrails |
 | `--skeptiker` | aus | Skeptiker-Agent aktivieren |
 | `--skeptiker-only-konform` | aus | Skeptiker nur für `konform`-Ratings |
 | `--adversarial` | aus | Adversarial Prompting Layer aktivieren |
@@ -730,6 +731,7 @@ Hinweise:
 - [x] ~~Context Drift Detection: Regulatory Term Preservation Layer in `bericht_generator.py`~~ ✅ *v2.7 – Issue #3*
 - [ ] Per-Claim Provenance + Skeptic-Tagging: Claim-Level-Annotation mit Corroboration-Status *(Issue #6)*
 - [x] ~~Human Validation Cadence: `--review-budget N` Flag + Checkpoint-Resume~~ ✅ *v2.5 – Issue #1*
+- [x] ~~spike: Evidence Relevance Classifier als Pre-Processor~~ ✅ *v2.9 – Issue #29*
 - [ ] Multi-Model Cross-Validation: Adversarial Reviewer mit Gemini / Grok für Confidence 0.40–0.70 *(Issue #5)*
 - [ ] Synthetische Kontroll-Prüffelder (Ground-Truth-Signal) zur Kalibrierung
 - [ ] Persistenter Vektorindex via ChromaDB / Weaviate

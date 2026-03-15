@@ -25,6 +25,7 @@ Oder als Python-Modul:
 import argparse
 import json
 import logging
+import random
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -89,6 +90,7 @@ class AuditPipeline:
         verbose: bool = True,
         verbose_token_details: bool = False,
         review_budget: int | None = None,
+        evidence_relevance_filter: bool = False,
         skeptiker: bool = False,
         skeptiker_only_konform: bool = False,
         adversarial: bool = False,
@@ -106,6 +108,7 @@ class AuditPipeline:
         self.verbose = verbose
         self.verbose_token_details = verbose_token_details
         self.review_budget = review_budget
+        self.evidence_relevance_filter = evidence_relevance_filter
         self.skeptiker = skeptiker
         self.skeptiker_only_konform = skeptiker_only_konform
         if self.review_budget is not None and self.review_budget < 1:
@@ -199,6 +202,7 @@ class AuditPipeline:
             model=self.model,
             top_k=self.top_k,
             adversarial=self.adversarial,
+            evidence_relevance_filter=self.evidence_relevance_filter,
         )
         if self.adversarial:
             self._log("   → Adversarial Prompting Layer aktiviert ⚔️")
@@ -342,6 +346,10 @@ class AuditPipeline:
             stats_file=stats_file,
             verbose=self.verbose_token_details,
         )
+        if self.evidence_relevance_filter:
+            report_paths["relevance_filter_report"] = (
+                self._write_relevance_filter_report(agent)
+            )
 
         # ── Zusammenfassung ──────────────────────────────────────────────
         t_total = time.time() - t_start
@@ -359,6 +367,33 @@ class AuditPipeline:
             self._log(f"     {fmt.upper()}: {pth}")
 
         return report_paths
+
+    def _write_relevance_filter_report(self, agent: PrueferAgent) -> str:
+        out_dir = Path(self.output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / "relevance_filter_samples.json"
+        drops = list(agent.relevance_filter_drops)
+        sample = random.sample(drops, k=min(20, len(drops))) if drops else []
+        payload = {
+            "enabled": True,
+            "stats": dict(agent.relevance_filter_stats),
+            "sample_size": len(sample),
+            "dropped_samples": sample,
+            "klassifikation": [
+                "regulatory_requirement",
+                "control_evidence",
+                "context_noise",
+            ],
+            "drop_reasons": [
+                "NO_REG_REF",
+                "MARKETING_PHRASE",
+                "NON_CONTROL_CONTEXT",
+            ],
+        }
+        out_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+        return str(out_path)
 
     def _save_checkpoint(
         self,
@@ -597,6 +632,12 @@ Beispiele:
         help="Stoppt den Lauf nach N review-markierten Befunden und schreibt einen Checkpoint.",
     )
     parser.add_argument(
+        "--evidence-relevance-filter",
+        action="store_true",
+        default=False,
+        help="Aktiviert Spike-Preprocessor: klassifiziert Chunks und droppt context_noise.",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         default=False,
@@ -652,6 +693,7 @@ Beispiele:
         verbose=not args.quiet,
         verbose_token_details=args.verbose,
         review_budget=args.review_budget,
+        evidence_relevance_filter=args.evidence_relevance_filter,
         skeptiker=args.skeptiker,
         skeptiker_only_konform=args.skeptiker_only_konform,
         adversarial=args.adversarial,
