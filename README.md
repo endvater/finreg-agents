@@ -346,12 +346,23 @@ Der Skeptiker verdoppelt die LLM-Aufrufe ungefähr (+1 Aufruf pro aktivem Prüff
 
 ## Quickstart
 
-### 1. Installation
+### 1. Installation (empfohlen: Python 3.12)
 
 ```bash
 git clone https://github.com/endvater/finreg-agents.git
 cd finreg-agents
-pip install -r requirements.txt
+python3.12 -m pip install -r requirements.txt
+```
+
+Optional je LLM-Provider:
+
+```bash
+python3.12 -m pip install -r requirements-openai.txt
+python3.12 -m pip install -r requirements-gemini.txt
+python3.12 -m pip install -r requirements-mistral.txt
+python3.12 -m pip install -r requirements-cohere.txt
+python3.12 -m pip install -r requirements-grok.txt
+python3.12 -m pip install -r requirements-ollama.txt
 ```
 
 ### 2. API-Keys setzen
@@ -384,25 +395,25 @@ meine_dokumente/
 
 ```bash
 # GwG-Sonderprüfung (AML) – Standard: Sonnet (kosteneffizient)
-python pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
+python3.12 pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
 
 # DORA-Prüfung (nur Drittparteienrisiko-Sektion)
-python pipeline.py --input ./docs --regulatorik dora --sektionen D04
+python3.12 pipeline.py --input ./docs --regulatorik dora --sektionen D04
 
 # MaRisk-Vollprüfung mit Opus (höchste Qualität)
-python pipeline.py --input ./docs --regulatorik marisk --model claude-opus-4-5
+python3.12 pipeline.py --input ./docs --regulatorik marisk --model claude-opus-4-5
 
 # WpHG / MaComp mit Skeptiker-Review
-python pipeline.py --input ./docs --regulatorik wphg --skeptiker
+python3.12 pipeline.py --input ./docs --regulatorik wphg --skeptiker
 
 # Nur konform-Ratings skeptisch hinterfragen (kostensparender)
-python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only-konform
+python3.12 pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only-konform
 
 # Adversarial Layer: zweiter LLM-Pass mit umgekehrtem Prompt
-python pipeline.py --input ./docs --regulatorik gwg --adversarial
+python3.12 pipeline.py --input ./docs --regulatorik gwg --adversarial
 
 # Maximale QA-Tiefe: Adversarial + Skeptiker kombiniert
-python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
+python3.12 pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
 ```
 
 **Alle CLI-Parameter:**
@@ -441,7 +452,7 @@ Die Benutzeroberfläche bietet folgende Funktionen:
 
 **So starten Sie die Benutzeroberfläche:**
 ```bash
-streamlit run app.py
+python3.12 -m streamlit run app.py
 ```
 Dies öffnet die App automatisch in Ihrem Standard-Browser (meist unter `http://localhost:8501`).
 
