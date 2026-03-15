@@ -242,6 +242,61 @@ def _build_drift_rows(index_a: dict, index_b: dict) -> list[dict]:
     return rows
 
 
+def _build_evidence_graph_dot(befund: dict) -> str:
+    """Build a compact Graphviz graph: Prüffeld -> Claims -> Sources."""
+    befund_id = str(befund.get("id") or befund.get("prueffeld_id") or "BEFUND")
+    frage = str(befund.get("frage", ""))[:60]
+    label_befund = f"{befund_id}\\n{frage}".replace('"', "'")
+    lines = [
+        "digraph EvidenceGraph {",
+        'rankdir="LR";',
+        'graph [fontname="Arial"];',
+        'node [shape=box, style="rounded,filled", fontname="Arial", fontsize=10];',
+        'edge [fontname="Arial", fontsize=9];',
+        f'"B0" [label="{label_befund}", fillcolor="#dbeafe"];',
+    ]
+
+    claims = befund.get("claim_list") or []
+    if claims:
+        for idx, claim in enumerate(claims, start=1):
+            cid = str(claim.get("claim_id", f"C{idx}"))
+            ctext = str(claim.get("text", ""))[:90].replace('"', "'")
+            status = str(claim.get("status", "unverified"))
+            lines.append(
+                f'"CL{idx}" [label="{cid}\\n{status}\\n{ctext}", fillcolor="#fef3c7"];'
+            )
+            lines.append(f'"B0" -> "CL{idx}";')
+            provenance = claim.get("provenance") or []
+            if provenance:
+                for pidx, prov in enumerate(provenance, start=1):
+                    sid = str(prov.get("source", "unbekannt")).replace('"', "'")
+                    pid = f"S{idx}_{pidx}"
+                    lines.append(
+                        f'"{pid}" [label="{sid}", shape=ellipse, fillcolor="#dcfce7"];'
+                    )
+                    lines.append(f'"CL{idx}" -> "{pid}";')
+            else:
+                sources = befund.get("quellen") or []
+                for sidx, src in enumerate(sources, start=1):
+                    sid = str(src).replace('"', "'")
+                    pid = f"S{idx}_{sidx}"
+                    lines.append(
+                        f'"{pid}" [label="{sid}", shape=ellipse, fillcolor="#dcfce7"];'
+                    )
+                    lines.append(f'"CL{idx}" -> "{pid}";')
+    else:
+        for sidx, src in enumerate(befund.get("quellen") or [], start=1):
+            sid = str(src).replace('"', "'")
+            pid = f"S0_{sidx}"
+            lines.append(
+                f'"{pid}" [label="{sid}", shape=ellipse, fillcolor="#dcfce7"];'
+            )
+            lines.append(f'"B0" -> "{pid}";')
+
+    lines.append("}")
+    return "\n".join(lines)
+
+
 def _find_source_path(source_name: str) -> str | None:
     if not source_name:
         return None
@@ -926,8 +981,13 @@ with result_tab:
                     claims = b.get("claim_list", [])
                     if claims:
                         st.json(claims)
+                        st.markdown("### Visual Evidence Graph")
+                        st.graphviz_chart(_build_evidence_graph_dot(b))
                     else:
                         st.caption("Keine Claim-Liste vorhanden.")
+                        if b.get("quellen"):
+                            st.markdown("### Visual Evidence Graph")
+                            st.graphviz_chart(_build_evidence_graph_dot(b))
 
         with run_subtab:
             stats_payload = _load_run_stats(report_payload)
