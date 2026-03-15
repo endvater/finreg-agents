@@ -105,7 +105,7 @@ class AuditPipeline:
         skeptiker_only_konform: bool = False,
         adversarial: bool = False,
         use_relevance_filter: bool = False,
-        review_budget: int = 0,
+        review_budget: int | None = None,
         resume: bool = False,
     ):
         self.input_dir = input_dir
@@ -121,6 +121,8 @@ class AuditPipeline:
         self.verbose = verbose
         self.verbose_token_details = verbose_token_details
         self.review_budget = review_budget
+        if self.review_budget is not None and self.review_budget < 1:
+            raise ValueError("review_budget muss >= 1 sein")
         self.evidence_relevance_filter = evidence_relevance_filter
         self.skeptiker = skeptiker
         self.skeptiker_only_konform = skeptiker_only_konform
@@ -406,6 +408,7 @@ class AuditPipeline:
                     review_markierte_felder += 1
                     if (
                         self.review_budget is not None
+                        and self.review_budget == 1
                         and review_markierte_felder >= self.review_budget
                     ):
                         review_budget_erreicht = True
@@ -416,7 +419,7 @@ class AuditPipeline:
                         break
 
                 # Review-Budget-Tracking
-                if befund.review_erforderlich and self.review_budget > 0:
+                if befund.review_erforderlich and (self.review_budget or 0) > 1:
                     review_counter += 1
                     if review_counter >= self.review_budget:
                         # Save partial section results before raising
@@ -836,9 +839,9 @@ Beispiele:
     parser.add_argument(
         "--review-budget",
         type=int,
-        default=0,
+        default=None,
         dest="review_budget",
-        help="Pausiert die Prüfung nach N Befunden mit review_erforderlich=True und speichert einen Checkpoint (0 = deaktiviert).",
+        help="Pausiert die Prüfung nach N Befunden mit review_erforderlich=True und speichert einen Checkpoint.",
     )
     parser.add_argument(
         "--resume",

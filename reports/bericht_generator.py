@@ -348,13 +348,15 @@ class BerichtGenerator:
                         (s.sektion_id for s in sektionsergebnisse if b in s.befunde),
                         "unbekannt",
                     ),
-                    "pruefer_bewertung": (b.disputed_positions or {}).get("pruefer", ""),
+                    "pruefer_bewertung": (b.disputed_positions or {}).get(
+                        "pruefer", ""
+                    ),
                     "adversarial_bewertung": (b.disputed_positions or {}).get(
                         "adversarial", ""
                     ),
                     "divergenz": (b.disputed_positions or {}).get("divergenz", 0),
                 }
-                for b in disputed
+                for b in strittig
             ],
         }
 
@@ -418,7 +420,9 @@ class BerichtGenerator:
                                 }
                                 for cp in getattr(b, "claim_provenance", [])
                             ],
-                            "disputed_positions": getattr(b, "disputed_positions", None),
+                            "disputed_positions": getattr(
+                                b, "disputed_positions", None
+                            ),
                             **({"token_usage": b.token_usage} if verbose else {}),
                         }
                         for b in s.befunde

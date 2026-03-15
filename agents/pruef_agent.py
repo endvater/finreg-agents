@@ -95,6 +95,16 @@ class Sektionsergebnis:
         return sum(1 for b in self.befunde if b.review_erforderlich) / len(self.befunde)
 
 
+@dataclass
+class AdversarialErgebnis:
+    """Ergebnis des adversarialen Prüf-Passes."""
+
+    prueffeld_id: str
+    adversarial_bewertung: Bewertung
+    schwachstellen: list[str] = field(default_factory=list)
+    fehlende_nachweise: list[str] = field(default_factory=list)
+
+
 # ------------------------------------------------------------------ #
 # Regulatorik-spezifische System-Prompts
 # ------------------------------------------------------------------ #
@@ -325,6 +335,18 @@ NON_CONTROL_TERMS = (
     "newsletter",
     "werbung",
 )
+
+# Numerischer Schweregrad je Bewertung (für Divergenzberechnung)
+BEWERTUNG_SEVERITY = {
+    "konform": 0,
+    "teilkonform": 1,
+    "nicht_konform": 2,
+    "nicht_prüfbar": 3,
+    "disputed": 3,
+}
+
+# Confidence-Penalty je Divergenzstufe
+_ADVERSARIAL_PENALTY = {1: 0.05, 2: 0.15, 3: 0.20}
 NORM_REF_RE = re.compile(
     r"(§\s*\d+[a-z]?(?:\s*Abs\.\s*\d+)?(?:\s*(?:GwG|KWG|WpHG|MaComp))?"
     r"|Art\.\s*\d+[a-z]?(?:\s*Abs\.\s*\d+)?(?:\s*(?:DORA|MAR))?)"
@@ -766,6 +788,7 @@ class PrueferAgent:
             term_drift_warnings=drift_warnings,
             claim_provenance=claim_prov,
         )
+        return befund
 
     # ------------------------------------------------------------------ #
     # Retrieval

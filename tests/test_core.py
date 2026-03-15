@@ -1013,7 +1013,6 @@ class TestBerichtGeneratorTokenStats:
         assert len(z["strittige_befunde"]) == 1
 
 
-
 # ------------------------------------------------------------------ #
 # Test: Per-Claim Provenance (Issue #6)
 # ------------------------------------------------------------------ #
