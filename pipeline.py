@@ -94,6 +94,7 @@ class AuditPipeline:
         skeptiker: bool = False,
         skeptiker_only_konform: bool = False,
         adversarial: bool = False,
+        local_embeddings: bool = False,
     ):
         self.input_dir = input_dir
         self.institution = institution
@@ -101,6 +102,10 @@ class AuditPipeline:
         self.output_dir = output_dir
         self.provider = provider
         self.model = model or default_model(provider)
+        self.local_embeddings = local_embeddings
+        # --local-embeddings erzwingt FastEmbed, sofern kein expliziter Provider gesetzt ist.
+        if self.local_embeddings and embedding_provider is None:
+            embedding_provider = "fastembed"
         self.embedding_provider = embedding_provider  # None → Auto-Detect in factory
         self.embedding_model = embedding_model  # None → Provider-Default in factory
         self.sektionen_filter = sektionen_filter
@@ -697,6 +702,7 @@ Beispiele:
         skeptiker=args.skeptiker,
         skeptiker_only_konform=args.skeptiker_only_konform,
         adversarial=args.adversarial,
+        local_embeddings=args.local_embeddings,
     )
     pipeline.run()
 
