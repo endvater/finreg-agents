@@ -8,6 +8,10 @@ import io
 from pathlib import Path
 from datetime import datetime
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
+from agents.llm_factory import build_llm
+from agents.pruef_agent import SYSTEM_PROMPTS, SYSTEM_PROMPT_TEMPLATE, extract_json
+from agents.skeptiker_agent import SKEPTIKER_SYSTEM_PROMPT
+from langchain_core.messages import HumanMessage, SystemMessage
 
 logger = logging.getLogger(__name__)
 
@@ -294,6 +298,68 @@ def _append_run_history(report_paths: dict):
         st.session_state.run_history.append(entry)
 
 
+def _run_playground_pass(
+    regulatorik: str,
+    model: str,
+    frage: str,
+    evidenz_snippet: str,
+    erwartete_evidenz: str,
+) -> tuple[dict | None, str]:
+    llm = build_llm(provider="anthropic", model=model, temperature=0.1)
+    kontext = SYSTEM_PROMPTS.get(regulatorik, SYSTEM_PROMPTS["gwg"])
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(regulatorik_kontext=kontext)
+    user_prompt = f"""## PLAYGROUND-PRÜFFELD
+**Frage:** {frage}
+**Erwartete Evidenz:** {erwartete_evidenz or "(nicht gesetzt)"}
+**Schweregrad:** unbekannt
+**Bewertungskriterien:** Snippet-Schnellprüfung
+
+=== GEFUNDENE EVIDENZ ===
+{evidenz_snippet}
+
+Bewerte dieses Prüffeld und antworte als JSON.
+"""
+    response = llm.invoke(
+        [SystemMessage(content=system_prompt), HumanMessage(content=user_prompt)]
+    )
+    raw = response.content
+    try:
+        return extract_json(raw), raw
+    except Exception:
+        return None, raw
+
+
+def _run_playground_skeptic_pass(
+    model: str,
+    frage: str,
+    evidenz_snippet: str,
+    pruefer_result: dict,
+) -> tuple[dict | None, str]:
+    llm = build_llm(provider="anthropic", model=model, temperature=0.3, max_tokens=1500)
+    skeptiker_user = f"""## ORIGINAL-BEWERTUNG (Playground)
+{json.dumps(pruefer_result, ensure_ascii=False, indent=2)}
+
+## PRÜFFRAGE
+{frage}
+
+## EVIDENZ-SNIPPET
+{evidenz_snippet}
+
+Bitte kritische Gegenprüfung als JSON durchführen.
+"""
+    response = llm.invoke(
+        [
+            SystemMessage(content=SKEPTIKER_SYSTEM_PROMPT),
+            HumanMessage(content=skeptiker_user),
+        ]
+    )
+    raw = response.content
+    try:
+        return extract_json(raw), raw
+    except Exception:
+        return None, raw
+
+
 # --- UI Sidebar ---
 with st.sidebar:
     st.title("🏦 FinRegAgents v2")
@@ -344,7 +410,9 @@ with st.sidebar:
 # --- UI Main Area ---
 st.title("Prüfungszentrale")
 
-setup_tab, result_tab = st.tabs(["📄 Dokumente & Start", "📊 Ergebnisse"])
+setup_tab, result_tab, playground_tab = st.tabs(
+    ["📄 Dokumente & Start", "📊 Ergebnisse", "🧪 Playground"]
+)
 
 with setup_tab:
     st.subheader("Dokumenten-Input")
@@ -994,3 +1062,104 @@ with result_tab:
                     st.markdown(md_content)
             else:
                 st.info("Kein Markdown-Report für Vorschau verfügbar.")
+
+with playground_tab:
+    st.subheader("Sandbox / Playground")
+    st.caption(
+        "Schnelltest eines Snippets ohne vollständigen Pipeline-Lauf. Ideal für Prompt-Debugging."
+    )
+    pl_col1, pl_col2 = st.columns([2, 1])
+    with pl_col1:
+        pl_frage = st.text_input(
+            "Prüffrage",
+            value="Sind die internen Sicherungsmaßnahmen gemäß GwG angemessen dokumentiert?",
+            key="playground_frage",
+        )
+        pl_evidenz = st.text_area(
+            "Evidenz-Snippet",
+            value="§ 15 Abs. 2 GwG: Das Institut dokumentiert interne Sicherungsmaßnahmen...",
+            height=200,
+            key="playground_evidenz",
+        )
+        pl_erwartete = st.text_input(
+            "Erwartete Evidenz (kommagetrennt)",
+            value="IKS-Dokumentation, Schulungsnachweis, Audit-Trail",
+            key="playground_erwartete",
+        )
+    with pl_col2:
+        pl_regulatorik = st.selectbox(
+            "Regulatorik",
+            options=list(KATALOG_REGISTRY.keys()),
+            index=list(KATALOG_REGISTRY.keys()).index(regulatorik)
+            if regulatorik in KATALOG_REGISTRY
+            else 0,
+            format_func=lambda x: KATALOG_LABELS.get(x, x.upper()),
+            key="playground_regulatorik",
+        )
+        pl_model = st.selectbox(
+            "Modell",
+            ["claude-sonnet-4-5-20250514", "claude-opus-4-5"],
+            key="playground_model",
+        )
+        pl_skeptiker = st.checkbox(
+            "Skeptischen Gegencheck ausführen",
+            value=True,
+            key="playground_skeptiker",
+        )
+
+    can_playground = (
+        bool(api_key_anthropic) and bool(pl_frage.strip()) and bool(pl_evidenz.strip())
+    )
+    if not can_playground:
+        st.info(
+            "Für den Playground werden Anthropic API Key, Frage und Snippet benötigt."
+        )
+
+    if st.button(
+        "▶️ Playground ausführen",
+        type="primary",
+        disabled=not can_playground,
+        key="playground_run",
+    ):
+        with st.spinner("Playground läuft ..."):
+            pruefer_json, pruefer_raw = _run_playground_pass(
+                regulatorik=pl_regulatorik,
+                model=pl_model,
+                frage=pl_frage,
+                evidenz_snippet=pl_evidenz,
+                erwartete_evidenz=pl_erwartete,
+            )
+            skeptic_json, skeptic_raw = None, ""
+            if pl_skeptiker and pruefer_json:
+                skeptic_json, skeptic_raw = _run_playground_skeptic_pass(
+                    model=pl_model,
+                    frage=pl_frage,
+                    evidenz_snippet=pl_evidenz,
+                    pruefer_result=pruefer_json,
+                )
+            st.session_state.playground_result = {
+                "pruefer_json": pruefer_json,
+                "pruefer_raw": pruefer_raw,
+                "skeptic_json": skeptic_json,
+                "skeptic_raw": skeptic_raw,
+            }
+
+    result = st.session_state.get("playground_result")
+    if result:
+        pt1, pt2, pt3 = st.tabs(["Prüfer", "Skeptiker", "Raw"])
+        with pt1:
+            if result.get("pruefer_json"):
+                st.json(result["pruefer_json"])
+            else:
+                st.warning("Prüfer-JSON konnte nicht geparst werden.")
+        with pt2:
+            if result.get("skeptic_json"):
+                st.json(result["skeptic_json"])
+            elif pl_skeptiker:
+                st.caption("Kein skeptisches JSON verfügbar.")
+        with pt3:
+            st.markdown("**Prüfer (raw)**")
+            st.code(result.get("pruefer_raw", ""), language="text")
+            if result.get("skeptic_raw"):
+                st.markdown("**Skeptiker (raw)**")
+                st.code(result.get("skeptic_raw", ""), language="text")
