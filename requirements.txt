@@ -24,7 +24,8 @@ langchain-anthropic>=0.3.0
 
 # ── Lokale Embeddings (Fallback, kein API-Key nötig) ─────────────────
 llama-index-embeddings-fastembed>=0.2.0
-fastembed>=0.3.0
+fastembed>=0.3.0,<0.8.0; python_version < "3.12"
+fastembed>=0.8.0; python_version >= "3.12"
 
 # ── Dokumenten-Verarbeitung ───────────────────────────────────────────
 pypdf>=4.0.0
@@ -32,7 +33,8 @@ pandas>=2.0.0
 openpyxl>=3.1.0
 
 # ── Sicherheits-Pins (CVE-Fixes) ──────────────────────────────────────
-pillow>=10.3.0,<12.0  # TODO: Update auf >=12.1.1 wenn fastembed kompatibel (CVE-2026-25990)
+pillow>=10.3.0,<12.0.0; python_version < "3.12"
+pillow>=12.1.1; python_version >= "3.12"  # CVE-2026-25990
 
 # ── Utilities ─────────────────────────────────────────────────────────
 python-dotenv>=1.0.0
