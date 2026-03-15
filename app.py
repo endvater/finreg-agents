@@ -153,6 +153,95 @@ def _agent_delta_rows(
     return rows
 
 
+_BEWERTUNG_SEVERITY = {
+    "konform": 0,
+    "teilkonform": 1,
+    "nicht_konform": 2,
+    "nicht_prüfbar": 3,
+    "disputed": 3,
+}
+
+
+def _build_befund_index(report_payload: dict) -> dict:
+    index = {}
+    for sektion in report_payload.get("sektionen", []):
+        sid = sektion.get("id", "")
+        for b in sektion.get("befunde", []):
+            bid = b.get("id") or b.get("prueffeld_id")
+            if not bid:
+                continue
+            index[bid] = {
+                "sektion": sid,
+                "frage": b.get("frage", ""),
+                "bewertung": b.get("bewertung", ""),
+                "confidence": _to_number(b.get("confidence")),
+                "confidence_level": b.get("confidence_level", ""),
+            }
+    return index
+
+
+def _build_drift_rows(index_a: dict, index_b: dict) -> list[dict]:
+    rows = []
+    keys = sorted(set(index_a.keys()) | set(index_b.keys()))
+    for key in keys:
+        a = index_a.get(key)
+        b = index_b.get(key)
+        if a and b:
+            bew_a = a.get("bewertung", "")
+            bew_b = b.get("bewertung", "")
+            sev_delta = _BEWERTUNG_SEVERITY.get(bew_b, 0) - _BEWERTUNG_SEVERITY.get(
+                bew_a, 0
+            )
+            if sev_delta > 0:
+                change = "verschlechtert"
+            elif sev_delta < 0:
+                change = "verbessert"
+            elif bew_a != bew_b:
+                change = "geändert"
+            else:
+                change = "gleich"
+            rows.append(
+                {
+                    "prueffeld_id": key,
+                    "sektion": b.get("sektion", a.get("sektion", "")),
+                    "frage": b.get("frage", a.get("frage", "")),
+                    "bewertung_a": bew_a,
+                    "bewertung_b": bew_b,
+                    "delta_confidence": round(
+                        _to_number(b.get("confidence"))
+                        - _to_number(a.get("confidence")),
+                        3,
+                    ),
+                    "status": change,
+                }
+            )
+        elif b and not a:
+            rows.append(
+                {
+                    "prueffeld_id": key,
+                    "sektion": b.get("sektion", ""),
+                    "frage": b.get("frage", ""),
+                    "bewertung_a": "(neu)",
+                    "bewertung_b": b.get("bewertung", ""),
+                    "delta_confidence": round(_to_number(b.get("confidence")), 3),
+                    "status": "neu",
+                }
+            )
+        elif a and not b:
+            rows.append(
+                {
+                    "prueffeld_id": key,
+                    "sektion": a.get("sektion", ""),
+                    "frage": a.get("frage", ""),
+                    "bewertung_a": a.get("bewertung", ""),
+                    "bewertung_b": "(entfallen)",
+                    "delta_confidence": round(-_to_number(a.get("confidence")), 3),
+                    "status": "entfallen",
+                }
+            )
+    return rows
+
+
 def _find_source_path(source_name: str) -> str | None:
     if not source_name:
         return None
@@ -284,6 +373,7 @@ def _append_run_history(report_paths: dict):
         .get("audit_trail", {})
         .get("regulatorik", ""),
         "token_stats": token_stats,
+        "befund_index": _build_befund_index(payload),
     }
     existing = {
         e.get("run_key"): idx for idx, e in enumerate(st.session_state.run_history)
@@ -930,6 +1020,34 @@ with result_tab:
                         if ab_delta:
                             st.markdown("#### Delta pro Agent (B vs A)")
                             st.dataframe(ab_delta, use_container_width=True)
+                        drift_rows = _build_drift_rows(
+                            run_a.get("befund_index", {}),
+                            run_b.get("befund_index", {}),
+                        )
+                        if drift_rows:
+                            changed = [r for r in drift_rows if r["status"] != "gleich"]
+                            worsened = [
+                                r for r in drift_rows if r["status"] == "verschlechtert"
+                            ]
+                            improved = [
+                                r for r in drift_rows if r["status"] == "verbessert"
+                            ]
+                            st.markdown("#### Compliance-Drift (Bewertungs-Diff)")
+                            d1, d2, d3 = st.columns(3)
+                            d1.metric("Geänderte Prüffelder", len(changed))
+                            d2.metric("Verschlechtert", len(worsened))
+                            d3.metric("Verbessert", len(improved))
+                            only_changes = st.checkbox(
+                                "Nur Änderungen anzeigen (A/B)",
+                                value=True,
+                                key="drift_only_changes",
+                            )
+                            table = (
+                                [r for r in drift_rows if r["status"] != "gleich"]
+                                if only_changes
+                                else drift_rows
+                            )
+                            st.dataframe(table, use_container_width=True, height=280)
                         history_rows = [
                             {
                                 "run_key": h.get("run_key"),
