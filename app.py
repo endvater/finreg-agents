@@ -121,6 +121,30 @@ def _to_number(value):
     return value if isinstance(value, (int, float)) else 0
 
 
+def _agent_delta_rows(
+    current_token_stats: dict, previous_token_stats: dict
+) -> list[dict]:
+    curr_agents = current_token_stats.get("nach_agent", {}) or {}
+    prev_agents = previous_token_stats.get("nach_agent", {}) or {}
+    agent_names = sorted(set(curr_agents.keys()) | set(prev_agents.keys()))
+    rows = []
+    for name in agent_names:
+        curr = curr_agents.get(name, {})
+        prev = prev_agents.get(name, {})
+        rows.append(
+            {
+                "agent": name,
+                "curr_total": _to_number(curr.get("total")),
+                "prev_total": _to_number(prev.get("total")),
+                "delta_total": _to_number(curr.get("total"))
+                - _to_number(prev.get("total")),
+                "curr_input": _to_number(curr.get("input")),
+                "curr_output": _to_number(curr.get("output")),
+            }
+        )
+    return rows
+
+
 def _find_source_path(source_name: str) -> str | None:
     if not source_name:
         return None
@@ -449,6 +473,36 @@ with result_tab:
                 st.session_state.reprompt_notes = {}
                 st.rerun()
 
+            import_file = st.file_uploader(
+                "Review-Entscheidungen importieren (JSON)",
+                type=["json"],
+                key=f"import_review_{run_key}",
+            )
+            if import_file and st.button(
+                "Import anwenden", key=f"apply_import_{run_key}"
+            ):
+                try:
+                    payload = json.loads(import_file.getvalue().decode("utf-8"))
+                    imported = 0
+                    for row in payload.get("decisions", []):
+                        befund_id = row.get("befund_id")
+                        if not befund_id:
+                            continue
+                        action_key = _review_action_key(run_key, befund_id)
+                        st.session_state.review_actions[action_key] = {
+                            "decision": row.get("decision", "approved"),
+                            "timestamp": row.get(
+                                "timestamp",
+                                datetime.now().isoformat(timespec="seconds"),
+                            ),
+                            **({"note": row.get("note")} if row.get("note") else {}),
+                        }
+                        imported += 1
+                    st.success(f"{imported} Entscheidungen importiert.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Import fehlgeschlagen: {e}")
+
             export_payload = {
                 "run_key": run_key,
                 "decisions": [
@@ -517,6 +571,30 @@ with result_tab:
                             "timestamp": datetime.now().isoformat(timespec="seconds"),
                             "note": note,
                         }
+
+            by_section = {}
+            for item in queue_items:
+                section = item.get("sektion_id", "UNBEKANNT")
+                by_section.setdefault(
+                    section,
+                    {
+                        "sektion": section,
+                        "queue_total": 0,
+                        "approved": 0,
+                        "rejected": 0,
+                        "reprompt": 0,
+                    },
+                )
+                by_section[section]["queue_total"] += 1
+                action_key = _review_action_key(run_key, item.get("id", ""))
+                decision = st.session_state.review_actions.get(action_key, {}).get(
+                    "decision"
+                )
+                if decision in ("approved", "rejected", "reprompt"):
+                    by_section[section][decision] += 1
+            if by_section:
+                st.markdown("### Fortschritt pro Sektion")
+                st.dataframe(list(by_section.values()), use_container_width=True)
 
         with explain_subtab:
             if not flat_befunde:
@@ -655,6 +733,10 @@ with result_tab:
                     d1, d2 = st.columns(2)
                     d1.metric("Δ Total Tokens", curr_total - prev_total)
                     d2.metric("Δ Kosten (USD)", f"{curr_cost - prev_cost:.4f}")
+                    delta_rows = _agent_delta_rows(token_stats, prev_token_stats)
+                    if delta_rows:
+                        st.markdown("#### Delta pro Agent")
+                        st.dataframe(delta_rows, use_container_width=True)
                 else:
                     st.caption("Kein vorheriger Run für Delta-Vergleich verfügbar.")
 
