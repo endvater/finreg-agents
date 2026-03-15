@@ -18,6 +18,7 @@ import json
 import logging
 import re
 import time
+from collections import Counter
 
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
@@ -37,6 +38,7 @@ class Bewertung(str, Enum):
     TEILKONFORM = "teilkonform"
     NICHT_KONFORM = "nicht_konform"
     NICHT_PRUEFBAR = "nicht_prüfbar"
+    DISPUTED = "disputed"
 
 
 class Schweregrad(str, Enum):
@@ -61,6 +63,7 @@ class Befund:
     confidence_guards: dict = field(default_factory=dict)
     low_confidence_reasons: list[str] = field(default_factory=list)
     token_usage: dict = field(default_factory=dict)
+    claim_list: list[dict] = field(default_factory=list)
     review_erforderlich: bool = False
     validierungshinweise: list[str] = field(default_factory=list)
 
@@ -414,6 +417,66 @@ def validate_befund_structure(
     return warnings
 
 
+def build_claim_annotations(
+    llm_result: dict,
+    nodes: list,
+    retrieved_sources: set[str],
+) -> list[dict]:
+    """
+    Leitet eine auditierbare Claim-Liste aus Textstellen und Retrieval-Metadaten ab.
+    """
+    raw_claims = [str(t).strip() for t in (llm_result.get("belegte_textstellen") or [])]
+    raw_claims = [c for c in raw_claims if c]
+    if not raw_claims:
+        begruendung = (llm_result.get("begruendung") or "").strip()
+        if begruendung:
+            raw_claims = [begruendung]
+    if not raw_claims:
+        return []
+
+    provenance = []
+    seen = set()
+    for node in nodes:
+        md = getattr(node, "metadata", {}) or {}
+        signature = (
+            str(md.get("source", "unbekannt")),
+            str(md.get("chunk_id", "")),
+            str(md.get("page_label", md.get("start_char_idx", ""))),
+        )
+        if signature in seen:
+            continue
+        seen.add(signature)
+        provenance.append(
+            {
+                "id": f"P{len(provenance) + 1}",
+                "source": signature[0],
+                "chunk_id": signature[1] or None,
+                "position": signature[2] or None,
+            }
+        )
+
+    source_count = len(retrieved_sources)
+    status = (
+        "corroborated"
+        if source_count >= 2
+        else "single-sourced"
+        if source_count == 1
+        else "unverified"
+    )
+    provenance_ids = [p["id"] for p in provenance]
+    return [
+        {
+            "claim_id": f"C{idx + 1}",
+            "text": claim,
+            "status": status,
+            "provenance_ids": provenance_ids,
+            "provenance": provenance,
+            "skeptiker_tag": "none",
+        }
+        for idx, claim in enumerate(raw_claims)
+    ]
+
+
 # ------------------------------------------------------------------ #
 # JSON-Extraktion (robust)
 # ------------------------------------------------------------------ #
@@ -475,11 +538,15 @@ class PrueferAgent:
         top_k: int = 8,
         temperature: float = 0.1,
         retrieval_score_min: float = RETRIEVAL_SCORE_MIN,
+        evidence_relevance_filter: bool = False,
     ):
         self.retriever = VectorIndexRetriever(index=index, similarity_top_k=top_k)
         self.llm = build_llm(provider=provider, model=model, temperature=temperature)
         self.regulatorik = regulatorik
         self.retrieval_score_min = retrieval_score_min
+        self.evidence_relevance_filter = evidence_relevance_filter
+        self.relevance_filter_stats = Counter()
+        self.relevance_filter_drops = []
 
         # System-Prompt für die gewählte Regulatorik
         kontext = SYSTEM_PROMPTS.get(regulatorik, SYSTEM_PROMPTS["gwg"])
@@ -497,6 +564,15 @@ class PrueferAgent:
             if not allowed_types
             or (n.metadata or {}).get("input_type", "unbekannt") in allowed_types
         ]
+        if getattr(self, "evidence_relevance_filter", False):
+            scoped_nodes, dropped = self._apply_relevance_filter(
+                scoped_nodes, prueffeld
+            )
+            self.relevance_filter_stats["kept"] += len(scoped_nodes)
+            self.relevance_filter_stats["dropped"] += len(dropped)
+            for d in dropped:
+                self.relevance_filter_stats[f"reason:{d['reason']}"] += 1
+            self.relevance_filter_drops.extend(dropped)
 
         if not scoped_nodes:
             verfügbare_typen = sorted(
@@ -646,6 +722,7 @@ class PrueferAgent:
             confidence_guards=guard_result,
             low_confidence_reasons=low_confidence_reasons,
             token_usage=token_usage,
+            claim_list=build_claim_annotations(llm_result, good_nodes, retrieved_sources),
             review_erforderlich=review_erforderlich,
             validierungshinweise=val_warnings,
         )
@@ -667,6 +744,40 @@ class PrueferAgent:
         elif isinstance(rg, str) and rg:
             parts.append(f"Rechtsgrundlage: {rg}")
         return self.retriever.retrieve("\n".join(parts))
+
+    def _classify_evidence_chunk(self, text: str) -> tuple[str, str | None]:
+        if REG_GUARDRAIL_RE.search(text or ""):
+            return "regulatory_requirement", None
+        lower = (text or "").lower()
+        if any(term in lower for term in MARKETING_TERMS):
+            return "context_noise", "MARKETING_PHRASE"
+        if any(term in lower for term in CONTROL_TERMS):
+            return "control_evidence", None
+        if any(term in lower for term in NON_CONTROL_TERMS):
+            return "context_noise", "NON_CONTROL_CONTEXT"
+        return "context_noise", "NO_REG_REF"
+
+    def _apply_relevance_filter(
+        self, nodes: list, prueffeld: dict
+    ) -> tuple[list, list]:
+        kept = []
+        dropped = []
+        for node in nodes:
+            text = node.get_content()
+            klassifikation, reason = self._classify_evidence_chunk(text)
+            if klassifikation == "context_noise" and reason:
+                md = node.metadata or {}
+                dropped.append(
+                    {
+                        "prueffeld_id": prueffeld.get("id"),
+                        "source": md.get("source", "unbekannt"),
+                        "reason": reason,
+                        "snippet": (text or "")[:220],
+                    }
+                )
+                continue
+            kept.append(node)
+        return kept, dropped
 
     def _format_evidence(self, nodes: list, prueffeld: dict) -> str:
         """Formatiert die Evidenz für den LLM-Prompt."""
