@@ -565,15 +565,23 @@ class PrueferAgent:
         top_k: int = 8,
         temperature: float = 0.1,
         retrieval_score_min: float = RETRIEVAL_SCORE_MIN,
+        adversarial: bool = False,
         evidence_relevance_filter: bool = False,
     ):
         self.retriever = VectorIndexRetriever(index=index, similarity_top_k=top_k)
         self.llm = build_llm(provider=provider, model=model, temperature=temperature)
         self.regulatorik = regulatorik
         self.retrieval_score_min = retrieval_score_min
+        self.adversarial = adversarial
         self.evidence_relevance_filter = evidence_relevance_filter
         self.relevance_filter_stats = Counter()
         self.relevance_filter_drops = []
+
+        if self.adversarial:
+            logger.warning(
+                "Adversarial-Flag gesetzt, aber in dieser Agent-Version nicht aktiv "
+                "implementiert; es wird der Standard-Prüfpass verwendet."
+            )
 
         # System-Prompt für die gewählte Regulatorik
         kontext = SYSTEM_PROMPTS.get(regulatorik, SYSTEM_PROMPTS["gwg"])
