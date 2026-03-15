@@ -141,7 +141,9 @@ class GwGIngestor:
                 }
 
                 # 2. Use the regulatory parser to intelligently chunk the concatenated text
-                nodes = self.regulatory_parser.parse_text(full_text, base_metadata=base_meta)
+                nodes = self.regulatory_parser.parse_text(
+                    full_text, base_metadata=base_meta
+                )
                 for node in nodes:
                     # Cast TextNode back to Document for the index
                     docs.append(

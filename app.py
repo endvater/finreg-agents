@@ -662,8 +662,10 @@ with setup_tab:
         embedding_provider = "fastembed"
 
     if embedding_provider == "fastembed" and not fastembed_available:
-        if provider == "gemini" and gemini_embed_available and os.environ.get(
-            "GOOGLE_API_KEY"
+        if (
+            provider == "gemini"
+            and gemini_embed_available
+            and os.environ.get("GOOGLE_API_KEY")
         ):
             embedding_provider = "gemini"
             st.warning(
