@@ -1,0 +1,13 @@
+services:
+  finreg-agents:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finreg-agents
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./docs:/app/docs
+      - ./reports:/app/reports
+      - ./streamlit_tmp_docs:/app/streamlit_tmp_docs
+    restart: unless-stopped
