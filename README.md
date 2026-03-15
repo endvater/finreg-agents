@@ -328,6 +328,14 @@ cd finreg-agents
 python3.12 -m pip install -r requirements.txt
 ```
 
+### Runtime-Kompatibilität
+
+| Python | Status | Hinweise |
+|---|---|---|
+| 3.11 | ✅ unterstützt | Gemini/OpenAI/Ollama etc. möglich |
+| 3.12 | ✅ empfohlen | Vollständig getestet, inkl. `fastembed` |
+| 3.13 | ⚠️ unterstützt (mit Einschränkung) | `fastembed` aktuell nicht verfügbar; bitte `--embedding-provider gemini` oder `openai` nutzen |
+
 Optional je LLM-Provider:
 
 ```bash
@@ -415,7 +423,7 @@ python3.12 pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptike
 | Fehlerbild | Ursache | Fix |
 |---|---|---|
 | `ModuleNotFoundError` (z. B. `langchain_core`, `dotenv`, `llama_index.readers`) | Unvollständige Installation im aktiven Python-Interpreter | `python3.12 -m pip install -r requirements.txt` |
-| `llama-index-embeddings-fastembed ist nicht installiert` | FastEmbed-Plugin fehlt oder falsche Python-Version | `python3.12 -m pip install llama-index-embeddings-fastembed fastembed` |
+| `llama-index-embeddings-fastembed ist nicht installiert` | FastEmbed-Plugin fehlt oder inkompatible Python-Version (z. B. 3.13) | Python 3.12 verwenden: `python3.12 -m pip install llama-index-embeddings-fastembed fastembed` oder unter 3.13 auf `gemini`/`openai` Embeddings wechseln |
 | `llama-index-embeddings-gemini ist nicht installiert` | Gemini-Embedding-Plugin fehlt | `python3.12 -m pip install llama-index-embeddings-gemini -r requirements-gemini.txt` |
 | OpenAI `429 insufficient_quota` bei Embeddings | OpenAI-Key aktiv, aber Quota/Billing erschöpft | In der UI lokale Embeddings aktivieren oder Gemini-Embeddings nutzen |
 | Gemini `404 ... text-embedding-004 ... not found` | Veralteter Gemini-Embedding-Name | Aktuelle Version nutzen (Default ist `models/gemini-embedding-001`) und neu starten |
