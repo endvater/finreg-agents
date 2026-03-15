@@ -151,7 +151,7 @@ class TestEmbeddingFactory:
     def test_default_embedding_model_known_providers(self):
         assert default_embedding_model("openai") == "text-embedding-3-small"
         assert default_embedding_model("fastembed") == "BAAI/bge-small-en-v1.5"
-        assert default_embedding_model("gemini") == "text-embedding-004"
+        assert default_embedding_model("gemini") == "models/gemini-embedding-001"
         assert default_embedding_model("mistral") == "mistral-embed"
         assert default_embedding_model("ollama") == "nomic-embed-text"
 
