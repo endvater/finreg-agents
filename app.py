@@ -2,8 +2,10 @@ import streamlit as st
 import os
 import json
 import shutil
+import base64
 from pathlib import Path
 from datetime import datetime
+import streamlit.components.v1 as components
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
 
 # --- Streamlit config ---
@@ -117,6 +119,51 @@ def _summarize_actions(run_key: str) -> dict:
 
 def _to_number(value):
     return value if isinstance(value, (int, float)) else 0
+
+
+def _find_source_path(source_name: str) -> str | None:
+    if not source_name:
+        return None
+    input_dir = st.session_state.get("input_dir") or ""
+    if not input_dir or not Path(input_dir).exists():
+        return None
+    for file in Path(input_dir).rglob("*"):
+        if file.is_file() and file.name == source_name:
+            return str(file)
+    return None
+
+
+def _render_pdf_preview(path: str, height: int = 650):
+    pdf_bytes = Path(path).read_bytes()
+    encoded = base64.b64encode(pdf_bytes).decode("utf-8")
+    iframe = (
+        f'<iframe src="data:application/pdf;base64,{encoded}" '
+        f'width="100%" height="{height}" type="application/pdf"></iframe>'
+    )
+    components.html(iframe, height=height + 10, scrolling=True)
+
+
+def _extract_timeline(logs: list[str]) -> list[dict]:
+    events = []
+    for line in logs:
+        msg = line.strip()
+        icon = "ℹ️"
+        if "Schritt 1/4" in msg:
+            icon = "📂"
+        elif "Schritt 2/4" in msg:
+            icon = "🔍"
+        elif "Schritt 3/4" in msg:
+            icon = "📋"
+        elif "Schritt 4/4" in msg:
+            icon = "📝"
+        elif "REVIEW" in msg:
+            icon = "🔎"
+        elif "Skeptiker" in msg:
+            icon = "⚔️"
+        elif "abgeschlossen" in msg:
+            icon = "✅"
+        events.append({"icon": icon, "message": msg})
+    return events[-40:]
 
 
 # --- UI Sidebar ---
@@ -519,6 +566,43 @@ with result_tab:
                         st.markdown("**Quellen:**")
                         for src in sources:
                             st.markdown(f"- `{src}`")
+                        selected_source = st.selectbox(
+                            "Quelle für Detailansicht",
+                            options=sources,
+                            key=f"source_select_{b.get('id', 'x')}",
+                        )
+                        source_path = _find_source_path(selected_source)
+                        if source_path:
+                            st.caption(f"Datei gefunden: {source_path}")
+                            p = Path(source_path)
+                            if p.suffix.lower() == ".pdf":
+                                with st.expander("PDF-Vorschau öffnen", expanded=False):
+                                    _render_pdf_preview(source_path, height=520)
+                            else:
+                                with st.expander(
+                                    "Datei-Inhalt (Textvorschau)", expanded=False
+                                ):
+                                    if p.suffix.lower() in {
+                                        ".txt",
+                                        ".log",
+                                        ".json",
+                                        ".yaml",
+                                        ".yml",
+                                        ".md",
+                                        ".csv",
+                                    }:
+                                        content = p.read_text(
+                                            encoding="utf-8", errors="ignore"
+                                        )
+                                        st.code(content[:6000], language="text")
+                                    else:
+                                        st.info(
+                                            "Kein Inline-Preview für diesen Dateityp verfügbar."
+                                        )
+                        else:
+                            st.caption(
+                                "Quelle aktuell nicht im aktiven Input-Verzeichnis gefunden."
+                            )
                     textstellen = b.get("belegte_textstellen", [])
                     if textstellen:
                         st.markdown("**Belegte Textstellen:**")
@@ -577,6 +661,9 @@ with result_tab:
             st.markdown("### Live-Logs (letzte 30 Zeilen)")
             if st.session_state.logs:
                 st.code("\n".join(st.session_state.logs[-30:]), language="text")
+                st.markdown("### Ereignis-Timeline")
+                for ev in _extract_timeline(st.session_state.logs):
+                    st.markdown(f"- {ev['icon']} {ev['message']}")
             else:
                 st.caption("Noch keine Logs verfügbar.")
 
