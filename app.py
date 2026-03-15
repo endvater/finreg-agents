@@ -38,6 +38,8 @@ def init_session_state():
         st.session_state.previous_run_stats = None
     if "run_history" not in st.session_state:
         st.session_state.run_history = []
+    if "loaded_review_runs" not in st.session_state:
+        st.session_state.loaded_review_runs = set()
 
 
 init_session_state()
@@ -207,6 +209,62 @@ def _extract_timeline(logs: list[str]) -> list[dict]:
             icon = "✅"
         events.append({"icon": icon, "message": msg})
     return events[-40:]
+
+
+def _safe_run_key(run_key: str) -> str:
+    safe = run_key.replace(":", "_").replace("/", "_").replace("\\", "_")
+    return "".join(ch for ch in safe if ch.isalnum() or ch in ("_", "-", "."))
+
+
+def _review_decisions_path(run_key: str) -> Path:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    return OUTPUT_DIR / f"review_decisions_{_safe_run_key(run_key)}.json"
+
+
+def _collect_review_actions_for_run(run_key: str) -> list[dict]:
+    return [
+        {"befund_id": k[len(run_key) + 1 :], **v}
+        for k, v in st.session_state.review_actions.items()
+        if k.startswith(f"{run_key}:")
+    ]
+
+
+def _persist_review_actions_for_run(run_key: str):
+    payload = {
+        "run_key": run_key,
+        "saved_at": datetime.now().isoformat(timespec="seconds"),
+        "decisions": _collect_review_actions_for_run(run_key),
+    }
+    _review_decisions_path(run_key).write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+
+def _load_review_actions_for_run(run_key: str):
+    if run_key in st.session_state.loaded_review_runs:
+        return
+    path = _review_decisions_path(run_key)
+    if not path.exists():
+        st.session_state.loaded_review_runs.add(run_key)
+        return
+    payload = _read_json_file(str(path)) or {}
+    imported = 0
+    for row in payload.get("decisions", []):
+        befund_id = row.get("befund_id")
+        if not befund_id:
+            continue
+        action_key = _review_action_key(run_key, befund_id)
+        st.session_state.review_actions[action_key] = {
+            "decision": row.get("decision", "approved"),
+            "timestamp": row.get(
+                "timestamp", datetime.now().isoformat(timespec="seconds")
+            ),
+            **({"note": row.get("note")} if row.get("note") else {}),
+        }
+        imported += 1
+    st.session_state.loaded_review_runs.add(run_key)
+    if imported:
+        st.toast(f"{imported} Review-Entscheidungen aus Datei geladen.")
 
 
 def _append_run_history(report_paths: dict):
@@ -408,6 +466,7 @@ with result_tab:
         st.info("Noch keine Ergebnisse vorhanden. Starte eine Prüfung im ersten Tab.")
     else:
         run_key = _current_run_key(report_payload)
+        _load_review_actions_for_run(run_key)
         (
             overview_subtab,
             queue_subtab,
@@ -521,6 +580,9 @@ with result_tab:
                 for k in list(st.session_state.keys()):
                     if k.startswith("reprompt_"):
                         del st.session_state[k]
+                path = _review_decisions_path(run_key)
+                if path.exists():
+                    path.unlink()
                 st.rerun()
 
             import_file = st.file_uploader(
@@ -549,17 +611,14 @@ with result_tab:
                         }
                         imported += 1
                     st.success(f"{imported} Entscheidungen importiert.")
+                    _persist_review_actions_for_run(run_key)
                     st.rerun()
                 except Exception as e:
                     st.error(f"Import fehlgeschlagen: {e}")
 
             export_payload = {
                 "run_key": run_key,
-                "decisions": [
-                    {"befund_id": k[len(run_key) + 1 :], **v}
-                    for k, v in st.session_state.review_actions.items()
-                    if k.startswith(f"{run_key}:")
-                ],
+                "decisions": _collect_review_actions_for_run(run_key),
             }
             st.download_button(
                 "Review-Entscheidungen exportieren (JSON)",
@@ -629,11 +688,15 @@ with result_tab:
                             "decision": "approved",
                             "timestamp": datetime.now().isoformat(timespec="seconds"),
                         }
+                        _persist_review_actions_for_run(run_key)
+                        st.rerun()
                     if c2.button("Reject", key=f"reject_{befund_id}"):
                         st.session_state.review_actions[action_key] = {
                             "decision": "rejected",
                             "timestamp": datetime.now().isoformat(timespec="seconds"),
                         }
+                        _persist_review_actions_for_run(run_key)
+                        st.rerun()
                     reprompt_key = f"reprompt_{befund_id}"
                     if reprompt_key not in st.session_state:
                         st.session_state[reprompt_key] = (
@@ -652,6 +715,8 @@ with result_tab:
                             "timestamp": datetime.now().isoformat(timespec="seconds"),
                             "note": note,
                         }
+                        _persist_review_actions_for_run(run_key)
+                        st.rerun()
 
             by_section = {}
             for item in queue_items:
