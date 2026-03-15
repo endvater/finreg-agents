@@ -384,6 +384,7 @@ with st.sidebar:
     }
     required_key_env = provider_key_env.get(provider)
     provider_key = ""
+    ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
     if required_key_env:
         provider_key = st.text_input(
             f"{provider.upper()} API Key",
@@ -394,6 +395,13 @@ with st.sidebar:
             os.environ[required_key_env] = provider_key
     else:
         st.caption("Für OLLAMA ist kein API-Key erforderlich.")
+        ollama_host = st.text_input(
+            "Ollama Host (URL)",
+            value=ollama_host,
+            help="Beispiel: http://localhost:11434 oder https://ollama.dein-server.tld",
+        ).strip()
+        if ollama_host:
+            os.environ["OLLAMA_HOST"] = ollama_host
 
     api_key_openai = st.text_input(
         "OpenAI API Key (optional für Embeddings)",
@@ -496,6 +504,8 @@ with setup_tab:
 
     embedding_provider = "fastembed" if use_local_embeddings else None
     provider_key_ok = True if required_key_env is None else bool(provider_key)
+    if provider == "ollama":
+        provider_key_ok = bool(ollama_host)
     can_run = bool(input_dir) and provider_key_ok
     if not can_run:
         st.info(
