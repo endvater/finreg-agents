@@ -8,6 +8,7 @@ import io
 from pathlib import Path
 from datetime import datetime
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
+from ui_drift import build_befund_index, build_drift_rows
 
 logger = logging.getLogger(__name__)
 
@@ -153,93 +154,12 @@ def _agent_delta_rows(
     return rows
 
 
-_BEWERTUNG_SEVERITY = {
-    "konform": 0,
-    "teilkonform": 1,
-    "nicht_konform": 2,
-    "nicht_prüfbar": 3,
-    "disputed": 3,
-}
-
-
 def _build_befund_index(report_payload: dict) -> dict:
-    index = {}
-    for sektion in report_payload.get("sektionen", []):
-        sid = sektion.get("id", "")
-        for b in sektion.get("befunde", []):
-            bid = b.get("id") or b.get("prueffeld_id")
-            if not bid:
-                continue
-            index[bid] = {
-                "sektion": sid,
-                "frage": b.get("frage", ""),
-                "bewertung": b.get("bewertung", ""),
-                "confidence": _to_number(b.get("confidence")),
-                "confidence_level": b.get("confidence_level", ""),
-            }
-    return index
+    return build_befund_index(report_payload, logger=logger)
 
 
 def _build_drift_rows(index_a: dict, index_b: dict) -> list[dict]:
-    rows = []
-    keys = sorted(set(index_a.keys()) | set(index_b.keys()))
-    for key in keys:
-        a = index_a.get(key)
-        b = index_b.get(key)
-        if a and b:
-            bew_a = a.get("bewertung", "")
-            bew_b = b.get("bewertung", "")
-            sev_delta = _BEWERTUNG_SEVERITY.get(bew_b, 0) - _BEWERTUNG_SEVERITY.get(
-                bew_a, 0
-            )
-            if sev_delta > 0:
-                change = "verschlechtert"
-            elif sev_delta < 0:
-                change = "verbessert"
-            elif bew_a != bew_b:
-                change = "geändert"
-            else:
-                change = "gleich"
-            rows.append(
-                {
-                    "prueffeld_id": key,
-                    "sektion": b.get("sektion", a.get("sektion", "")),
-                    "frage": b.get("frage", a.get("frage", "")),
-                    "bewertung_a": bew_a,
-                    "bewertung_b": bew_b,
-                    "delta_confidence": round(
-                        _to_number(b.get("confidence"))
-                        - _to_number(a.get("confidence")),
-                        3,
-                    ),
-                    "status": change,
-                }
-            )
-        elif b and not a:
-            rows.append(
-                {
-                    "prueffeld_id": key,
-                    "sektion": b.get("sektion", ""),
-                    "frage": b.get("frage", ""),
-                    "bewertung_a": "(neu)",
-                    "bewertung_b": b.get("bewertung", ""),
-                    "delta_confidence": round(_to_number(b.get("confidence")), 3),
-                    "status": "neu",
-                }
-            )
-        elif a and not b:
-            rows.append(
-                {
-                    "prueffeld_id": key,
-                    "sektion": a.get("sektion", ""),
-                    "frage": a.get("frage", ""),
-                    "bewertung_a": a.get("bewertung", ""),
-                    "bewertung_b": "(entfallen)",
-                    "delta_confidence": round(-_to_number(a.get("confidence")), 3),
-                    "status": "entfallen",
-                }
-            )
-    return rows
+    return build_drift_rows(index_a, index_b, logger=logger)
 
 
 def _build_evidence_graph_dot(befund: dict) -> str:
@@ -418,8 +338,6 @@ def _append_run_history(report_paths: dict):
     payload = _read_json_file(json_path) or {}
     run_key = _current_run_key(payload)
     token_stats = (_load_run_stats(payload) or {}).get("token_stats", {})
-    if not token_stats:
-        return
     entry = {
         "run_key": run_key,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -1046,83 +964,109 @@ with result_tab:
                         inst = h.get("institution", "")
                         options.append(f"{rk} | {inst} | {ts}")
                     if options:
-                        col_a, col_b = st.columns(2)
-                        idx_b = len(options) - 1
-                        idx_a = max(0, idx_b - 1)
-                        run_a_label = col_a.selectbox(
-                            "Run A",
-                            options=options,
-                            index=idx_a,
-                            key="run_compare_a",
-                        )
-                        run_b_label = col_b.selectbox(
-                            "Run B",
-                            options=options,
-                            index=idx_b,
-                            key="run_compare_b",
-                        )
-                        run_a = history[options.index(run_a_label)]
-                        run_b = history[options.index(run_b_label)]
-                        a_stats = run_a.get("token_stats", {})
-                        b_stats = run_b.get("token_stats", {})
-                        a_total = _to_number(a_stats.get("gesamt", {}).get("total"))
-                        b_total = _to_number(b_stats.get("gesamt", {}).get("total"))
-                        a_cost = _to_number(
-                            a_stats.get("kosten_schaetzung", {}).get("total_cost")
-                        )
-                        b_cost = _to_number(
-                            b_stats.get("kosten_schaetzung", {}).get("total_cost")
-                        )
-                        c_a, c_b = st.columns(2)
-                        c_a.metric("Δ Tokens (B - A)", b_total - a_total)
-                        c_b.metric("Δ Kosten (B - A)", f"{b_cost - a_cost:.4f}")
-                        ab_delta = _agent_delta_rows(b_stats, a_stats)
-                        if ab_delta:
-                            st.markdown("#### Delta pro Agent (B vs A)")
-                            st.dataframe(ab_delta, use_container_width=True)
-                        drift_rows = _build_drift_rows(
-                            run_a.get("befund_index", {}),
-                            run_b.get("befund_index", {}),
-                        )
-                        if drift_rows:
-                            changed = [r for r in drift_rows if r["status"] != "gleich"]
-                            worsened = [
-                                r for r in drift_rows if r["status"] == "verschlechtert"
-                            ]
-                            improved = [
-                                r for r in drift_rows if r["status"] == "verbessert"
-                            ]
-                            st.markdown("#### Compliance-Drift (Bewertungs-Diff)")
-                            d1, d2, d3 = st.columns(3)
-                            d1.metric("Geänderte Prüffelder", len(changed))
-                            d2.metric("Verschlechtert", len(worsened))
-                            d3.metric("Verbessert", len(improved))
-                            only_changes = st.checkbox(
-                                "Nur Änderungen anzeigen (A/B)",
-                                value=True,
-                                key="drift_only_changes",
+                        if len(options) < 2:
+                            st.info(
+                                "Mindestens 2 Runs für Drift-Vergleich erforderlich."
                             )
-                            table = (
-                                [r for r in drift_rows if r["status"] != "gleich"]
-                                if only_changes
-                                else drift_rows
+                            history_rows = [
+                                {
+                                    "run_key": h.get("run_key"),
+                                    "timestamp": h.get("timestamp"),
+                                    "institution": h.get("institution"),
+                                    "total_tokens": _to_number(
+                                        h.get("token_stats", {})
+                                        .get("gesamt", {})
+                                        .get("total")
+                                    ),
+                                }
+                                for h in history
+                            ]
+                            st.markdown("#### Historie")
+                            st.dataframe(history_rows, use_container_width=True)
+                        else:
+                            col_a, col_b = st.columns(2)
+                            idx_b = len(options) - 1
+                            idx_a = max(0, idx_b - 1)
+                            run_a_label = col_a.selectbox(
+                                "Run A",
+                                options=options,
+                                index=idx_a,
+                                key="run_compare_a",
                             )
-                            st.dataframe(table, use_container_width=True, height=280)
-                        history_rows = [
-                            {
-                                "run_key": h.get("run_key"),
-                                "timestamp": h.get("timestamp"),
-                                "institution": h.get("institution"),
-                                "total_tokens": _to_number(
-                                    h.get("token_stats", {})
-                                    .get("gesamt", {})
-                                    .get("total")
-                                ),
-                            }
-                            for h in history
-                        ]
-                        st.markdown("#### Historie")
-                        st.dataframe(history_rows, use_container_width=True)
+                            run_b_label = col_b.selectbox(
+                                "Run B",
+                                options=options,
+                                index=idx_b,
+                                key="run_compare_b",
+                            )
+                            run_a = history[options.index(run_a_label)]
+                            run_b = history[options.index(run_b_label)]
+                            a_stats = run_a.get("token_stats", {})
+                            b_stats = run_b.get("token_stats", {})
+                            a_total = _to_number(a_stats.get("gesamt", {}).get("total"))
+                            b_total = _to_number(b_stats.get("gesamt", {}).get("total"))
+                            a_cost = _to_number(
+                                a_stats.get("kosten_schaetzung", {}).get("total_cost")
+                            )
+                            b_cost = _to_number(
+                                b_stats.get("kosten_schaetzung", {}).get("total_cost")
+                            )
+                            c_a, c_b = st.columns(2)
+                            c_a.metric("Δ Tokens (B - A)", b_total - a_total)
+                            c_b.metric("Δ Kosten (B - A)", f"{b_cost - a_cost:.4f}")
+                            ab_delta = _agent_delta_rows(b_stats, a_stats)
+                            if ab_delta:
+                                st.markdown("#### Delta pro Agent (B vs A)")
+                                st.dataframe(ab_delta, use_container_width=True)
+                            drift_rows = _build_drift_rows(
+                                run_a.get("befund_index", {}),
+                                run_b.get("befund_index", {}),
+                            )
+                            if drift_rows:
+                                changed = [
+                                    r for r in drift_rows if r["status"] != "gleich"
+                                ]
+                                worsened = [
+                                    r
+                                    for r in drift_rows
+                                    if r["status"] == "verschlechtert"
+                                ]
+                                improved = [
+                                    r for r in drift_rows if r["status"] == "verbessert"
+                                ]
+                                st.markdown("#### Compliance-Drift (Bewertungs-Diff)")
+                                d1, d2, d3 = st.columns(3)
+                                d1.metric("Geänderte Prüffelder", len(changed))
+                                d2.metric("Verschlechtert", len(worsened))
+                                d3.metric("Verbessert", len(improved))
+                                only_changes = st.checkbox(
+                                    "Nur Änderungen anzeigen (A/B)",
+                                    value=True,
+                                    key="drift_only_changes",
+                                )
+                                table = changed if only_changes else drift_rows
+                                st.dataframe(
+                                    table, use_container_width=True, height=280
+                                )
+                            else:
+                                st.caption(
+                                    "Drift-Daten für diesen Run-Vergleich nicht verfügbar."
+                                )
+                            history_rows = [
+                                {
+                                    "run_key": h.get("run_key"),
+                                    "timestamp": h.get("timestamp"),
+                                    "institution": h.get("institution"),
+                                    "total_tokens": _to_number(
+                                        h.get("token_stats", {})
+                                        .get("gesamt", {})
+                                        .get("total")
+                                    ),
+                                }
+                                for h in history
+                            ]
+                            st.markdown("#### Historie")
+                            st.dataframe(history_rows, use_container_width=True)
 
             st.markdown("### Live-Logs (letzte 30 Zeilen)")
             if st.session_state.logs:
