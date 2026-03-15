@@ -5,6 +5,7 @@ import shutil
 import logging
 import csv
 import io
+import importlib.util
 from pathlib import Path
 from datetime import datetime
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
@@ -129,6 +130,10 @@ def _summarize_actions(run_key: str) -> dict:
 
 def _to_number(value):
     return value if isinstance(value, (int, float)) else 0
+
+
+def _module_available(module_name: str) -> bool:
+    return importlib.util.find_spec(module_name) is not None
 
 
 def _agent_delta_rows(
@@ -502,20 +507,45 @@ with setup_tab:
 
     st.divider()
 
+    fastembed_available = _module_available("llama_index.embeddings.fastembed")
+    gemini_embed_available = _module_available("llama_index.embeddings.gemini")
+
     # Embeddings pro Provider:
     # - openai: optional lokal oder OpenAI
     # - gemini: native Gemini-Embeddings
-    # - alle anderen: lokal (fastembed), um OpenAI-Quota zu vermeiden
+    # - alle anderen: lokal (fastembed), falls verfügbar
     if provider == "openai":
         embedding_provider = "fastembed" if use_local_embeddings else "openai"
     elif provider == "gemini":
         embedding_provider = "gemini"
     else:
         embedding_provider = "fastembed"
+
+    if embedding_provider == "fastembed" and not fastembed_available:
+        if provider == "gemini" and gemini_embed_available and os.environ.get(
+            "GOOGLE_API_KEY"
+        ):
+            embedding_provider = "gemini"
+            st.warning(
+                "FastEmbed ist nicht installiert. Fallback auf Gemini-Embeddings aktiv."
+            )
+        elif os.environ.get("OPENAI_API_KEY"):
+            embedding_provider = "openai"
+            st.warning(
+                "FastEmbed ist nicht installiert. Fallback auf OpenAI-Embeddings aktiv."
+            )
+        else:
+            embedding_provider = None
+            st.error(
+                "FastEmbed ist nicht installiert und kein Cloud-Embedding-Fallback "
+                "verfügbar. Setze OPENAI_API_KEY oder installiere FastEmbed."
+            )
+
     provider_key_ok = True if required_key_env is None else bool(provider_key)
     if provider == "ollama":
         provider_key_ok = bool(ollama_host)
-    can_run = bool(input_dir) and provider_key_ok
+    embedding_ok = embedding_provider is not None
+    can_run = bool(input_dir) and provider_key_ok and embedding_ok
     if not can_run:
         st.info(
             "Bitte den API-Key für den gewählten Provider setzen "
