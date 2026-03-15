@@ -21,7 +21,7 @@ import time
 
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
-from agents.llm_factory import build_llm, PROVIDER_DEFAULTS
+from agents.llm_factory import build_llm
 from langchain_core.messages import HumanMessage, SystemMessage
 
 logger = logging.getLogger(__name__)
@@ -279,12 +279,62 @@ KNOWN_LAW_PATTERNS = {
 GENERIC_LAW_REF_RE = re.compile(
     r"(§\s*\d+[a-z]?(?:\s+\S+){0,6}|Art\.\s*\d+[a-z]?(?:\s+\S+){0,6})"
 )
+REG_GUARDRAIL_RE = re.compile(r"(§|Art\.|MaRisk|DORA|GwG|KWG|WpHG|MaComp)")
+
+MARKETING_TERMS = (
+    "kundenfokus",
+    "innovativ",
+    "premium",
+    "marktführ",
+    "vision",
+    "mission",
+    "growth",
+    "brand",
+    "campaign",
+    "marketing",
+)
+CONTROL_TERMS = (
+    "kontrolle",
+    "prozess",
+    "freigabe",
+    "monitoring",
+    "review",
+    "dokument",
+    "nachweis",
+    "risiko",
+    "policy",
+    "verfahren",
+    "pruefung",
+    "prüfung",
+    "audit",
+    "eskalation",
+)
+NON_CONTROL_TERMS = (
+    "presse",
+    "blog",
+    "karriere",
+    "event",
+    "newsletter",
+    "werbung",
+)
+NORM_REF_RE = re.compile(
+    r"(§\s*\d+[a-z]?(?:\s*Abs\.\s*\d+)?(?:\s*(?:GwG|KWG|WpHG|MaComp))?"
+    r"|Art\.\s*\d+[a-z]?(?:\s*Abs\.\s*\d+)?(?:\s*(?:DORA|MAR))?)"
+)
+
+
+def _extract_norm_refs(text: str) -> set[str]:
+    refs = set()
+    for match in NORM_REF_RE.finditer(text or ""):
+        refs.add(re.sub(r"\s+", " ", match.group(0).strip()))
+    return refs
 
 
 def validate_befund_structure(
     llm_result: dict,
     retrieved_sources: set[str],
     regulatorik: str,
+    evidence_text: str = "",
 ) -> list[str]:
     """
     Strukturelle Validierung des LLM-Outputs. Gibt eine Liste von Warnungen zurück.
@@ -340,6 +390,26 @@ def validate_befund_structure(
         if suspicious_refs:
             refs = ", ".join(sorted(suspicious_refs))
             warnings.append(f"Unplausible Rechtszitate für '{regulatorik}': {refs}")
+
+    # 7. Context-Drift: zentrale Normreferenzen aus Evidenz sollen erhalten bleiben
+    if evidence_text:
+        refs_evidence = _extract_norm_refs(evidence_text)
+        refs_befund = _extract_norm_refs(
+            " ".join(
+                [
+                    llm_result.get("begruendung", "") or "",
+                    llm_result.get("mangel_text", "") or "",
+                    " ".join(llm_result.get("belegte_textstellen", []) or []),
+                ]
+            )
+        )
+        missing_refs = refs_evidence - refs_befund
+        if missing_refs:
+            sample = ", ".join(sorted(missing_refs)[:3])
+            warnings.append(
+                "Context-Drift-Verdacht: Normreferenzen aus Evidenz fehlen im "
+                f"Befund ({sample})"
+            )
 
     return warnings
 
@@ -501,7 +571,10 @@ class PrueferAgent:
 
         # 5. Strukturelle Validierung
         val_warnings = validate_befund_structure(
-            llm_result, retrieved_sources, self.regulatorik
+            llm_result,
+            retrieved_sources,
+            self.regulatorik,
+            evidence_text=evidenz_text,
         )
 
         # 6. Confidence-Score berechnen
