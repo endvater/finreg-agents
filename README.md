@@ -350,6 +350,13 @@ docker compose logs -f
 docker compose down
 ```
 
+Fertiges Release-Image (GHCR):
+
+```bash
+docker pull ghcr.io/endvater/finreg-agents:v2.4.0
+docker run --rm -p 9000:9000 --env-file .env ghcr.io/endvater/finreg-agents:v2.4.0
+```
+
 ### 1. Installation (empfohlen: Python 3.12)
 
 ```bash
