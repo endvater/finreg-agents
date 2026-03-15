@@ -17,7 +17,7 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 ## Inhaltsverzeichnis
 
 1. [Was ist neu in v2?](#was-ist-neu-in-v2)
-2. [Bugfixes v2.1 / v2.2](#bugfixes-v21--v22)
+2. [Changelog](CHANGELOG.md)
 3. [Adversarial Prompting Layer](#adversarial-prompting-layer)
 4. [Architektur](#architektur)
 5. [Skeptiker-Agent](#skeptiker-agent)
@@ -65,33 +65,6 @@ Version 2 ist eine vollständige Überarbeitung, die fünf kritische Architektur
 - **YAML-Support**: Interview-Fragebögen in YAML werden korrekt geparst
 - **Model-Default**: Sonnet statt Opus (kosteneffizient, Opus optional per `--model`)
 - **Test-Suite**: Pytest-Tests für Confidence, Validierung, JSON-Parsing, Katalog-Struktur
-
----
-
-## Bugfixes v2.1 / v2.2
-
-Behebt Probleme, die durch ein nachgelagertes Code-Review identifiziert wurden:
-
-| Problem | Fix |
-|---|---|
-| `Settings.embed_model` wurde permanent mutiert – Race Condition bei parallelen Instanzen | Save/Restore-Pattern: State wird nach dem Index-Aufbau wiederhergestellt |
-| Keine Retry-Logik – ein einzelner API-Fehler (429/503) beendet die Pipeline | Exponentieller Backoff: 3 Versuche mit 2s / 4s Wartezeit; JSON-ParseErrors werden sofort durchgereicht |
-| Checkpoint-Exception wurde lautlos geschluckt – Fehler unsichtbar | `logger.warning()` statt leerem `except` |
-| `.env`-Dateien wurden nicht geladen trotz `python-dotenv`-Dependency | `load_dotenv()` wird beim Start aufgerufen |
-| Fuzzy-Matching: `"log"` matchte `"dialog.pdf"` → falscher Confidence-Anstieg | Token-Splitting auf Separator-Grenzen (`._-/`) statt Substring-Match |
-| Unbekannte Regulatorik im `BerichtGenerator` fiel lautlos auf GwG-Labels zurück | Wirft jetzt `ValueError` mit klarer Fehlermeldung |
-| CSV-Dateien ohne Encoding-Angabe – Windows-1252-Logs aus Bankensystemen schlugen fehl | `encoding="utf-8", encoding_errors="replace"` explizit gesetzt |
-| `import hashlib` in `pruef_agent.py` war ungenutzt | Entfernt |
-| Typo-Alias `SektionsergebniS` (großes S am Ende) in der Public API | Korrigiert |
-| Kein Logging – `print()` überall, kein Log-Level, keine Filterbarkeit | `logging.getLogger(__name__)` in allen Modulen; `basicConfig` in `main()` |
-| Kein CI | GitHub Actions: Test-Job (Python 3.11 + 3.12) + Lint-Job (ruff) |
-| **Skeptiker-Agent**: `import json` und `CONFIDENCE_REVIEW_THRESHOLD` ungenutzt (F401) | Entfernt |
-| **Skeptiker-Agent**: Kein Logging | `logging.getLogger(__name__)` ergänzt |
-| **Skeptiker-Agent**: Keine Retry-Logik in `_challenge()` | Exponentieller Backoff analog `PrueferAgent` |
-| **Input-Typ-Leak im Scoring**: unzulässige Typen konnten Confidence/Gate beeinflussen | Type-Scoping vor Retrieval-Gate und Confidence-Berechnung |
-| **Skeptiker-Typdrift**: String statt Liste bei `einwaende` verzerrte Confidence-Penalty | Robuste Typnormalisierung (Bool/List/String-Coercion) |
-| `--sektionen` ohne Treffer erzeugte leeren Report mit implizit "KONFORM" | Harte Validierung: Pipeline wirft `ValueError`, wenn 0 Prüffelder verarbeitet wurden |
-| Regulatorik-spezifische Paragraphen-Patterns waren deklariert, aber ungenutzt | Rechtszitat-Plausibilitätscheck je Regulatorik in der strukturellen Validierung aktiviert |
 
 ---
 
