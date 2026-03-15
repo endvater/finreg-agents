@@ -41,6 +41,9 @@ class GwGIngestor:
     """
 
     def __init__(self, chunk_size: int = 1024, chunk_overlap: int = 128):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+
         # Fallback splitter for non-regulatory text or logs
         self.splitter = SentenceSplitter(
             chunk_size=chunk_size, chunk_overlap=chunk_overlap
@@ -134,14 +137,8 @@ class GwGIngestor:
                     "page_count": len(raw_documents),
                 }
 
-                # 2. Use the new regulatory parser to intelligently chunk the concatenated text
-                self.regulatory_parser = RegulatoryParser(
-                    fallback_chunk_size=self.chunk_size,
-                    fallback_chunk_overlap=self.chunk_overlap,
-                )
-                nodes = self.regulatory_parser.parse_text(
-                    full_text, base_metadata=base_meta
-                )
+                # 2. Use the regulatory parser to intelligently chunk the concatenated text
+                nodes = self.regulatory_parser.parse_text(full_text, base_metadata=base_meta)
                 for node in nodes:
                     # Cast TextNode back to Document for the index
                     docs.append(
