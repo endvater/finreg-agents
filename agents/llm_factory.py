@@ -4,7 +4,7 @@ FinRegAgents – LLM Factory
 Unterstützte Provider:
   anthropic  – Claude Sonnet / Opus / Haiku  (Standard)
   openai     – GPT-4o, GPT-4o-mini, o3
-  gemini     – Gemini 2.0 Flash, 2.5 Pro
+  gemini     – Gemini 2.5 Pro, 2.0 Flash
   mistral    – Mistral Large, Mistral Small
   cohere     – Command R+, Command A
   grok       – Grok-3, Grok-3 Mini  (OpenAI-kompatibler Endpunkt)
@@ -13,7 +13,7 @@ Unterstützte Provider:
 Verwendung:
     from agents.llm_factory import build_llm, PROVIDER_DEFAULTS
 
-    llm = build_llm("gemini", model="gemini-2.0-flash", temperature=0.1)
+    llm = build_llm("gemini", model="gemini-2.5-pro", temperature=0.1)
     llm = build_llm("ollama", model="llama3.3")
 """
 
@@ -39,7 +39,7 @@ PROVIDER_DEFAULTS: dict[str, dict[str, Any]] = {
         "max_tokens": 2048,
     },
     "gemini": {
-        "model": "gemini-2.0-flash",
+        "model": "gemini-2.5-pro",
         "max_tokens": 2048,
     },
     "mistral": {
@@ -284,6 +284,11 @@ def _build_ollama(model, temperature, max_tokens, **kwargs):
 
 
 def _require_env(var: str, provider: str) -> None:
+    if var == "GOOGLE_API_KEY" and not os.environ.get(var):
+        gemini_key = os.environ.get("GEMINI_API_KEY")
+        if gemini_key:
+            os.environ[var] = gemini_key
+            logger.info("GEMINI_API_KEY erkannt – als GOOGLE_API_KEY übernommen.")
     if not os.environ.get(var):
         raise EnvironmentError(
             f"Umgebungsvariable '{var}' fehlt für Provider '{provider}'. "

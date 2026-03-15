@@ -2,9 +2,9 @@
 FinRegAgents – Embedding Factory
 
 Unterstützte Embedding-Provider:
-  openai    – text-embedding-3-small/large  (Standard, benötigt OPENAI_API_KEY)
-  fastembed – BAAI/bge-small-en-v1.5        (lokal, kein API-Key)
-  gemini    – text-embedding-004            (benötigt GOOGLE_API_KEY)
+  openai    – text-embedding-3-small/large   (Standard, benötigt OPENAI_API_KEY)
+  fastembed – BAAI/bge-small-en-v1.5         (lokal, kein API-Key)
+  gemini    – models/gemini-embedding-001    (benötigt GOOGLE_API_KEY)
   mistral   – mistral-embed                 (benötigt MISTRAL_API_KEY)
   ollama    – nomic-embed-text, mxbai-embed-large (lokal, kein API-Key)
 
@@ -36,7 +36,7 @@ EMBEDDING_DEFAULTS: dict[str, dict[str, Any]] = {
         "model": "BAAI/bge-small-en-v1.5",
     },
     "gemini": {
-        "model": "text-embedding-004",
+        "model": "models/gemini-embedding-001",
     },
     "mistral": {
         "model": "mistral-embed",
@@ -193,6 +193,11 @@ def _resolve_provider(provider: str | None) -> str:
 
 
 def _require_env(var: str, provider: str) -> None:
+    if var == "GOOGLE_API_KEY" and not os.environ.get(var):
+        gemini_key = os.environ.get("GEMINI_API_KEY")
+        if gemini_key:
+            os.environ[var] = gemini_key
+            logger.info("GEMINI_API_KEY erkannt – als GOOGLE_API_KEY übernommen.")
     if not os.environ.get(var):
         raise EnvironmentError(
             f"Umgebungsvariable '{var}' fehlt für Embedding-Provider '{provider}'. "

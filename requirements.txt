@@ -1,5 +1,8 @@
 # FinRegAgents v2 – Core Dependencies
 #
+# Empfohlene Runtime: Python 3.12
+# (3.13 kann bei einzelnen Embedding-Backends zu Inkompatibilitäten führen)
+#
 # Basis-Installation (Anthropic + lokale Embeddings, kein OpenAI-Key nötig):
 #   pip install -r requirements.txt
 #

@@ -5,15 +5,18 @@ import shutil
 import logging
 import csv
 import io
+import importlib.util
 from pathlib import Path
 from datetime import datetime
 from pipeline import AuditPipeline, KATALOG_REGISTRY, KATALOG_LABELS
+from ui_drift import build_befund_index, build_drift_rows
+from agents.llm_factory import list_providers, default_model
 
 logger = logging.getLogger(__name__)
 
 # --- Streamlit config ---
 st.set_page_config(
-    page_title="FinRegAgents v2",
+    page_title="FinRegAgents v2.4",
     page_icon="🏦",
     layout="wide",
 )
@@ -43,6 +46,132 @@ def init_session_state():
 
 
 init_session_state()
+
+
+def _inject_design_system():
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+        :root {
+            --fg-title: #0f172a;
+            --fg-body: #1e293b;
+            --brand-ink: #0b3954;
+            --brand-accent: #1f6f8b;
+            --brand-soft: #e8f2f6;
+            --panel: #f8fafc;
+            --line: #dbe6ef;
+        }
+
+        .stApp {
+            font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+            color: var(--fg-body);
+            background:
+                radial-gradient(1200px 500px at -20% -10%, #dff3ff 0%, transparent 55%),
+                radial-gradient(1000px 500px at 120% -20%, #e5f4ee 0%, transparent 50%),
+                #f4f7fb;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: "Space Grotesk", "IBM Plex Sans", sans-serif !important;
+            color: var(--fg-title);
+            letter-spacing: -0.015em;
+        }
+
+        /* Keep contrast for content text without overriding interactive widgets. */
+        .stApp [data-testid="stMarkdownContainer"],
+        .stApp [data-testid="stMarkdownContainer"] p,
+        .stApp [data-testid="stMarkdownContainer"] li,
+        .stApp [data-testid="stMarkdownContainer"] small {
+            color: var(--fg-body);
+        }
+
+        .stApp [data-testid="stMarkdownContainer"] h1,
+        .stApp [data-testid="stMarkdownContainer"] h2,
+        .stApp [data-testid="stMarkdownContainer"] h3,
+        .stApp [data-testid="stMarkdownContainer"] h4 {
+            color: var(--fg-title);
+        }
+
+        /* Ensure good contrast on dark interactive controls. */
+        .stApp button,
+        .stApp [role="tab"],
+        .stApp [data-baseweb="tag"] {
+            color: inherit;
+        }
+
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #ffffff 0%, #f5f9fc 100%);
+            border-right: 1px solid var(--line);
+        }
+
+        [data-testid="stSidebar"] .stMarkdown h1,
+        [data-testid="stSidebar"] .stMarkdown h2,
+        [data-testid="stSidebar"] .stMarkdown h3 {
+            color: #0d334a;
+        }
+
+        [data-testid="stMetric"] {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+
+        .finreg-hero {
+            background: linear-gradient(120deg, #0b3954 0%, #1f6f8b 52%, #4ca4c7 100%);
+            border-radius: 18px;
+            padding: 22px 24px;
+            color: #f8fdff;
+            margin: 4px 0 14px 0;
+            box-shadow: 0 10px 30px rgba(11, 57, 84, 0.2);
+        }
+
+        .finreg-hero h1 {
+            margin: 0 0 6px 0;
+            color: #ffffff !important;
+            font-size: 2rem;
+        }
+
+        .finreg-hero p {
+            margin: 0;
+            font-size: 1.02rem;
+            opacity: 0.95;
+        }
+
+        .finreg-chiprow {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .finreg-chip {
+            font-size: 0.78rem;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .finreg-hero,
+        .finreg-hero p,
+        .finreg-hero span {
+            color: #f8fdff !important;
+        }
+
+        .block-container {
+            padding-top: 1.25rem;
+            max-width: 1320px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+_inject_design_system()
 
 
 def _read_json_file(path: str) -> dict | None:
@@ -129,6 +258,10 @@ def _to_number(value):
     return value if isinstance(value, (int, float)) else 0
 
 
+def _module_available(module_name: str) -> bool:
+    return importlib.util.find_spec(module_name) is not None
+
+
 def _agent_delta_rows(
     current_token_stats: dict, previous_token_stats: dict
 ) -> list[dict]:
@@ -153,93 +286,67 @@ def _agent_delta_rows(
     return rows
 
 
-_BEWERTUNG_SEVERITY = {
-    "konform": 0,
-    "teilkonform": 1,
-    "nicht_konform": 2,
-    "nicht_prüfbar": 3,
-    "disputed": 3,
-}
-
-
 def _build_befund_index(report_payload: dict) -> dict:
-    index = {}
-    for sektion in report_payload.get("sektionen", []):
-        sid = sektion.get("id", "")
-        for b in sektion.get("befunde", []):
-            bid = b.get("id") or b.get("prueffeld_id")
-            if not bid:
-                continue
-            index[bid] = {
-                "sektion": sid,
-                "frage": b.get("frage", ""),
-                "bewertung": b.get("bewertung", ""),
-                "confidence": _to_number(b.get("confidence")),
-                "confidence_level": b.get("confidence_level", ""),
-            }
-    return index
+    return build_befund_index(report_payload, logger=logger)
 
 
 def _build_drift_rows(index_a: dict, index_b: dict) -> list[dict]:
-    rows = []
-    keys = sorted(set(index_a.keys()) | set(index_b.keys()))
-    for key in keys:
-        a = index_a.get(key)
-        b = index_b.get(key)
-        if a and b:
-            bew_a = a.get("bewertung", "")
-            bew_b = b.get("bewertung", "")
-            sev_delta = _BEWERTUNG_SEVERITY.get(bew_b, 0) - _BEWERTUNG_SEVERITY.get(
-                bew_a, 0
+    return build_drift_rows(index_a, index_b, logger=logger)
+
+
+def _build_evidence_graph_dot(befund: dict) -> str:
+    """Build a compact Graphviz graph: Prüffeld -> Claims -> Sources."""
+    befund_id = str(befund.get("id") or befund.get("prueffeld_id") or "BEFUND")
+    frage = str(befund.get("frage", ""))[:60]
+    label_befund = f"{befund_id}\\n{frage}".replace('"', "'")
+    lines = [
+        "digraph EvidenceGraph {",
+        'rankdir="LR";',
+        'graph [fontname="Arial"];',
+        'node [shape=box, style="rounded,filled", fontname="Arial", fontsize=10];',
+        'edge [fontname="Arial", fontsize=9];',
+        f'"B0" [label="{label_befund}", fillcolor="#dbeafe"];',
+    ]
+
+    claims = befund.get("claim_list") or []
+    if claims:
+        for idx, claim in enumerate(claims, start=1):
+            cid = str(claim.get("claim_id", f"C{idx}"))
+            ctext = str(claim.get("text", ""))[:90].replace('"', "'")
+            status = str(claim.get("status", "unverified"))
+            lines.append(
+                f'"CL{idx}" [label="{cid}\\n{status}\\n{ctext}", fillcolor="#fef3c7"];'
             )
-            if sev_delta > 0:
-                change = "verschlechtert"
-            elif sev_delta < 0:
-                change = "verbessert"
-            elif bew_a != bew_b:
-                change = "geändert"
+            lines.append(f'"B0" -> "CL{idx}";')
+            provenance = claim.get("provenance") or []
+            if provenance:
+                for pidx, prov in enumerate(provenance, start=1):
+                    sid = str(prov.get("source", "unbekannt")).replace('"', "'")
+                    pid = f"S{idx}_{pidx}"
+                    lines.append(
+                        f'"{pid}" [label="{sid}", shape=ellipse, fillcolor="#dcfce7"];'
+                    )
+                    lines.append(f'"CL{idx}" -> "{pid}";')
             else:
-                change = "gleich"
-            rows.append(
-                {
-                    "prueffeld_id": key,
-                    "sektion": b.get("sektion", a.get("sektion", "")),
-                    "frage": b.get("frage", a.get("frage", "")),
-                    "bewertung_a": bew_a,
-                    "bewertung_b": bew_b,
-                    "delta_confidence": round(
-                        _to_number(b.get("confidence"))
-                        - _to_number(a.get("confidence")),
-                        3,
-                    ),
-                    "status": change,
-                }
+                sources = befund.get("quellen") or []
+                for sidx, src in enumerate(sources, start=1):
+                    sid = str(src).replace('"', "'")
+                    pid = f"S{idx}_{sidx}"
+                    lines.append(
+                        f'"{pid}" [label="{sid}", shape=ellipse, fillcolor="#dcfce7"];'
+                    )
+                    lines.append(f'"CL{idx}" -> "{pid}";')
+    else:
+        for sidx, src in enumerate(befund.get("quellen") or [], start=1):
+            sid = str(src).replace('"', "'")
+            pid = f"S0_{sidx}"
+            lines.append(
+                f'"{pid}" [label="{sid}", shape=ellipse, fillcolor="#dcfce7"];'
             )
-        elif b and not a:
-            rows.append(
-                {
-                    "prueffeld_id": key,
-                    "sektion": b.get("sektion", ""),
-                    "frage": b.get("frage", ""),
-                    "bewertung_a": "(neu)",
-                    "bewertung_b": b.get("bewertung", ""),
-                    "delta_confidence": round(_to_number(b.get("confidence")), 3),
-                    "status": "neu",
-                }
-            )
-        elif a and not b:
-            rows.append(
-                {
-                    "prueffeld_id": key,
-                    "sektion": a.get("sektion", ""),
-                    "frage": a.get("frage", ""),
-                    "bewertung_a": a.get("bewertung", ""),
-                    "bewertung_b": "(entfallen)",
-                    "delta_confidence": round(-_to_number(a.get("confidence")), 3),
-                    "status": "entfallen",
-                }
-            )
-    return rows
+            lines.append(f'"B0" -> "{pid}";')
+
+    lines.append("}")
+    return "\n".join(lines)
 
 
 def _find_source_path(source_name: str) -> str | None:
@@ -363,8 +470,6 @@ def _append_run_history(report_paths: dict):
     payload = _read_json_file(json_path) or {}
     run_key = _current_run_key(payload)
     token_stats = (_load_run_stats(payload) or {}).get("token_stats", {})
-    if not token_stats:
-        return
     entry = {
         "run_key": run_key,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -386,23 +491,54 @@ def _append_run_history(report_paths: dict):
 
 # --- UI Sidebar ---
 with st.sidebar:
-    st.title("🏦 FinRegAgents v2")
+    st.title("🏦 FinRegAgents v2.4")
     st.markdown("KI-Agenten für regulatorische Prüfungen")
 
     st.header("Konfiguration")
-    api_key_anthropic = st.text_input(
-        "Anthropic API Key",
-        type="password",
-        value=os.environ.get("ANTHROPIC_API_KEY", ""),
+    provider = st.selectbox(
+        "LLM-Provider",
+        options=list_providers(),
+        index=list_providers().index("anthropic")
+        if "anthropic" in list_providers()
+        else 0,
+        format_func=lambda p: p.upper(),
     )
+
+    provider_key_env = {
+        "anthropic": "ANTHROPIC_API_KEY",
+        "openai": "OPENAI_API_KEY",
+        "gemini": "GOOGLE_API_KEY",
+        "mistral": "MISTRAL_API_KEY",
+        "cohere": "COHERE_API_KEY",
+        "grok": "XAI_API_KEY",
+        "ollama": None,
+    }
+    required_key_env = provider_key_env.get(provider)
+    provider_key = ""
+    ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+    if required_key_env:
+        provider_key = st.text_input(
+            f"{provider.upper()} API Key",
+            type="password",
+            value=os.environ.get(required_key_env, ""),
+        )
+        if provider_key:
+            os.environ[required_key_env] = provider_key
+    else:
+        st.caption("Für OLLAMA ist kein API-Key erforderlich.")
+        ollama_host = st.text_input(
+            "Ollama Host (URL)",
+            value=ollama_host,
+            help="Beispiel: http://localhost:11434 oder https://ollama.dein-server.tld",
+        ).strip()
+        if ollama_host:
+            os.environ["OLLAMA_HOST"] = ollama_host
+
     api_key_openai = st.text_input(
-        "OpenAI API Key (Embeddings)",
+        "OpenAI API Key (optional für Embeddings)",
         type="password",
         value=os.environ.get("OPENAI_API_KEY", ""),
     )
-
-    if api_key_anthropic:
-        os.environ["ANTHROPIC_API_KEY"] = api_key_anthropic
     if api_key_openai:
         os.environ["OPENAI_API_KEY"] = api_key_openai
 
@@ -416,10 +552,16 @@ with st.sidebar:
     )
 
     with st.expander("Erweiterte Einstellungen"):
-        model = st.selectbox(
-            "Modell", ["claude-sonnet-4-5-20250514", "claude-opus-4-5"]
-        )
+        model = st.text_input("Modell", value=default_model(provider))
         top_k = st.slider("RAG Chunks (Top-K)", min_value=3, max_value=20, value=8)
+        use_local_embeddings = st.checkbox(
+            "Lokale Embeddings nutzen (FastEmbed, kein OpenAI-Budget nötig)",
+            value=True,
+            help=(
+                "Empfohlen bei OpenAI-Quota-Fehlern. "
+                "Deaktivieren nur, wenn OpenAI-Embeddings explizit gewünscht sind."
+            ),
+        )
         skeptiker = st.checkbox(
             "Skeptiker-Agent aktivieren ⚔️",
             value=False,
@@ -432,6 +574,20 @@ with st.sidebar:
         )
 
 # --- UI Main Area ---
+st.markdown(
+    """
+    <section class="finreg-hero">
+      <h1>FinRegAgents v2.4</h1>
+      <p>Regulatorische Prüfungen mit klarer Evidenz, Guardrails und nachvollziehbaren Entscheidungen.</p>
+      <div class="finreg-chiprow">
+        <span class="finreg-chip">Streamlit Control Center</span>
+        <span class="finreg-chip">Skeptiker & Adversarial Ready</span>
+        <span class="finreg-chip">Audit-Trail inklusive</span>
+      </div>
+    </section>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("Prüfungszentrale")
 
 setup_tab, result_tab = st.tabs(["📄 Dokumente & Start", "📊 Ergebnisse"])
@@ -491,9 +647,52 @@ with setup_tab:
 
     st.divider()
 
-    can_run = bool(input_dir) and bool(api_key_anthropic) and bool(api_key_openai)
+    fastembed_available = _module_available("llama_index.embeddings.fastembed")
+    gemini_embed_available = _module_available("llama_index.embeddings.gemini")
+
+    # Embeddings pro Provider:
+    # - openai: optional lokal oder OpenAI
+    # - gemini: native Gemini-Embeddings
+    # - alle anderen: lokal (fastembed), falls verfügbar
+    if provider == "openai":
+        embedding_provider = "fastembed" if use_local_embeddings else "openai"
+    elif provider == "gemini":
+        embedding_provider = "gemini"
+    else:
+        embedding_provider = "fastembed"
+
+    if embedding_provider == "fastembed" and not fastembed_available:
+        if (
+            provider == "gemini"
+            and gemini_embed_available
+            and os.environ.get("GOOGLE_API_KEY")
+        ):
+            embedding_provider = "gemini"
+            st.warning(
+                "FastEmbed ist nicht installiert. Fallback auf Gemini-Embeddings aktiv."
+            )
+        elif os.environ.get("OPENAI_API_KEY"):
+            embedding_provider = "openai"
+            st.warning(
+                "FastEmbed ist nicht installiert. Fallback auf OpenAI-Embeddings aktiv."
+            )
+        else:
+            embedding_provider = None
+            st.error(
+                "FastEmbed ist nicht installiert und kein Cloud-Embedding-Fallback "
+                "verfügbar. Setze OPENAI_API_KEY oder installiere FastEmbed."
+            )
+
+    provider_key_ok = True if required_key_env is None else bool(provider_key)
+    if provider == "ollama":
+        provider_key_ok = bool(ollama_host)
+    embedding_ok = embedding_provider is not None
+    can_run = bool(input_dir) and provider_key_ok and embedding_ok
     if not can_run:
-        st.info("Bitte API Keys setzen und gültiges Dokumentenverzeichnis wählen.")
+        st.info(
+            "Bitte den API-Key für den gewählten Provider setzen "
+            "und ein gültiges Dokumentenverzeichnis wählen."
+        )
 
     if st.button(
         "🚀 Prüfung starten",
@@ -518,7 +717,9 @@ with setup_tab:
                 institution=institution,
                 regulatorik=regulatorik,
                 output_dir=str(OUTPUT_DIR),
+                provider=provider,
                 model=model,
+                embedding_provider=embedding_provider,
                 top_k=top_k,
                 skeptiker=skeptiker,
                 skeptiker_only_konform=skeptiker_only_konform,
@@ -543,6 +744,13 @@ with setup_tab:
                 st.success("Prüfung erfolgreich abgeschlossen!")
             except Exception as e:
                 st.error(f"Fehler während der Prüfung: {str(e)}")
+                msg = str(e).lower()
+                if "insufficient_quota" in msg or "exceeded your current quota" in msg:
+                    st.info(
+                        "OpenAI-Quota erreicht. Empfehlung: "
+                        "In 'Erweiterte Einstellungen' lokale Embeddings aktivieren "
+                        "oder OpenAI-Billing/Quota erhöhen."
+                    )
             finally:
                 os.environ["PIPELINE_RUNNING"] = "0"
 
@@ -926,8 +1134,13 @@ with result_tab:
                     claims = b.get("claim_list", [])
                     if claims:
                         st.json(claims)
+                        st.markdown("### Visual Evidence Graph")
+                        st.graphviz_chart(_build_evidence_graph_dot(b))
                     else:
                         st.caption("Keine Claim-Liste vorhanden.")
+                        if b.get("quellen"):
+                            st.markdown("### Visual Evidence Graph")
+                            st.graphviz_chart(_build_evidence_graph_dot(b))
 
         with run_subtab:
             stats_payload = _load_run_stats(report_payload)
@@ -986,83 +1199,109 @@ with result_tab:
                         inst = h.get("institution", "")
                         options.append(f"{rk} | {inst} | {ts}")
                     if options:
-                        col_a, col_b = st.columns(2)
-                        idx_b = len(options) - 1
-                        idx_a = max(0, idx_b - 1)
-                        run_a_label = col_a.selectbox(
-                            "Run A",
-                            options=options,
-                            index=idx_a,
-                            key="run_compare_a",
-                        )
-                        run_b_label = col_b.selectbox(
-                            "Run B",
-                            options=options,
-                            index=idx_b,
-                            key="run_compare_b",
-                        )
-                        run_a = history[options.index(run_a_label)]
-                        run_b = history[options.index(run_b_label)]
-                        a_stats = run_a.get("token_stats", {})
-                        b_stats = run_b.get("token_stats", {})
-                        a_total = _to_number(a_stats.get("gesamt", {}).get("total"))
-                        b_total = _to_number(b_stats.get("gesamt", {}).get("total"))
-                        a_cost = _to_number(
-                            a_stats.get("kosten_schaetzung", {}).get("total_cost")
-                        )
-                        b_cost = _to_number(
-                            b_stats.get("kosten_schaetzung", {}).get("total_cost")
-                        )
-                        c_a, c_b = st.columns(2)
-                        c_a.metric("Δ Tokens (B - A)", b_total - a_total)
-                        c_b.metric("Δ Kosten (B - A)", f"{b_cost - a_cost:.4f}")
-                        ab_delta = _agent_delta_rows(b_stats, a_stats)
-                        if ab_delta:
-                            st.markdown("#### Delta pro Agent (B vs A)")
-                            st.dataframe(ab_delta, use_container_width=True)
-                        drift_rows = _build_drift_rows(
-                            run_a.get("befund_index", {}),
-                            run_b.get("befund_index", {}),
-                        )
-                        if drift_rows:
-                            changed = [r for r in drift_rows if r["status"] != "gleich"]
-                            worsened = [
-                                r for r in drift_rows if r["status"] == "verschlechtert"
-                            ]
-                            improved = [
-                                r for r in drift_rows if r["status"] == "verbessert"
-                            ]
-                            st.markdown("#### Compliance-Drift (Bewertungs-Diff)")
-                            d1, d2, d3 = st.columns(3)
-                            d1.metric("Geänderte Prüffelder", len(changed))
-                            d2.metric("Verschlechtert", len(worsened))
-                            d3.metric("Verbessert", len(improved))
-                            only_changes = st.checkbox(
-                                "Nur Änderungen anzeigen (A/B)",
-                                value=True,
-                                key="drift_only_changes",
+                        if len(options) < 2:
+                            st.info(
+                                "Mindestens 2 Runs für Drift-Vergleich erforderlich."
                             )
-                            table = (
-                                [r for r in drift_rows if r["status"] != "gleich"]
-                                if only_changes
-                                else drift_rows
+                            history_rows = [
+                                {
+                                    "run_key": h.get("run_key"),
+                                    "timestamp": h.get("timestamp"),
+                                    "institution": h.get("institution"),
+                                    "total_tokens": _to_number(
+                                        h.get("token_stats", {})
+                                        .get("gesamt", {})
+                                        .get("total")
+                                    ),
+                                }
+                                for h in history
+                            ]
+                            st.markdown("#### Historie")
+                            st.dataframe(history_rows, use_container_width=True)
+                        else:
+                            col_a, col_b = st.columns(2)
+                            idx_b = len(options) - 1
+                            idx_a = max(0, idx_b - 1)
+                            run_a_label = col_a.selectbox(
+                                "Run A",
+                                options=options,
+                                index=idx_a,
+                                key="run_compare_a",
                             )
-                            st.dataframe(table, use_container_width=True, height=280)
-                        history_rows = [
-                            {
-                                "run_key": h.get("run_key"),
-                                "timestamp": h.get("timestamp"),
-                                "institution": h.get("institution"),
-                                "total_tokens": _to_number(
-                                    h.get("token_stats", {})
-                                    .get("gesamt", {})
-                                    .get("total")
-                                ),
-                            }
-                            for h in history
-                        ]
-                        st.markdown("#### Historie")
-                        st.dataframe(history_rows, use_container_width=True)
+                            run_b_label = col_b.selectbox(
+                                "Run B",
+                                options=options,
+                                index=idx_b,
+                                key="run_compare_b",
+                            )
+                            run_a = history[options.index(run_a_label)]
+                            run_b = history[options.index(run_b_label)]
+                            a_stats = run_a.get("token_stats", {})
+                            b_stats = run_b.get("token_stats", {})
+                            a_total = _to_number(a_stats.get("gesamt", {}).get("total"))
+                            b_total = _to_number(b_stats.get("gesamt", {}).get("total"))
+                            a_cost = _to_number(
+                                a_stats.get("kosten_schaetzung", {}).get("total_cost")
+                            )
+                            b_cost = _to_number(
+                                b_stats.get("kosten_schaetzung", {}).get("total_cost")
+                            )
+                            c_a, c_b = st.columns(2)
+                            c_a.metric("Δ Tokens (B - A)", b_total - a_total)
+                            c_b.metric("Δ Kosten (B - A)", f"{b_cost - a_cost:.4f}")
+                            ab_delta = _agent_delta_rows(b_stats, a_stats)
+                            if ab_delta:
+                                st.markdown("#### Delta pro Agent (B vs A)")
+                                st.dataframe(ab_delta, use_container_width=True)
+                            drift_rows = _build_drift_rows(
+                                run_a.get("befund_index", {}),
+                                run_b.get("befund_index", {}),
+                            )
+                            if drift_rows:
+                                changed = [
+                                    r for r in drift_rows if r["status"] != "gleich"
+                                ]
+                                worsened = [
+                                    r
+                                    for r in drift_rows
+                                    if r["status"] == "verschlechtert"
+                                ]
+                                improved = [
+                                    r for r in drift_rows if r["status"] == "verbessert"
+                                ]
+                                st.markdown("#### Compliance-Drift (Bewertungs-Diff)")
+                                d1, d2, d3 = st.columns(3)
+                                d1.metric("Geänderte Prüffelder", len(changed))
+                                d2.metric("Verschlechtert", len(worsened))
+                                d3.metric("Verbessert", len(improved))
+                                only_changes = st.checkbox(
+                                    "Nur Änderungen anzeigen (A/B)",
+                                    value=True,
+                                    key="drift_only_changes",
+                                )
+                                table = changed if only_changes else drift_rows
+                                st.dataframe(
+                                    table, use_container_width=True, height=280
+                                )
+                            else:
+                                st.caption(
+                                    "Drift-Daten für diesen Run-Vergleich nicht verfügbar."
+                                )
+                            history_rows = [
+                                {
+                                    "run_key": h.get("run_key"),
+                                    "timestamp": h.get("timestamp"),
+                                    "institution": h.get("institution"),
+                                    "total_tokens": _to_number(
+                                        h.get("token_stats", {})
+                                        .get("gesamt", {})
+                                        .get("total")
+                                    ),
+                                }
+                                for h in history
+                            ]
+                            st.markdown("#### Historie")
+                            st.dataframe(history_rows, use_container_width=True)
 
             st.markdown("### Live-Logs (letzte 30 Zeilen)")
             if st.session_state.logs:

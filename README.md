@@ -17,25 +17,26 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 ## Inhaltsverzeichnis
 
 1. [Was ist neu in v2?](#was-ist-neu-in-v2)
-2. [Bugfixes v2.1 / v2.2](#bugfixes-v21--v22)
+2. [Changelog](CHANGELOG.md)
 3. [Adversarial Prompting Layer](#adversarial-prompting-layer)
 4. [Architektur](#architektur)
 5. [Skeptiker-Agent](#skeptiker-agent)
 6. [Unterstützte Regulatorik](#unterstützte-regulatorik)
 7. [Quickstart](#quickstart)
-8. [Streamlit Web-UI](#streamlit-web-ui)
-9. [Python API](#python-api)
-10. [Confidence-Scoring](#confidence-scoring)
-11. [Strukturelle Validierung](#strukturelle-validierung)
-12. [Bewertungsskala](#bewertungsskala)
-13. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
-14. [Interview-Format](#interview-format)
-15. [Prüfbericht-Output](#prüfbericht-output)
-16. [Kosten-Einschätzung](#kosten-einschätzung)
-17. [Roadmap](#roadmap)
-18. [Disclaimer](#disclaimer)
-19. [Contributing](#contributing)
-20. [Lizenz](#lizenz)
+8. [Troubleshooting](#troubleshooting)
+9. [Streamlit Web-UI](#streamlit-web-ui)
+10. [Python API](#python-api)
+11. [Confidence-Scoring](#confidence-scoring)
+12. [Strukturelle Validierung](#strukturelle-validierung)
+13. [Bewertungsskala](#bewertungsskala)
+14. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
+15. [Interview-Format](#interview-format)
+16. [Prüfbericht-Output](#prüfbericht-output)
+17. [Kosten-Einschätzung](#kosten-einschätzung)
+18. [Roadmap](#roadmap)
+19. [Disclaimer](#disclaimer)
+20. [Contributing](#contributing)
+21. [Lizenz](#lizenz)
 
 ---
 
@@ -64,33 +65,6 @@ Version 2 ist eine vollständige Überarbeitung, die fünf kritische Architektur
 - **YAML-Support**: Interview-Fragebögen in YAML werden korrekt geparst
 - **Model-Default**: Sonnet statt Opus (kosteneffizient, Opus optional per `--model`)
 - **Test-Suite**: Pytest-Tests für Confidence, Validierung, JSON-Parsing, Katalog-Struktur
-
----
-
-## Bugfixes v2.1 / v2.2
-
-Behebt Probleme, die durch ein nachgelagertes Code-Review identifiziert wurden:
-
-| Problem | Fix |
-|---|---|
-| `Settings.embed_model` wurde permanent mutiert – Race Condition bei parallelen Instanzen | Save/Restore-Pattern: State wird nach dem Index-Aufbau wiederhergestellt |
-| Keine Retry-Logik – ein einzelner API-Fehler (429/503) beendet die Pipeline | Exponentieller Backoff: 3 Versuche mit 2s / 4s Wartezeit; JSON-ParseErrors werden sofort durchgereicht |
-| Checkpoint-Exception wurde lautlos geschluckt – Fehler unsichtbar | `logger.warning()` statt leerem `except` |
-| `.env`-Dateien wurden nicht geladen trotz `python-dotenv`-Dependency | `load_dotenv()` wird beim Start aufgerufen |
-| Fuzzy-Matching: `"log"` matchte `"dialog.pdf"` → falscher Confidence-Anstieg | Token-Splitting auf Separator-Grenzen (`._-/`) statt Substring-Match |
-| Unbekannte Regulatorik im `BerichtGenerator` fiel lautlos auf GwG-Labels zurück | Wirft jetzt `ValueError` mit klarer Fehlermeldung |
-| CSV-Dateien ohne Encoding-Angabe – Windows-1252-Logs aus Bankensystemen schlugen fehl | `encoding="utf-8", encoding_errors="replace"` explizit gesetzt |
-| `import hashlib` in `pruef_agent.py` war ungenutzt | Entfernt |
-| Typo-Alias `SektionsergebniS` (großes S am Ende) in der Public API | Korrigiert |
-| Kein Logging – `print()` überall, kein Log-Level, keine Filterbarkeit | `logging.getLogger(__name__)` in allen Modulen; `basicConfig` in `main()` |
-| Kein CI | GitHub Actions: Test-Job (Python 3.11 + 3.12) + Lint-Job (ruff) |
-| **Skeptiker-Agent**: `import json` und `CONFIDENCE_REVIEW_THRESHOLD` ungenutzt (F401) | Entfernt |
-| **Skeptiker-Agent**: Kein Logging | `logging.getLogger(__name__)` ergänzt |
-| **Skeptiker-Agent**: Keine Retry-Logik in `_challenge()` | Exponentieller Backoff analog `PrueferAgent` |
-| **Input-Typ-Leak im Scoring**: unzulässige Typen konnten Confidence/Gate beeinflussen | Type-Scoping vor Retrieval-Gate und Confidence-Berechnung |
-| **Skeptiker-Typdrift**: String statt Liste bei `einwaende` verzerrte Confidence-Penalty | Robuste Typnormalisierung (Bool/List/String-Coercion) |
-| `--sektionen` ohne Treffer erzeugte leeren Report mit implizit "KONFORM" | Harte Validierung: Pipeline wirft `ValueError`, wenn 0 Prüffelder verarbeitet wurden |
-| Regulatorik-spezifische Paragraphen-Patterns waren deklariert, aber ungenutzt | Rechtszitat-Plausibilitätscheck je Regulatorik in der strukturellen Validierung aktiviert |
 
 ---
 
@@ -346,12 +320,31 @@ Der Skeptiker verdoppelt die LLM-Aufrufe ungefähr (+1 Aufruf pro aktivem Prüff
 
 ## Quickstart
 
-### 1. Installation
+### 1. Installation (empfohlen: Python 3.12)
 
 ```bash
 git clone https://github.com/endvater/finreg-agents.git
 cd finreg-agents
-pip install -r requirements.txt
+python3.12 -m pip install -r requirements.txt
+```
+
+### Runtime-Kompatibilität
+
+| Python | Status | Hinweise |
+|---|---|---|
+| 3.11 | ✅ unterstützt | Gemini/OpenAI/Ollama etc. möglich |
+| 3.12 | ✅ empfohlen | Vollständig getestet, inkl. `fastembed` |
+| 3.13 | ⚠️ unterstützt (mit Einschränkung) | `fastembed` aktuell nicht verfügbar; bitte `--embedding-provider gemini` oder `openai` nutzen |
+
+Optional je LLM-Provider:
+
+```bash
+python3.12 -m pip install -r requirements-openai.txt
+python3.12 -m pip install -r requirements-gemini.txt
+python3.12 -m pip install -r requirements-mistral.txt
+python3.12 -m pip install -r requirements-cohere.txt
+python3.12 -m pip install -r requirements-grok.txt
+python3.12 -m pip install -r requirements-ollama.txt
 ```
 
 ### 2. API-Keys setzen
@@ -384,25 +377,25 @@ meine_dokumente/
 
 ```bash
 # GwG-Sonderprüfung (AML) – Standard: Sonnet (kosteneffizient)
-python pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
+python3.12 pipeline.py --input ./docs --institution "Musterbank AG" --regulatorik gwg
 
 # DORA-Prüfung (nur Drittparteienrisiko-Sektion)
-python pipeline.py --input ./docs --regulatorik dora --sektionen D04
+python3.12 pipeline.py --input ./docs --regulatorik dora --sektionen D04
 
 # MaRisk-Vollprüfung mit Opus (höchste Qualität)
-python pipeline.py --input ./docs --regulatorik marisk --model claude-opus-4-5
+python3.12 pipeline.py --input ./docs --regulatorik marisk --model claude-opus-4-5
 
 # WpHG / MaComp mit Skeptiker-Review
-python pipeline.py --input ./docs --regulatorik wphg --skeptiker
+python3.12 pipeline.py --input ./docs --regulatorik wphg --skeptiker
 
 # Nur konform-Ratings skeptisch hinterfragen (kostensparender)
-python pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only-konform
+python3.12 pipeline.py --input ./docs --regulatorik gwg --skeptiker --skeptiker-only-konform
 
 # Adversarial Layer: zweiter LLM-Pass mit umgekehrtem Prompt
-python pipeline.py --input ./docs --regulatorik gwg --adversarial
+python3.12 pipeline.py --input ./docs --regulatorik gwg --adversarial
 
 # Maximale QA-Tiefe: Adversarial + Skeptiker kombiniert
-python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
+python3.12 pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
 ```
 
 **Alle CLI-Parameter:**
@@ -425,6 +418,25 @@ python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
 
 > **Wichtig:** Wenn `--sektionen` keine gültige Sektion trifft, bricht die Pipeline mit `ValueError` ab (statt einen leeren "KONFORM"-Report zu erzeugen).
 
+## Troubleshooting
+
+| Fehlerbild | Ursache | Fix |
+|---|---|---|
+| `ModuleNotFoundError` (z. B. `langchain_core`, `dotenv`, `llama_index.readers`) | Unvollständige Installation im aktiven Python-Interpreter | `python3.12 -m pip install -r requirements.txt` |
+| `llama-index-embeddings-fastembed ist nicht installiert` | FastEmbed-Plugin fehlt oder inkompatible Python-Version (z. B. 3.13) | Python 3.12 verwenden: `python3.12 -m pip install llama-index-embeddings-fastembed fastembed` oder unter 3.13 auf `gemini`/`openai` Embeddings wechseln |
+| `llama-index-embeddings-gemini ist nicht installiert` | Gemini-Embedding-Plugin fehlt | `python3.12 -m pip install llama-index-embeddings-gemini -r requirements-gemini.txt` |
+| OpenAI `429 insufficient_quota` bei Embeddings | OpenAI-Key aktiv, aber Quota/Billing erschöpft | In der UI lokale Embeddings aktivieren oder Gemini-Embeddings nutzen |
+| Gemini `404 ... text-embedding-004 ... not found` | Veralteter Gemini-Embedding-Name | Aktuelle Version nutzen (Default ist `models/gemini-embedding-001`) und neu starten |
+| `PrueferAgent.__init__() got an unexpected keyword argument 'adversarial'` | Branch-Mismatch zwischen Pipeline und Agent | Aktuellen Branch pullen und App neu starten |
+
+Schneller Health-Check:
+
+```bash
+python3.12 -m pip install -r requirements.txt
+python3.12 -m pip install -r requirements-gemini.txt
+python3.12 -m streamlit run app.py
+```
+
 ## Streamlit Web-UI
 
 <div align="center">
@@ -441,7 +453,7 @@ Die Benutzeroberfläche bietet folgende Funktionen:
 
 **So starten Sie die Benutzeroberfläche:**
 ```bash
-streamlit run app.py
+python3.12 -m streamlit run app.py
 ```
 Dies öffnet die App automatisch in Ihrem Standard-Browser (meist unter `http://localhost:8501`).
 

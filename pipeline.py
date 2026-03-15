@@ -107,6 +107,7 @@ class AuditPipeline:
         use_relevance_filter: bool = False,
         review_budget: int | None = None,
         resume: bool = False,
+        local_embeddings: bool = False,
     ):
         self.input_dir = input_dir
         self.institution = institution
@@ -114,6 +115,10 @@ class AuditPipeline:
         self.output_dir = output_dir
         self.provider = provider
         self.model = model or default_model(provider)
+        self.local_embeddings = local_embeddings
+        # --local-embeddings erzwingt FastEmbed, sofern kein expliziter Provider gesetzt ist.
+        if self.local_embeddings and embedding_provider is None:
+            embedding_provider = "fastembed"
         self.embedding_provider = embedding_provider  # None → Auto-Detect in factory
         self.embedding_model = embedding_model  # None → Provider-Default in factory
         self.sektionen_filter = sektionen_filter
@@ -720,7 +725,7 @@ Beispiele:
   python pipeline.py --input ./docs --regulatorik gwg --adversarial
   python pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptiker
   python pipeline.py --input ./docs --regulatorik wphg --provider openai --model gpt-4o
-  python pipeline.py --input ./docs --regulatorik gwg --provider gemini --model gemini-2.0-flash
+  python pipeline.py --input ./docs --regulatorik gwg --provider gemini --model gemini-2.5-pro
   python pipeline.py --input ./docs --regulatorik gwg --provider ollama --model llama3.3
   python pipeline.py --input ./docs --regulatorik gwg --provider mistral --embedding-provider mistral
         """,
@@ -755,7 +760,7 @@ Beispiele:
     parser.add_argument(
         "--model",
         default=None,
-        help="Modellname (Default: Provider-spezifisch, z.B. claude-sonnet-4-6 / gpt-4o / gemini-2.0-flash)",
+        help="Modellname (Default: Provider-spezifisch, z.B. claude-sonnet-4-6 / gpt-4o / gemini-2.5-pro)",
     )
     parser.add_argument(
         "--embedding-provider",
@@ -872,6 +877,7 @@ Beispiele:
         adversarial=args.adversarial,
         use_relevance_filter=args.relevance_filter,
         resume=args.resume,
+        local_embeddings=args.local_embeddings,
     )
     try:
         pipeline.run()
