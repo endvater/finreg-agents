@@ -23,19 +23,20 @@ generiert einen formellen Prüfbericht – so wie es ein BaFin- oder AMLA-Prüfe
 5. [Skeptiker-Agent](#skeptiker-agent)
 6. [Unterstützte Regulatorik](#unterstützte-regulatorik)
 7. [Quickstart](#quickstart)
-8. [Streamlit Web-UI](#streamlit-web-ui)
-9. [Python API](#python-api)
-10. [Confidence-Scoring](#confidence-scoring)
-11. [Strukturelle Validierung](#strukturelle-validierung)
-12. [Bewertungsskala](#bewertungsskala)
-13. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
-14. [Interview-Format](#interview-format)
-15. [Prüfbericht-Output](#prüfbericht-output)
-16. [Kosten-Einschätzung](#kosten-einschätzung)
-17. [Roadmap](#roadmap)
-18. [Disclaimer](#disclaimer)
-19. [Contributing](#contributing)
-20. [Lizenz](#lizenz)
+8. [Troubleshooting](#troubleshooting)
+9. [Streamlit Web-UI](#streamlit-web-ui)
+10. [Python API](#python-api)
+11. [Confidence-Scoring](#confidence-scoring)
+12. [Strukturelle Validierung](#strukturelle-validierung)
+13. [Bewertungsskala](#bewertungsskala)
+14. [Eigenen Katalog erstellen](#eigenen-katalog-erstellen)
+15. [Interview-Format](#interview-format)
+16. [Prüfbericht-Output](#prüfbericht-output)
+17. [Kosten-Einschätzung](#kosten-einschätzung)
+18. [Roadmap](#roadmap)
+19. [Disclaimer](#disclaimer)
+20. [Contributing](#contributing)
+21. [Lizenz](#lizenz)
 
 ---
 
@@ -435,6 +436,25 @@ python3.12 pipeline.py --input ./docs --regulatorik gwg --adversarial --skeptike
 | `--adversarial` | aus | Adversarial Prompting Layer aktivieren |
 
 > **Wichtig:** Wenn `--sektionen` keine gültige Sektion trifft, bricht die Pipeline mit `ValueError` ab (statt einen leeren "KONFORM"-Report zu erzeugen).
+
+## Troubleshooting
+
+| Fehlerbild | Ursache | Fix |
+|---|---|---|
+| `ModuleNotFoundError` (z. B. `langchain_core`, `dotenv`, `llama_index.readers`) | Unvollständige Installation im aktiven Python-Interpreter | `python3.12 -m pip install -r requirements.txt` |
+| `llama-index-embeddings-fastembed ist nicht installiert` | FastEmbed-Plugin fehlt oder falsche Python-Version | `python3.12 -m pip install llama-index-embeddings-fastembed fastembed` |
+| `llama-index-embeddings-gemini ist nicht installiert` | Gemini-Embedding-Plugin fehlt | `python3.12 -m pip install llama-index-embeddings-gemini -r requirements-gemini.txt` |
+| OpenAI `429 insufficient_quota` bei Embeddings | OpenAI-Key aktiv, aber Quota/Billing erschöpft | In der UI lokale Embeddings aktivieren oder Gemini-Embeddings nutzen |
+| Gemini `404 ... text-embedding-004 ... not found` | Veralteter Gemini-Embedding-Name | Aktuelle Version nutzen (Default ist `models/gemini-embedding-001`) und neu starten |
+| `PrueferAgent.__init__() got an unexpected keyword argument 'adversarial'` | Branch-Mismatch zwischen Pipeline und Agent | Aktuellen Branch pullen und App neu starten |
+
+Schneller Health-Check:
+
+```bash
+python3.12 -m pip install -r requirements.txt
+python3.12 -m pip install -r requirements-gemini.txt
+python3.12 -m streamlit run app.py
+```
 
 ## Streamlit Web-UI
 
