@@ -77,6 +77,7 @@ class TestLLMFactory:
 
     def test_build_llm_gemini_missing_key_raises(self, monkeypatch):
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         with patch.dict("sys.modules", {"langchain_google_genai": MagicMock()}):
             with pytest.raises(EnvironmentError, match="GOOGLE_API_KEY"):
                 build_llm("gemini")
@@ -199,6 +200,7 @@ class TestEmbeddingFactory:
 
     def test_build_embedding_gemini_missing_key_raises(self, monkeypatch):
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         mock_gemini_module = MagicMock()
         mock_gemini_module.GeminiEmbedding = MagicMock()
         with patch.dict(

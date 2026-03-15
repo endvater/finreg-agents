@@ -13,7 +13,7 @@ Alle relevanten Änderungen an FinRegAgents werden hier dokumentiert.
 - Embedding-Auswahl: Fallback-Logik ergänzt, wenn `fastembed` nicht installiert ist.
 - Pipeline/Agent-Kompatibilität: `PrueferAgent` akzeptiert wieder das Argument `adversarial`.
 - Gemini Defaults aktualisiert:
-  - LLM: `gemini-3.1-pro-001`
+  - LLM: `gemini-2.5-pro`
   - Embeddings: `models/gemini-embedding-001`
 - Ingestion: PDF-Chunking stabilisiert (korrekte `chunk_size`-Verwendung).
 - Security/Upload-Hygiene: Upload-Dateinamen werden auf Basename normalisiert.
