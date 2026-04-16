@@ -37,20 +37,83 @@ jobs:
           echo "PR: ${{ github.event.client_payload.pr_number }}"
           echo "Sender: ${{ github.event.client_payload.sender }}"
 
-      - name: Execute Codex template
+      # ── Codex: auto-fix lint & format ──────────────────────────
+      - name: Set up Python (Codex)
         if: github.event.client_payload.bot == 'codex'
-        run: |
-          echo "TODO: Codex-Automation hier einbauen."
-          echo "Beispiel: Lint/Fix laufen lassen und Commit vorbereiten."
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
 
+      - name: Run ruff lint and format fixes (Codex)
+        if: github.event.client_payload.bot == 'codex'
+        id: codex-fix
+        run: |
+          pip install ruff
+          echo "::group::ruff check --fix"
+          ruff check --fix . 2>&1 | tee /tmp/ruff-check.log || true
+          echo "::endgroup::"
+          echo "::group::ruff format"
+          ruff format . 2>&1 | tee /tmp/ruff-format.log || true
+          echo "::endgroup::"
+          if [ -n "$(git diff --name-only)" ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "changed_files<<EOF" >> "$GITHUB_OUTPUT"
+            git diff --name-only >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push fixes (Codex)
+        if: github.event.client_payload.bot == 'codex' && steps.codex-fix.outputs.has_changes == 'true'
+        run: |
+          git config user.name "finreg-bot[bot]"
+          git config user.email "finreg-bot[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style: auto-fix lint and format issues (ruff)"
+          git push
+
+      - name: Post Codex summary comment
+        if: github.event.client_payload.bot == 'codex'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            const hasChanges = "${{ steps.codex-fix.outputs.has_changes }}" === "true";
+            let body;
+            if (hasChanges) {
+              const files = `${{ steps.codex-fix.outputs.changed_files }}`.trim();
+              const fileList = files.split("\n").map(f => `- \`${f}\``).join("\n");
+              body = [
+                "### Codex Bot \u2014 Lint & Format",
+                "",
+                "Automatisch behobene Probleme wurden committet.",
+                "",
+                "**Geaenderte Dateien:**",
+                fileList,
+                "",
+                "_Tools: `ruff check --fix`, `ruff format`_"
+              ].join("\n");
+            } else {
+              body = "### Codex Bot \u2014 Lint & Format\n\nKeine Lint- oder Format-Probleme gefunden. Alles sauber!";
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number("${{ github.event.client_payload.pr_number }}"),
+              body: body
+            });
+
+      # ── Claude: review placeholder ─────────────────────────────
       - name: Execute Claude template
         if: github.event.client_payload.bot == 'claude'
         run: |
-          echo "TODO: Claude-Review-Automation hier einbauen."
+          echo "Claude-Review-Automation erfordert einen API-Key (ANTHROPIC_API_KEY)."
           echo "Beispiel: Review-Zusammenfassung als PR-Kommentar posten."
 
+      # ── Gemini: docs placeholder ───────────────────────────────
       - name: Execute Gemini template
         if: github.event.client_payload.bot == 'gemini'
         run: |
-          echo "TODO: Gemini-Doku-Automation hier einbauen."
+          echo "Gemini-Doku-Automation erfordert einen API-Key (GEMINI_API_KEY)."
           echo "Beispiel: README/Changelog Checks und Kommentar posten."

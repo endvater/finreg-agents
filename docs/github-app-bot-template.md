@@ -41,6 +41,14 @@ Einmalig im Repo anlegen:
 - `pr_number`: PR-Nummer
 - `bot`: `codex|claude|gemini`
 
+## Bot-Status
+
+| Bot | Status | Beschreibung |
+|-----|--------|--------------|
+| `codex` | implementiert | Fuehrt `ruff check --fix` und `ruff format` aus, committet Aenderungen und postet eine Zusammenfassung als PR-Kommentar. |
+| `claude` | Platzhalter | Erfordert `ANTHROPIC_API_KEY` als Repository-Secret. |
+| `gemini` | Platzhalter | Erfordert `GEMINI_API_KEY` als Repository-Secret. |
+
 ## Naechster Schritt
 
-Im Worker-Template die drei TODO-Bloecke durch echte Bot-Aufrufe ersetzen (z. B. ueber CLI/MCP/HTTP).
+Im Worker-Template die verbleibenden Platzhalter (`claude`, `gemini`) durch echte Bot-Aufrufe ersetzen (z. B. ueber CLI/MCP/HTTP).
