@@ -383,22 +383,22 @@ Profile-Übersicht: ohne Profil = nur App (leichtgewichtig) · `local-llm` = App
 `eval` = App + Ollama + Eval-Runner. Default `OLLAMA_HOST` im Container zeigt auf den
 `ollama`-Dienst (per `.env`/Shell überschreibbar).
 
-**Kleines lokales Modell wählen (z. B. gemma).** Das lokale Ollama-Modell ist über die
+**Lokales Modell wählen (z. B. gemma4).** Das lokale Ollama-Modell ist über die
 Umgebungsvariable `OLLAMA_MODEL` global wählbar – ohne überall `--model` zu setzen
-(Default sonst `llama3.3`). Kleine Modelle (`gemma3:1b`, `gemma2:2b`, `llama3.2:1b`, …)
-sind lauffähig, aber nur für Tests/Ressourcensparen gedacht (geringe Prüfqualität – einmaliger
-Log-Hinweis statt Dauerwarnung):
+(Default sonst `llama3.3`). Edge-/Kleinmodelle (`gemma4:e2b`, `gemma4:e4b`, `gemma3:1b`,
+`gemma2:2b`, `llama3.2:1b`, …) sind lauffähig, aber für regulatorische Prüfqualität
+eingeschränkt (Test/Ressourcensparen – einmaliger Log-Hinweis statt Dauerwarnung):
 
 ```bash
 # Modell ins lokale Ollama laden
-ollama pull gemma3:1b           # bzw. im Compose-Dienst: docker compose --profile local-llm exec ollama ollama pull gemma3:1b
+ollama pull gemma4:e2b          # bzw. im Compose-Dienst: docker compose --profile local-llm exec ollama ollama pull gemma4:e2b
 
-# Mit gemma prüfen (lokal, Routing erzwungen)
-OLLAMA_MODEL=gemma3:1b python pipeline.py --input ./docs --regulatorik amlr --enforce-routing
+# Mit gemma4 prüfen (lokal, Routing erzwungen)
+OLLAMA_MODEL=gemma4:e2b python pipeline.py --input ./docs --regulatorik amlr --enforce-routing
 
 # Eval-Container gegen ein BEREITS LOKAL laufendes Ollama (nicht den Compose-Dienst):
 docker compose --profile eval run --rm --no-deps \
-  -e OLLAMA_HOST=http://host.docker.internal:11434 -e OLLAMA_MODEL=gemma3:1b eval
+  -e OLLAMA_HOST=http://host.docker.internal:11434 -e OLLAMA_MODEL=gemma4:e2b eval
 ```
 
 ### 1. Installation (empfohlen: Python 3.12)

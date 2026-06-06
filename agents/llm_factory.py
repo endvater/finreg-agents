@@ -75,6 +75,10 @@ OLLAMA_MIN_RECOMMENDED_MODELS = {
 # Kleine Modelle für Tests/lokale Ausführung (geringe Prüfqualität, aber lauffähig).
 # Sie lösen einen einmaligen Hinweis aus statt der vollen Qualitätswarnung.
 OLLAMA_SMALL_TEST_MODELS = {
+    "gemma4:e2b",
+    "gemma4:e4b",
+    "gemma4:e2b-mlx",
+    "gemma4:e4b-mlx",
     "gemma3:1b",
     "gemma3:4b",
     "gemma2:2b",
