@@ -1,0 +1,204 @@
+{
+  "katalog_version": "2026-06",
+  "basis": [
+    "VO (EU) 2023/1114 (MiCAR)",
+    "Delegierte Rechtsakte und RTS/ITS der ESMA und EBA zu MiCAR",
+    "VO (EU) 2023/1113 (Geldtransfer-VO / Travel Rule für Kryptowerte)",
+    "BaFin-Verwaltungspraxis zu Krypto-Dienstleistern (CASP)"
+  ],
+  "pruefsektionen": [
+    {
+      "id": "S01",
+      "titel": "Zulassung und laufende Voraussetzungen des CASP (Art. 59–63 MiCAR)",
+      "rechtsgrundlagen": ["Art. 59 MiCAR", "Art. 62 MiCAR", "Art. 63 MiCAR"],
+      "prueffelder": [
+        {
+          "id": "S01-01",
+          "frage": "Verfügt der Anbieter von Kryptowerte-Dienstleistungen über eine gültige Zulassung nach Art. 59 MiCAR für sämtliche erbrachten Dienstleistungen?",
+          "erwartete_evidenz": ["Zulassungsbescheid", "Dienstleistungskatalog", "Registereintrag ESMA"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Zulassung vorhanden und deckt alle tatsächlich erbrachten Dienstleistungen ab",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Es fehlt eine wirksame CASP-Zulassung nach Art. 59 MiCAR für eine oder mehrere erbrachte Dienstleistungen."
+        },
+        {
+          "id": "S01-02",
+          "frage": "Werden die laufenden organisatorischen Anforderungen einschließlich Eignung der Geschäftsleitung (fit & proper) erfüllt (Art. 62, 68 MiCAR)?",
+          "erwartete_evidenz": ["Eignungsbeurteilungen", "Organigramm", "Geschäftsleiter-Lebensläufe"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Geschäftsleiter und qualifiziert Beteiligte erfüllen die Eignungs- und Zuverlässigkeitsanforderungen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Eignungs-/Zuverlässigkeitsanforderungen nach Art. 62/68 MiCAR sind nicht nachgewiesen."
+        },
+        {
+          "id": "S01-03",
+          "frage": "Werden die aufsichtlichen Eigenmittelanforderungen (Mindestkapital / Versicherung) nach Anhang IV MiCAR eingehalten?",
+          "erwartete_evidenz": ["Eigenmittelnachweis", "Berechnung nach Klasse", "ggf. Versicherungspolice"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Eigenmittel entsprechend der Dienstleistungsklasse nachgewiesen",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die aufsichtlichen Eigenmittelanforderungen gemäß Anhang IV MiCAR werden unterschritten."
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "titel": "Krypto-Whitepaper und Marketing (Art. 6–9 MiCAR)",
+      "rechtsgrundlagen": ["Art. 6 MiCAR", "Art. 7 MiCAR", "Art. 9 MiCAR"],
+      "prueffelder": [
+        {
+          "id": "S02-01",
+          "frage": "Liegt für öffentlich angebotene Kryptowerte ein vollständiges, notifiziertes Whitepaper nach Art. 6 MiCAR vor?",
+          "erwartete_evidenz": ["Whitepaper", "Notifizierungsnachweis", "Pflichtangaben-Checkliste"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Whitepaper enthält alle Pflichtangaben und wurde der Aufsicht notifiziert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Es liegt kein vollständiges bzw. notifiziertes Whitepaper gemäß Art. 6 MiCAR vor."
+        },
+        {
+          "id": "S02-02",
+          "frage": "Sind Marketingmitteilungen redlich, klar und nicht irreführend sowie mit dem Whitepaper konsistent (Art. 7 MiCAR)?",
+          "erwartete_evidenz": ["Marketingfreigabeprozess", "Beispielmaterialien", "Whitepaper-Konsistenzprüfung"],
+          "input_typen": ["pdf", "docx", "image"],
+          "bewertungskriterien": "Marketing als solches gekennzeichnet, fair und konsistent",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Marketingmitteilungen erfüllen die Anforderungen des Art. 7 MiCAR nicht."
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "titel": "Verwahrung und Schutz von Kundenwerten (Art. 70, 75 MiCAR)",
+      "rechtsgrundlagen": ["Art. 70 MiCAR", "Art. 75 MiCAR"],
+      "prueffelder": [
+        {
+          "id": "S03-01",
+          "frage": "Werden Kundengelder und Kryptowerte getrennt vom Eigenvermögen gehalten und vor Insolvenzzugriff geschützt (Art. 70 MiCAR)?",
+          "erwartete_evidenz": ["Trennungskonzept", "Kontoauszüge Kundenkonten", "Verwahrnachweise"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Vermögenstrennung und Schutzmechanismen nachgewiesen",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Trennung und der Schutz von Kundenwerten gemäß Art. 70 MiCAR sind nicht sichergestellt."
+        },
+        {
+          "id": "S03-02",
+          "frage": "Besteht für die Verwahrung ein Verwahr- und Verwaltungskonzept mit Haftungsregelung und Positionsregister (Art. 75 MiCAR)?",
+          "erwartete_evidenz": ["Custody-Policy", "Positionsregister", "Haftungs-/Versicherungskonzept"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Verwahrkonzept dokumentiert, Register vollständig, Haftung geregelt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Das Verwahrkonzept entspricht nicht den Anforderungen des Art. 75 MiCAR."
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "titel": "Wohlverhalten, Interessenkonflikte und Beschwerden (Art. 66–72 MiCAR)",
+      "rechtsgrundlagen": ["Art. 66 MiCAR", "Art. 71 MiCAR", "Art. 72 MiCAR"],
+      "prueffelder": [
+        {
+          "id": "S04-01",
+          "frage": "Handelt der CASP ehrlich, redlich und professionell im besten Interesse der Kunden (Art. 66 MiCAR)?",
+          "erwartete_evidenz": ["Wohlverhaltensrichtlinie", "Risikohinweise an Kunden", "Preis-/Kostentransparenz"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Wohlverhaltenspflichten dokumentiert und umgesetzt",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Wohlverhaltenspflichten nach Art. 66 MiCAR sind nicht hinreichend umgesetzt."
+        },
+        {
+          "id": "S04-02",
+          "frage": "Bestehen Verfahren zur Erkennung, Vermeidung und Offenlegung von Interessenkonflikten (Art. 72 MiCAR)?",
+          "erwartete_evidenz": ["Interessenkonfliktrichtlinie", "Konfliktregister", "Offenlegungsbeispiele"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Konfliktmanagement etabliert und dokumentiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Das Management von Interessenkonflikten gemäß Art. 72 MiCAR ist unzureichend."
+        },
+        {
+          "id": "S04-03",
+          "frage": "Besteht ein wirksames Beschwerdemanagementverfahren (Art. 71 MiCAR)?",
+          "erwartete_evidenz": ["Beschwerderichtlinie", "Beschwerderegister", "Bearbeitungsfristen"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Beschwerdeverfahren transparent, fristgerecht und dokumentiert",
+          "schweregrad": "gering",
+          "mangel_template": "Ein wirksames Beschwerdemanagement nach Art. 71 MiCAR fehlt."
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "titel": "IKT, Auslagerung und operationelle Resilienz (Art. 68, 73 MiCAR / DORA)",
+      "rechtsgrundlagen": ["Art. 68 MiCAR", "Art. 73 MiCAR", "VO (EU) 2022/2554 (DORA)"],
+      "prueffelder": [
+        {
+          "id": "S05-01",
+          "frage": "Verfügt der CASP über angemessene IKT-Systeme und Sicherheitsvorkehrungen im Sinne von Art. 68 MiCAR und DORA?",
+          "erwartete_evidenz": ["IT-Sicherheitskonzept", "DORA-Mapping", "Notfallkonzept"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "IKT-Risikomanagement und Sicherheitsmaßnahmen nachgewiesen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die IKT-Sicherheitsanforderungen nach Art. 68 MiCAR/DORA werden nicht erfüllt."
+        },
+        {
+          "id": "S05-02",
+          "frage": "Werden Auslagerungen ordnungsgemäß gesteuert und vertraglich abgesichert (Art. 73 MiCAR)?",
+          "erwartete_evidenz": ["Auslagerungsrichtlinie", "Dienstleisterverträge", "Auslagerungsregister"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Auslagerungen erfasst, Kontroll- und Weisungsrechte gesichert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Das Auslagerungsmanagement entspricht nicht den Anforderungen des Art. 73 MiCAR."
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "titel": "Marktmissbrauch bei Kryptowerten (Art. 86–92 MiCAR)",
+      "rechtsgrundlagen": ["Art. 89 MiCAR", "Art. 91 MiCAR", "Art. 92 MiCAR"],
+      "prueffelder": [
+        {
+          "id": "S06-01",
+          "frage": "Bestehen Systeme zur Verhinderung und Erkennung von Insiderhandel und Marktmanipulation (Art. 89, 91 MiCAR)?",
+          "erwartete_evidenz": ["Marktüberwachungskonzept", "Monitoring-Szenarien", "Insiderlisten"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Überwachungssysteme implementiert und wirksam",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Es fehlen wirksame Systeme zur Verhinderung von Marktmissbrauch nach Art. 89/91 MiCAR."
+        },
+        {
+          "id": "S06-02",
+          "frage": "Werden verdächtige Aufträge und Geschäfte gemeldet (STOR, Art. 92 MiCAR)?",
+          "erwartete_evidenz": ["STOR-Verfahren", "Meldevorlagen", "Beispielmeldungen"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "STOR-Meldeprozess etabliert und genutzt",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Ein wirksames Verfahren zur Meldung verdächtiger Geschäfte gemäß Art. 92 MiCAR fehlt."
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "titel": "Travel Rule für Kryptowerte-Transfers (VO 2023/1113)",
+      "rechtsgrundlagen": ["VO (EU) 2023/1113"],
+      "prueffelder": [
+        {
+          "id": "S07-01",
+          "frage": "Werden bei Transfers von Kryptowerten die Auftraggeber- und Begünstigtendaten vollständig übermittelt (Travel Rule)?",
+          "erwartete_evidenz": ["Travel-Rule-Lösung", "Datenfeld-Mapping", "Protokolle"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Begleitdaten vollständig übermittelt und gespeichert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Begleitdaten bei Kryptowerte-Transfers werden entgegen der VO 2023/1113 nicht vollständig übermittelt."
+        },
+        {
+          "id": "S07-02",
+          "frage": "Bestehen Verfahren für fehlende/unvollständige Begleitdaten und für Transfers zu/von selbst gehosteten Wallets?",
+          "erwartete_evidenz": ["Verfahren fehlende Daten", "Self-hosted-Wallet-Policy", "Risikobewertung"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Verfahren für unvollständige Daten und Self-hosted-Wallets dokumentiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Verfahren für fehlende Begleitdaten bzw. selbst gehostete Wallets fehlen (VO 2023/1113)."
+        }
+      ]
+    }
+  ]
+}

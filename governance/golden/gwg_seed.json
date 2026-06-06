@@ -1,0 +1,12 @@
+{
+  "dataset_id": "gwg-seed",
+  "version": "0.1.0-seed",
+  "regulatorik": "gwg",
+  "origin": "seed",
+  "_note": "SEED – nur Beispielstruktur. Die Bank füllt dies mit fachlich abgenommenen, pseudonymisierten Fällen (Standard/Grenz/Hochrisiko). Prüffeld-IDs entsprechen catalog/gwg_catalog.json.",
+  "cases": [
+    {"prueffeld_id": "S01-01", "expected_bewertung": "konform", "expected_review": false, "case_class": "standard", "risk_class": "mittel", "min_groundedness": 0.9, "notes": "Risikoanalyse vorhanden, datiert, versioniert."},
+    {"prueffeld_id": "S01-02", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Risikoanalyse > 12 Monate nicht aktualisiert."},
+    {"prueffeld_id": "S01-03", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "mittel", "notes": "Nur 3 von 4 Risikodimensionen adressiert."}
+  ]
+}

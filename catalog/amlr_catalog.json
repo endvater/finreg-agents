@@ -1,0 +1,257 @@
+{
+  "katalog_version": "2026-06",
+  "basis": [
+    "VO (EU) 2024/1624 (AMLR / EU-Geldwäsche-Verordnung)",
+    "RL (EU) 2024/1640 (AMLD6)",
+    "VO (EU) 2024/1620 (AMLA-Verordnung)",
+    "VO (EU) 2023/1113 (Geldtransfer-VO / Travel Rule)",
+    "AMLA-Leitlinien und technische Regulierungsstandards (RTS)"
+  ],
+  "pruefsektionen": [
+    {
+      "id": "S01",
+      "titel": "Unternehmensweite Risikobewertung (Art. 10 AMLR)",
+      "rechtsgrundlagen": ["Art. 10 AMLR", "Art. 9 AMLR"],
+      "prueffelder": [
+        {
+          "id": "S01-01",
+          "frage": "Liegt eine dokumentierte, institutsindividuelle Risikobewertung gemäß Art. 10 AMLR vor?",
+          "erwartete_evidenz": ["Risikobewertungsdokument", "Versionierung", "Genehmigungsvermerk der Leitungsebene"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Dokument vorhanden, datiert, von der Leitungsebene genehmigt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Es liegt keine dokumentierte unternehmensweite Risikobewertung gemäß Art. 10 AMLR vor."
+        },
+        {
+          "id": "S01-02",
+          "frage": "Berücksichtigt die Risikobewertung die supranationale (SNRA) und nationale Risikobewertung sowie die in Anhang I–III AMLR genannten Risikofaktoren?",
+          "erwartete_evidenz": ["Verweis auf SNRA/NRA", "Mapping auf Anhang I–III", "Risikofaktorenkatalog"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Alle Risikodimensionen (Kunden, Produkte, Transaktionen, Vertriebskanäle, Geografie) sind adressiert",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Risikobewertung berücksichtigt nicht alle nach Art. 10 i.V.m. Anhang I–III AMLR geforderten Risikofaktoren."
+        },
+        {
+          "id": "S01-03",
+          "frage": "Wird die Risikobewertung regelmäßig und anlassbezogen aktualisiert?",
+          "erwartete_evidenz": ["Aktualisierungsdatum", "Revisionsprotokoll", "Trigger-Liste"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Letzte Überprüfung aktuell und bei wesentlichen Änderungen anlassbezogen erfolgt",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Risikobewertung wird nicht im geforderten Turnus bzw. nicht anlassbezogen aktualisiert."
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "titel": "Interne Grundsätze, Kontrollen und Verfahren (Art. 9, 11–12 AMLR)",
+      "rechtsgrundlagen": ["Art. 9 AMLR", "Art. 11 AMLR", "Art. 12 AMLR"],
+      "prueffelder": [
+        {
+          "id": "S02-01",
+          "frage": "Sind interne Grundsätze, Verfahren und Kontrollen dokumentiert und auf das Risikoprofil abgestimmt (Art. 9 AMLR)?",
+          "erwartete_evidenz": ["Interne AML/CFT-Richtlinie", "Verfahrensanweisungen", "Kontrollkonzept"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Richtlinien vorhanden, risikoangemessen und genehmigt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Es fehlen dokumentierte interne Grundsätze, Verfahren oder Kontrollen gemäß Art. 9 AMLR."
+        },
+        {
+          "id": "S02-02",
+          "frage": "Ist ein Compliance-Beauftragter (Compliance Officer) auf Leitungsebene sowie ein operativer Geldwäschebeauftragter benannt (Art. 11 AMLR)?",
+          "erwartete_evidenz": ["Bestellungsurkunde", "Funktionsbeschreibung", "Organigramm"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Beide Funktionen benannt, unabhängig und mit ausreichenden Ressourcen ausgestattet",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die nach Art. 11 AMLR geforderten Compliance-Funktionen sind nicht ordnungsgemäß bestellt."
+        },
+        {
+          "id": "S02-03",
+          "frage": "Werden Mitarbeitende geschult und einer Zuverlässigkeitsprüfung unterzogen (Art. 12 AMLR)?",
+          "erwartete_evidenz": ["Schulungskonzept", "Teilnahmenachweise", "Zuverlässigkeitsprüfungen"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Regelmäßige Schulungen dokumentiert, Zuverlässigkeitsprüfung etabliert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Schulungen oder Zuverlässigkeitsprüfungen nach Art. 12 AMLR sind nicht ausreichend dokumentiert."
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "titel": "Gruppenweite Vorkehrungen (Art. 16–17 AMLR)",
+      "rechtsgrundlagen": ["Art. 16 AMLR", "Art. 17 AMLR"],
+      "prueffelder": [
+        {
+          "id": "S03-01",
+          "frage": "Bestehen gruppenweite Grundsätze und Verfahren inklusive Informationsaustausch (Art. 16 AMLR)?",
+          "erwartete_evidenz": ["Gruppenrichtlinie", "Informationsaustauschkonzept", "Konzernweisung"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Gruppenweite Vorkehrungen dokumentiert und implementiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Es fehlen gruppenweite Grundsätze und Verfahren gemäß Art. 16 AMLR."
+        },
+        {
+          "id": "S03-02",
+          "frage": "Werden für Zweigstellen und Tochterunternehmen in Drittländern angemessene Zusatzmaßnahmen ergriffen (Art. 17 AMLR)?",
+          "erwartete_evidenz": ["Drittland-Assessment", "Zusatzmaßnahmen-Dokumentation", "Meldung an Aufsicht"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Zusatzmaßnahmen bei abweichenden Drittlandsstandards nachgewiesen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Für Drittland-Einheiten fehlen die nach Art. 17 AMLR geforderten Zusatzmaßnahmen."
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "titel": "Allgemeine Sorgfaltspflichten / CDD (Art. 19–26 AMLR)",
+      "rechtsgrundlagen": ["Art. 19 AMLR", "Art. 20 AMLR", "Art. 22 AMLR", "Art. 26 AMLR"],
+      "prueffelder": [
+        {
+          "id": "S04-01",
+          "frage": "Werden Kunden vor Begründung der Geschäftsbeziehung zuverlässig identifiziert und verifiziert (Art. 20, 22 AMLR)?",
+          "erwartete_evidenz": ["Identifizierungsnachweise", "Verifikationsbelege", "KYC-Akte"],
+          "input_typen": ["pdf", "docx", "image"],
+          "bewertungskriterien": "Identifizierung und Verifizierung anhand verlässlicher, unabhängiger Quellen erfolgt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Identifizierung/Verifizierung von Kunden entspricht nicht den Anforderungen der Art. 20, 22 AMLR."
+        },
+        {
+          "id": "S04-02",
+          "frage": "Werden Zweck und angestrebte Art der Geschäftsbeziehung erfasst (Art. 20 AMLR)?",
+          "erwartete_evidenz": ["Kundenprofil", "Zweckdokumentation", "Geschäftsbeziehungsdaten"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Zweck und Art der Geschäftsbeziehung dokumentiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Zweck und Art der Geschäftsbeziehung wurden entgegen Art. 20 AMLR nicht erhoben."
+        },
+        {
+          "id": "S04-03",
+          "frage": "Erfolgt eine kontinuierliche Überwachung der Geschäftsbeziehung inkl. Transaktionsmonitoring (Art. 26 AMLR)?",
+          "erwartete_evidenz": ["Monitoring-Konzept", "Transaktionsregeln/Szenarien", "Alert-Bearbeitungsnachweise"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Laufende Überwachung etabliert und Kundendaten aktuell gehalten",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die kontinuierliche Überwachung der Geschäftsbeziehung gemäß Art. 26 AMLR ist unzureichend."
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "titel": "Verstärkte Sorgfaltspflichten, PEP und Hochrisiko-Drittländer (Art. 28–36 AMLR)",
+      "rechtsgrundlagen": ["Art. 28 AMLR", "Art. 29 AMLR", "Art. 33 AMLR", "Art. 34 AMLR"],
+      "prueffelder": [
+        {
+          "id": "S05-01",
+          "frage": "Werden verstärkte Sorgfaltspflichten (EDD) bei erhöhtem Risiko angewandt (Art. 28, 34 AMLR)?",
+          "erwartete_evidenz": ["EDD-Verfahren", "Beispielakten Hochrisiko", "Senior-Management-Freigaben"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "EDD risikobasiert dokumentiert und angewandt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Verstärkte Sorgfaltspflichten gemäß Art. 28/34 AMLR werden nicht risikoadäquat angewandt."
+        },
+        {
+          "id": "S05-02",
+          "frage": "Werden politisch exponierte Personen (PEP) identifiziert und mit den besonderen Maßnahmen nach Art. 33 AMLR behandelt?",
+          "erwartete_evidenz": ["PEP-Screening-Nachweise", "PEP-Liste/Tool", "Genehmigungen Senior Management"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "PEP-Erkennung, Mittelherkunftsprüfung und Genehmigungspflicht umgesetzt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "PEP werden nicht entsprechend Art. 33 AMLR identifiziert oder behandelt."
+        },
+        {
+          "id": "S05-03",
+          "frage": "Werden für Hochrisiko-Drittländer die nach Art. 29 AMLR geforderten verstärkten Maßnahmen umgesetzt?",
+          "erwartete_evidenz": ["Länderrisiko-Einstufung", "EU-Hochrisikoländer-Liste", "Maßnahmendokumentation"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Maßnahmen für gelistete Hochrisiko-Drittländer nachgewiesen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Für Hochrisiko-Drittländer fehlen die verstärkten Maßnahmen gemäß Art. 29 AMLR."
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "titel": "Wirtschaftlich Berechtigte (Art. 51–63 AMLR)",
+      "rechtsgrundlagen": ["Art. 51 AMLR", "Art. 52 AMLR", "Art. 62 AMLR"],
+      "prueffelder": [
+        {
+          "id": "S06-01",
+          "frage": "Werden die wirtschaftlich Berechtigten ermittelt und mit dem 25 %-Schwellenwert bzw. Kontrollkriterium bestimmt (Art. 51–52 AMLR)?",
+          "erwartete_evidenz": ["UBO-Feststellung", "Beteiligungsstruktur", "Kontrollnachweise"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "UBO anhand Eigentums- und Kontrollkriterien korrekt bestimmt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Wirtschaftlich Berechtigte werden nicht gemäß Art. 51–52 AMLR ermittelt."
+        },
+        {
+          "id": "S06-02",
+          "frage": "Erfolgt ein Abgleich mit dem Transparenzregister inkl. Meldung von Unstimmigkeiten (Art. 62 AMLR)?",
+          "erwartete_evidenz": ["Registerauszug", "Discrepancy-Reporting-Nachweis", "Abgleichprotokoll"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Registerabgleich erfolgt, Unstimmigkeiten gemeldet",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Der Abgleich mit dem Transparenzregister bzw. die Unstimmigkeitsmeldung nach Art. 62 AMLR fehlt."
+        }
+      ]
+    },
+    {
+      "id": "S07",
+      "titel": "Meldepflichten und Verdachtsmeldungen (Art. 69–77 AMLR)",
+      "rechtsgrundlagen": ["Art. 69 AMLR", "Art. 71 AMLR", "Art. 72 AMLR"],
+      "prueffelder": [
+        {
+          "id": "S07-01",
+          "frage": "Bestehen Verfahren zur Erkennung und unverzüglichen Meldung von Verdachtsfällen an die FIU (Art. 69 AMLR)?",
+          "erwartete_evidenz": ["Meldeprozess", "STR-Vorlagen", "Beispielmeldungen / Logbuch"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Meldeprozess etabliert und Meldungen fristgerecht abgesetzt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Es fehlt ein wirksames Verfahren zur Verdachtsmeldung gemäß Art. 69 AMLR."
+        },
+        {
+          "id": "S07-02",
+          "frage": "Wird das Verbot der Informationsweitergabe (Tipping-off) und der Schutz meldender Personen eingehalten (Art. 71–72 AMLR)?",
+          "erwartete_evidenz": ["Tipping-off-Richtlinie", "Whistleblowing-Verfahren", "Schulungsnachweise"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Tipping-off-Verbot und Hinweisgeberschutz dokumentiert und geschult",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Das Tipping-off-Verbot bzw. der Schutz meldender Personen nach Art. 71–72 AMLR ist nicht ausreichend umgesetzt."
+        }
+      ]
+    },
+    {
+      "id": "S08",
+      "titel": "Aufbewahrung, Bargeldobergrenze und Travel Rule (Art. 77–80 AMLR, VO 2023/1113)",
+      "rechtsgrundlagen": ["Art. 77 AMLR", "Art. 80 AMLR", "VO (EU) 2023/1113"],
+      "prueffelder": [
+        {
+          "id": "S08-01",
+          "frage": "Werden Sorgfalts- und Transaktionsunterlagen für den vorgeschriebenen Zeitraum aufbewahrt (Art. 77 AMLR)?",
+          "erwartete_evidenz": ["Aufbewahrungsrichtlinie", "Archivierungsnachweis", "Löschkonzept"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Aufbewahrung für fünf Jahre sichergestellt, Löschfristen beachtet",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Aufbewahrung der Unterlagen entspricht nicht den Vorgaben des Art. 77 AMLR."
+        },
+        {
+          "id": "S08-02",
+          "frage": "Wird die unionsweite Bargeldobergrenze von 10.000 EUR für gewerbliche Zahlungen beachtet (Art. 80 AMLR)?",
+          "erwartete_evidenz": ["Kassenrichtlinie", "Schwellenwert-Kontrollen", "Meldeverfahren"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Obergrenze umgesetzt und Kontrollen vorhanden",
+          "schweregrad": "gering",
+          "mangel_template": "Die Bargeldobergrenze nach Art. 80 AMLR wird nicht überwacht."
+        },
+        {
+          "id": "S08-03",
+          "frage": "Werden bei Geldtransfers und Kryptowerte-Transfers die Auftraggeber-/Begünstigtendaten gemäß Travel Rule (VO 2023/1113) übermittelt?",
+          "erwartete_evidenz": ["Travel-Rule-Konzept", "Datenfeld-Mapping", "Fehlende-Daten-Verfahren"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Vollständige Begleitdaten übermittelt und fehlende Angaben behandelt",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Übermittlung der Begleitdaten nach der Geldtransfer-VO (Travel Rule) ist unvollständig."
+        }
+      ]
+    }
+  ]
+}

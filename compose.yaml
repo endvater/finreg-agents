@@ -8,8 +8,53 @@ services:
       - "9000:9000"
     env_file:
       - .env
+    environment:
+      # In-Container-Default: lokales Ollama (Profil local-llm). Per .env/Shell überschreibbar.
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://ollama:11434}
     volumes:
       - ./docs:/app/docs
       - ./reports:/app/reports
       - ./streamlit_tmp_docs:/app/streamlit_tmp_docs
     restart: unless-stopped
+
+  # Lokales LLM für Routing-Durchsetzung bei vertraulichen Daten (Datenhoheit/DSGVO).
+  # Start: docker compose --profile local-llm up
+  # Modell laden: docker compose --profile local-llm exec ollama ollama pull llama3.3
+  ollama:
+    image: ollama/ollama:latest
+    container_name: finreg-ollama
+    profiles: ["local-llm", "eval"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  # Eval-Runner: erzeugt doctored Dokumente und fährt Security-/Chaos-Sets end-to-end.
+  # Start: docker compose --profile eval run --rm eval
+  eval:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finreg-eval
+    profiles: ["eval"]
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://ollama:11434}
+    volumes:
+      - ./reports:/app/reports
+      - ./eval_runtime:/app/eval_runtime
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command: ["python", "-m", "governance.eval_docs", "run", "/app/eval_runtime"]
+
+volumes:
+  ollama_models:

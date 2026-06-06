@@ -1,0 +1,21 @@
+{
+  "agent_name": "PruefAgent",
+  "version": "2.0",
+  "gattung": "G2",
+  "purpose": "Simuliert je Prüffeld das Urteil eines BaFin-/AMLA-Sonderprüfers (RAG über Bankdokumente gegen Prüfkatalog) zur internen Prüfungsvorbereitung.",
+  "non_purpose": [
+    "Ersetzt keinen echten Prüfer",
+    "Trifft keine bindenden Entscheidungen",
+    "Erstattet keine Verdachtsmeldung und schließt keinen Fall ab",
+    "Ruft keine externen Tools auf und schreibt nicht in Bank-Systeme"
+  ],
+  "risk_class": "mittel",
+  "business_owner": "Compliance / Geldwäschebeauftragter",
+  "technical_owner": "FinRegAgents-Team",
+  "allowed_data_classes": ["confidential", "internal", "catalog"],
+  "approved_models": ["anthropic:*", "openai:*", "ollama:*"],
+  "human_gate_states": ["review_erforderlich", "disputed", "low_confidence"],
+  "prompt_version": "2.0-2025-02",
+  "is_decision_making": false,
+  "calls_tools": false
+}

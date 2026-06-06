@@ -1,0 +1,152 @@
+{
+  "katalog_version": "2026-06",
+  "basis": [
+    "BaFin-Rundschreiben 05/2018 (WA) – MaComp i.d.F. der laufenden Aktualisierungen",
+    "WpHG (insb. §§ 63 ff., § 80)",
+    "Delegierte VO (EU) 2017/565 (MiFID-II-Durchführung)",
+    "WpDVerOV"
+  ],
+  "pruefsektionen": [
+    {
+      "id": "S01",
+      "titel": "Compliance-Funktion (MaComp BT 1)",
+      "rechtsgrundlagen": ["§ 80 Abs. 1 WpHG", "Art. 22 DelVO 2017/565", "MaComp BT 1"],
+      "prueffelder": [
+        {
+          "id": "S01-01",
+          "frage": "Ist eine dauerhafte, unabhängige und wirksame Compliance-Funktion mit ausreichenden Ressourcen eingerichtet (BT 1.1)?",
+          "erwartete_evidenz": ["Funktionsbeschreibung", "Bestellung Compliance-Beauftragter", "Ressourcenausstattung"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Compliance-Funktion unabhängig, dauerhaft und angemessen ausgestattet",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Compliance-Funktion entspricht nicht den Anforderungen von MaComp BT 1.1."
+        },
+        {
+          "id": "S01-02",
+          "frage": "Liegt ein risikobasierter Compliance-Überwachungsplan (Monitoring-Plan) vor und wird er umgesetzt (BT 1.2)?",
+          "erwartete_evidenz": ["Überwachungsplan", "Risikoanalyse Compliance", "Prüfberichte"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Risikoorientierter Überwachungsplan vorhanden und nachweislich umgesetzt",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Ein risikobasierter Compliance-Überwachungsplan gemäß BT 1.2 fehlt oder wird nicht umgesetzt."
+        },
+        {
+          "id": "S01-03",
+          "frage": "Berichtet die Compliance-Funktion regelmäßig an die Geschäftsleitung (BT 1.3)?",
+          "erwartete_evidenz": ["Compliance-Berichte", "Berichtsturnus", "Eskalationsnachweise"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Regelmäßige und anlassbezogene Berichterstattung an die Geschäftsleitung dokumentiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Berichterstattung der Compliance-Funktion gemäß BT 1.3 ist unzureichend."
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "titel": "Mitarbeitergeschäfte (MaComp BT 2)",
+      "rechtsgrundlagen": ["Art. 28–29 DelVO 2017/565", "MaComp BT 2"],
+      "prueffelder": [
+        {
+          "id": "S02-01",
+          "frage": "Bestehen Grundsätze für Mitarbeitergeschäfte mit Anzeige- und Genehmigungsverfahren (BT 2)?",
+          "erwartete_evidenz": ["Mitarbeitergeschäfte-Richtlinie", "Anzeigen", "Kontrollnachweise"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Verfahren für Mitarbeitergeschäfte definiert und kontrolliert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Regelungen zu Mitarbeitergeschäften entsprechen nicht MaComp BT 2."
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "titel": "Product Governance (MaComp BT 5)",
+      "rechtsgrundlagen": ["§ 80 Abs. 9–13 WpHG", "MaComp BT 5"],
+      "prueffelder": [
+        {
+          "id": "S03-01",
+          "frage": "Werden für hergestellte/vertriebene Finanzinstrumente Zielmärkte bestimmt und überprüft (BT 5)?",
+          "erwartete_evidenz": ["Zielmarktkonzept", "Produktfreigabeprozess", "Zielmarktüberprüfungen"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Zielmarktbestimmung und -überprüfung für Concepteur und Vertrieb dokumentiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Product-Governance-Anforderungen gemäß MaComp BT 5 werden nicht erfüllt."
+        },
+        {
+          "id": "S03-02",
+          "frage": "Erfolgt ein Abgleich des tatsächlichen Vertriebs mit dem definierten Zielmarkt (Negativ-/Positiv-Zielmarkt)?",
+          "erwartete_evidenz": ["Vertriebsauswertung", "Zielmarktabweichungsberichte", "Rückmeldungen an Concepteur"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Soll-Ist-Abgleich des Zielmarkts dokumentiert",
+          "schweregrad": "gering",
+          "mangel_template": "Ein Abgleich des Vertriebs mit dem Zielmarkt gemäß BT 5 fehlt."
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "titel": "Zuwendungen (MaComp BT 10)",
+      "rechtsgrundlagen": ["§ 70 WpHG", "Art. 11–13 DelVO 2017/565", "MaComp BT 10"],
+      "prueffelder": [
+        {
+          "id": "S04-01",
+          "frage": "Werden Zuwendungen nur angenommen/gewährt, wenn sie der Qualitätsverbesserung dienen und offengelegt werden (BT 10)?",
+          "erwartete_evidenz": ["Zuwendungsverzeichnis", "Qualitätsverbesserungsnachweis", "Offenlegungen an Kunden"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Zuwendungen erfasst, Qualitätsverbesserung belegt, offengelegt",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Anforderungen an Zuwendungen gemäß § 70 WpHG / MaComp BT 10 werden nicht erfüllt."
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "titel": "Geeignetheit und Angemessenheit (MaComp BT 6/7)",
+      "rechtsgrundlagen": ["§ 64 WpHG", "Art. 54–56 DelVO 2017/565", "MaComp BT 6", "MaComp BT 7"],
+      "prueffelder": [
+        {
+          "id": "S05-01",
+          "frage": "Wird bei Anlageberatung/Vermögensverwaltung eine Geeignetheitsprüfung durchgeführt und eine Geeignetheitserklärung erstellt (BT 6)?",
+          "erwartete_evidenz": ["Geeignetheitserklärungen", "Kundenangaben", "Beratungsprotokolle"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Geeignetheitsprüfung vollständig und Erklärung vor Geschäftsabschluss übergeben",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Geeignetheitsprüfung/-erklärung gemäß § 64 WpHG / MaComp BT 6 ist unzureichend."
+        },
+        {
+          "id": "S05-02",
+          "frage": "Wird bei beratungsfreiem Geschäft eine Angemessenheitsprüfung durchgeführt (BT 7)?",
+          "erwartete_evidenz": ["Angemessenheitsprozess", "Warnhinweise", "Dokumentation"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Angemessenheitsprüfung bzw. Warnhinweis dokumentiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Angemessenheitsprüfung gemäß MaComp BT 7 wird nicht ordnungsgemäß durchgeführt."
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "titel": "Information, Kosten und Aufzeichnung (MaComp BT 3 / BT 8)",
+      "rechtsgrundlagen": ["§ 63 WpHG", "§ 83 WpHG", "Art. 50, 76 DelVO 2017/565", "MaComp BT 3", "MaComp BT 8"],
+      "prueffelder": [
+        {
+          "id": "S06-01",
+          "frage": "Erhalten Kunden rechtzeitig die vorgeschriebenen Kosten- und Nebenkosteninformationen (ex ante / ex post)?",
+          "erwartete_evidenz": ["Ex-ante-Kosteninformation", "Ex-post-Kostenausweis", "Beispielunterlagen"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Vollständige Kostentransparenz vor und nach Geschäftsabschluss",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Kosteninformationspflichten gemäß § 63 WpHG werden nicht vollständig erfüllt."
+        },
+        {
+          "id": "S06-02",
+          "frage": "Werden Telefongespräche und elektronische Kommunikation mit Geschäftsbezug aufgezeichnet und aufbewahrt (Taping, § 83 WpHG)?",
+          "erwartete_evidenz": ["Aufzeichnungskonzept", "Kundeninformation Taping", "Aufbewahrungsnachweis"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Taping eingerichtet, Kunden informiert, Aufbewahrungsfristen eingehalten",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Aufzeichnungspflicht gemäß § 83 WpHG / MaComp BT 8 wird nicht eingehalten."
+        }
+      ]
+    }
+  ]
+}

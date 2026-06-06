@@ -1,0 +1,10 @@
+{
+  "_note": "Zulässige Modelle/Provider. data_classes = welche Datenklassen das Modell verarbeiten darf.",
+  "entries": [
+    {"provider": "ollama", "model": "*", "approved": true, "hosting": "self", "data_classes": ["customer", "confidential", "internal", "public", "catalog"]},
+    {"provider": "anthropic", "model": "*", "approved": true, "hosting": "external", "data_classes": ["public", "catalog"]},
+    {"provider": "openai", "model": "*", "approved": true, "hosting": "external", "data_classes": ["public", "catalog"]},
+    {"provider": "gemini", "model": "*", "approved": false, "hosting": "external", "data_classes": ["public"]},
+    {"provider": "mistral", "model": "*", "approved": false, "hosting": "external", "data_classes": ["public"]}
+  ]
+}

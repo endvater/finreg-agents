@@ -1,0 +1,14 @@
+{
+  "policy_version": "2026-06",
+  "description": "Routing nach Datenklasse: vertrauliche Bankdokumente bleiben lokal (Datenhoheit/DSGVO), öffentlicher/Kataloginhalt darf fremdgehostet verarbeitet werden. Zulässigkeit vor Kostenoptimierung.",
+  "data_classes": {
+    "customer": {"requires_local": true},
+    "confidential": {"requires_local": true},
+    "internal": {"requires_local": true},
+    "public": {"requires_local": false},
+    "catalog": {"requires_local": false}
+  },
+  "local": {"provider": "ollama", "model": null},
+  "hosted": {"provider": "anthropic", "model": null},
+  "escalate_risk_to_hosted": []
+}

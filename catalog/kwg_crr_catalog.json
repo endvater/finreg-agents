@@ -1,0 +1,171 @@
+{
+  "katalog_version": "2026-06",
+  "basis": [
+    "KWG (insb. §§ 10, 13, 24, 25a, 25c, 25d)",
+    "VO (EU) 575/2013 (CRR) i.d.F. der VO (EU) 2024/1623 (CRR III)",
+    "RL 2013/36/EU (CRD) i.d.F. CRD VI",
+    "InstitutsVergV",
+    "EBA-Leitlinien zu ICAAP/ILAAP und SREP"
+  ],
+  "pruefsektionen": [
+    {
+      "id": "S01",
+      "titel": "Eigenmittel und Eigenmittelanforderungen (Art. 92 ff. CRR / CRR III)",
+      "rechtsgrundlagen": ["§ 10 KWG", "Art. 92 CRR", "Art. 465 CRR (Output Floor)"],
+      "prueffelder": [
+        {
+          "id": "S01-01",
+          "frage": "Werden die Eigenmittelanforderungen (Gesamtkapital-, Kernkapital- und harte Kernkapitalquote) nach Art. 92 CRR jederzeit eingehalten?",
+          "erwartete_evidenz": ["COREP-Eigenmittelmeldung", "Quotenberechnung", "Kapitalplanung"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Mindestquoten (4,5 % CET1, 6 % T1, 8 % Gesamt) zzgl. Puffer eingehalten",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Eigenmittelanforderungen gemäß Art. 92 CRR werden nicht durchgängig eingehalten."
+        },
+        {
+          "id": "S01-02",
+          "frage": "Wird der Output Floor nach Art. 465 CRR III korrekt berechnet und in der Eigenmittelermittlung berücksichtigt?",
+          "erwartete_evidenz": ["Output-Floor-Berechnung", "RWA-Vergleich Standard-/IRB-Ansatz", "Übergangsregelungen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Output Floor (72,5 % der Standardansatz-RWA) inkl. Übergangsphase angewandt",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Der Output Floor nach Art. 465 CRR III wird nicht ordnungsgemäß berücksichtigt."
+        },
+        {
+          "id": "S01-03",
+          "frage": "Werden die kombinierten Kapitalpufferanforderungen (Kapitalerhaltung, antizyklisch, systemrelevant) eingehalten?",
+          "erwartete_evidenz": ["Pufferberechnung", "MDA-Schwellenüberwachung", "Aufsichtsvorgaben"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Kombinierte Pufferanforderung erfüllt und MDA-Schwelle überwacht",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die kombinierten Kapitalpufferanforderungen werden nicht eingehalten."
+        }
+      ]
+    },
+    {
+      "id": "S02",
+      "titel": "Großkredite und Verschuldungsquote (Art. 387 ff., 429 CRR)",
+      "rechtsgrundlagen": ["§ 13 KWG", "Art. 395 CRR", "Art. 429 CRR"],
+      "prueffelder": [
+        {
+          "id": "S02-01",
+          "frage": "Wird die Großkreditobergrenze (25 % der anrechenbaren Eigenmittel je Kunde/Gruppe) eingehalten und überwacht (Art. 395 CRR)?",
+          "erwartete_evidenz": ["Großkreditmeldung", "Limitüberwachung", "Gruppenbildung verbundener Kunden"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Großkreditgrenzen eingehalten und laufend überwacht",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Großkreditobergrenze gemäß Art. 395 CRR wird nicht eingehalten oder überwacht."
+        },
+        {
+          "id": "S02-02",
+          "frage": "Wird die Verschuldungsquote (Leverage Ratio) von mindestens 3 % berechnet und eingehalten (Art. 429 CRR)?",
+          "erwartete_evidenz": ["Leverage-Ratio-Meldung", "Berechnung Gesamtrisikomaß", "Zeitreihe"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Leverage Ratio ≥ 3 % nachgewiesen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Verschuldungsquote nach Art. 429 CRR unterschreitet die Mindestanforderung."
+        }
+      ]
+    },
+    {
+      "id": "S03",
+      "titel": "Liquidität – LCR und NSFR (Art. 412, 428b CRR)",
+      "rechtsgrundlagen": ["Art. 412 CRR", "Art. 428b CRR"],
+      "prueffelder": [
+        {
+          "id": "S03-01",
+          "frage": "Wird die Liquiditätsdeckungsquote (LCR) von mindestens 100 % eingehalten und gemeldet?",
+          "erwartete_evidenz": ["LCR-Meldung", "Liquiditätspuffer-Aufstellung", "Stressszenarien"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "LCR ≥ 100 % nachgewiesen und gemeldet",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die Liquiditätsdeckungsquote (LCR) gemäß Art. 412 CRR wird unterschritten."
+        },
+        {
+          "id": "S03-02",
+          "frage": "Wird die strukturelle Liquiditätsquote (NSFR) von mindestens 100 % eingehalten (Art. 428b CRR)?",
+          "erwartete_evidenz": ["NSFR-Meldung", "Berechnung verfügbare/erforderliche stabile Refinanzierung"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "NSFR ≥ 100 % nachgewiesen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die strukturelle Liquiditätsquote (NSFR) gemäß Art. 428b CRR wird unterschritten."
+        }
+      ]
+    },
+    {
+      "id": "S04",
+      "titel": "Risikotragfähigkeit – ICAAP/ILAAP und Geschäftsorganisation (§ 25a KWG)",
+      "rechtsgrundlagen": ["§ 25a KWG", "EBA/GL/2022/SREP"],
+      "prueffelder": [
+        {
+          "id": "S04-01",
+          "frage": "Verfügt das Institut über wirksame Verfahren zur Sicherstellung der Risikotragfähigkeit (ICAAP) gemäß § 25a KWG?",
+          "erwartete_evidenz": ["ICAAP-Konzept", "Risikotragfähigkeitsrechnung", "Kapitalplanung"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "ICAAP normative und ökonomische Perspektive dokumentiert und plausibel",
+          "schweregrad": "wesentlich",
+          "mangel_template": "Die ICAAP-Verfahren gemäß § 25a KWG sind unzureichend."
+        },
+        {
+          "id": "S04-02",
+          "frage": "Bestehen wirksame Verfahren zur Steuerung der Liquiditätsrisiken (ILAAP)?",
+          "erwartete_evidenz": ["ILAAP-Konzept", "Liquiditätsstresstests", "Notfallplanung Liquidität"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "ILAAP inkl. Stresstests und Notfallplan dokumentiert",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die ILAAP-Verfahren entsprechen nicht den Anforderungen des § 25a KWG."
+        }
+      ]
+    },
+    {
+      "id": "S05",
+      "titel": "Governance, Geschäftsleiter und Vergütung (§§ 25c, 25d KWG, InstitutsVergV)",
+      "rechtsgrundlagen": ["§ 25c KWG", "§ 25d KWG", "InstitutsVergV", "Art. 88 CRD"],
+      "prueffelder": [
+        {
+          "id": "S05-01",
+          "frage": "Erfüllen Geschäftsleiter und Verwaltungs-/Aufsichtsorgan die Eignungs- und Zeitanforderungen (§§ 25c, 25d KWG)?",
+          "erwartete_evidenz": ["Eignungsbeurteilungen", "Mandatsübersicht", "Fortbildungsnachweise"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Fachliche Eignung, Zuverlässigkeit und ausreichende Zeit nachgewiesen",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Eignungsanforderungen an Organmitglieder gemäß §§ 25c/25d KWG sind nicht erfüllt."
+        },
+        {
+          "id": "S05-02",
+          "frage": "Ist das Vergütungssystem angemessen, risikoorientiert und konform mit der InstitutsVergV ausgestaltet?",
+          "erwartete_evidenz": ["Vergütungsrichtlinie", "Risk-Taker-Identifizierung", "Vergütungsbericht"],
+          "input_typen": ["pdf", "docx", "excel"],
+          "bewertungskriterien": "Vergütungssystem dokumentiert, Risk Taker identifiziert, Vorgaben eingehalten",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Das Vergütungssystem entspricht nicht den Anforderungen der InstitutsVergV."
+        }
+      ]
+    },
+    {
+      "id": "S06",
+      "titel": "Melde- und Offenlegungswesen (§ 24 KWG, Art. 431 ff. CRR)",
+      "rechtsgrundlagen": ["§ 24 KWG", "Art. 431 CRR", "Art. 433 CRR"],
+      "prueffelder": [
+        {
+          "id": "S06-01",
+          "frage": "Werden die aufsichtlichen Anzeige- und Meldepflichten (COREP/FINREP, § 24 KWG) vollständig und fristgerecht erfüllt?",
+          "erwartete_evidenz": ["Meldekalender", "Einreichungsnachweise", "Plausibilitätskontrollen"],
+          "input_typen": ["pdf", "excel"],
+          "bewertungskriterien": "Meldungen vollständig, fristgerecht und qualitätsgesichert eingereicht",
+          "schweregrad": "bedeutsam",
+          "mangel_template": "Die Anzeige-/Meldepflichten gemäß § 24 KWG werden nicht vollständig oder fristgerecht erfüllt."
+        },
+        {
+          "id": "S06-02",
+          "frage": "Erfolgt die aufsichtliche Offenlegung (Säule 3) gemäß Art. 431 ff. CRR im vorgeschriebenen Umfang?",
+          "erwartete_evidenz": ["Offenlegungsbericht", "EBA-Templates", "Veröffentlichungsnachweis"],
+          "input_typen": ["pdf", "docx"],
+          "bewertungskriterien": "Offenlegungsbericht vollständig und veröffentlicht",
+          "schweregrad": "gering",
+          "mangel_template": "Die Offenlegungspflichten nach Art. 431 ff. CRR werden nicht vollständig erfüllt."
+        }
+      ]
+    }
+  ]
+}

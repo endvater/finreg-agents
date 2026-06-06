@@ -1,0 +1,13 @@
+{
+  "currency": "USD",
+  "_note": "Beispielwerte. Pro Setup kalibrieren ('Baseline first'). Self-Hosting-Werte sind GPU-Knoten-Annahmen.",
+  "hosted": {
+    "default": {"input_per_1k": 0.003, "output_per_1k": 0.015}
+  },
+  "self_hosted": {
+    "gpu_node_monthly_eur": 1500.0,
+    "assumed_monthly_runs": 200,
+    "input_per_1k": 0.0,
+    "output_per_1k": 0.0
+  }
+}
