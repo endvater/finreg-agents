@@ -26,6 +26,23 @@ TMP_DOC_DIR = Path("./streamlit_tmp_docs")
 OUTPUT_DIR = Path("./reports/output")
 
 
+def list_ollama_models(host: str) -> list[str]:
+    """Liest die im lokalen/Remote-Ollama installierten Modelle (/api/tags).
+
+    Damit erscheinen tatsächlich vorhandene Modelle (z. B. gemma4:e2b) in der UI-Auswahl,
+    statt nur des Defaults. Gibt [] zurück, wenn Ollama nicht erreichbar ist.
+    """
+    import urllib.request
+
+    try:
+        url = host.rstrip("/") + "/api/tags"
+        with urllib.request.urlopen(url, timeout=2) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return sorted(m["name"] for m in data.get("models", []) if m.get("name"))
+    except Exception:
+        return []
+
+
 def init_session_state():
     if "logs" not in st.session_state:
         st.session_state.logs = []
@@ -552,7 +569,31 @@ with st.sidebar:
     )
 
     with st.expander("Erweiterte Einstellungen"):
-        model = st.text_input("Modell", value=default_model(provider))
+        if provider == "ollama":
+            installed = list_ollama_models(ollama_host)
+            if installed:
+                default_ollama = default_model("ollama")
+                # vorausgewählt: konfiguriertes Default, sonst erstes installiertes Modell
+                default_idx = (
+                    installed.index(default_ollama)
+                    if default_ollama in installed
+                    else 0
+                )
+                model = st.selectbox(
+                    "Modell (lokal installiert)",
+                    options=installed,
+                    index=default_idx,
+                    help="Aus dem Ollama-Host geladen. Weitere via `ollama pull <name>`.",
+                )
+            else:
+                model = st.text_input(
+                    "Modell",
+                    value=default_model(provider),
+                    help=f"Keine Modelle unter {ollama_host} gefunden – Name manuell eingeben "
+                    "oder Ollama starten / `ollama pull <name>`.",
+                )
+        else:
+            model = st.text_input("Modell", value=default_model(provider))
         top_k = st.slider("RAG Chunks (Top-K)", min_value=3, max_value=20, value=8)
         use_local_embeddings = st.checkbox(
             "Lokale Embeddings nutzen (FastEmbed, kein OpenAI-Budget nötig)",

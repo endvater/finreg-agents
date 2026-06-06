@@ -9,8 +9,13 @@ services:
     env_file:
       - .env
     environment:
-      # In-Container-Default: lokales Ollama (Profil local-llm). Per .env/Shell überschreibbar.
-      - OLLAMA_HOST=${OLLAMA_HOST:-http://ollama:11434}
+      # Default: dein lokal laufendes Ollama auf dem Host (z. B. mit gemma4).
+      # Für den mitgelieferten Compose-Ollama-Dienst (Profil local-llm):
+      #   OLLAMA_HOST=http://ollama:11434 setzen.
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+    extra_hosts:
+      # macht host.docker.internal auch unter Linux auflösbar (Mac/Win automatisch)
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./docs:/app/docs
       - ./reports:/app/reports
@@ -24,8 +29,11 @@ services:
     image: ollama/ollama:latest
     container_name: finreg-ollama
     profiles: ["local-llm", "eval"]
-    ports:
-      - "11434:11434"
+    # Kein Host-Port-Publish: vermeidet Kollision mit einem lokal laufenden Ollama auf
+    # 11434. Andere Compose-Dienste erreichen ihn intern über `ollama:11434`.
+    # Für diesen Dienst dann OLLAMA_HOST=http://ollama:11434 setzen.
+    expose:
+      - "11434"
     volumes:
       - ollama_models:/root/.ollama
     restart: unless-stopped
