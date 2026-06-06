@@ -359,6 +359,30 @@ docker pull ghcr.io/endvater/finreg-agents:v2.4.0
 docker run --rm -p 9000:9000 --env-file .env ghcr.io/endvater/finreg-agents:v2.4.0
 ```
 
+#### Lokales LLM (Datenhoheit) + Eval-Sets per Compose-Profil
+
+Für die **Routing-Durchsetzung** bei vertraulichen Daten (LLM bleibt lokal, kein
+Datenabfluss – siehe [Governance & Monitoring](#governance--monitoring)) bringt ein
+Compose-Profil einen Ollama-Dienst mit. Ein zweites Profil fährt die Security-/Chaos-
+Eval-Sets end-to-end:
+
+```bash
+# 1) App + lokales Ollama starten
+docker compose --profile local-llm up -d
+# 2) lokales Modell laden (einmalig)
+docker compose --profile local-llm exec ollama ollama pull llama3.3
+# 3) Prüfung mit erzwungenem lokalem Routing (vertrauliche Daten)
+docker compose exec finreg-agents \
+  python pipeline.py --input ./docs --regulatorik amlr --enforce-routing
+
+# Security-/Chaos-Eval-Sets end-to-end (erzeugt doctored Dokumente, fährt sie lokal):
+docker compose --profile eval run --rm eval
+```
+
+Profile-Übersicht: ohne Profil = nur App (leichtgewichtig) · `local-llm` = App + Ollama ·
+`eval` = App + Ollama + Eval-Runner. Default `OLLAMA_HOST` im Container zeigt auf den
+`ollama`-Dienst (per `.env`/Shell überschreibbar).
+
 ### 1. Installation (empfohlen: Python 3.12)
 
 ```bash

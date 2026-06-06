@@ -36,3 +36,6 @@ chroma_db/
 .DS_Store
 streamlit_tmp_docs/
 .claude/
+
+# Generierte Eval-Laufzeit-Dokumente
+eval_runtime/

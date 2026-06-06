@@ -130,31 +130,92 @@ def score_case(befund: dict, expected: dict) -> dict:
     return {"passed": ok, "reasons": reasons}
 
 
-def build_pipeline_runner():
-    """Liefert einen Runner (input_dir, regulatorik, sektion, prueffeld_id) → Befund-Dict.
+def befund_from_trace(output_dir: str | Path, prueffeld_id: str) -> dict | None:
+    """Liest das jüngste decision_trace_*.jsonl und extrahiert den Befund eines Prüffelds.
 
-    ACHTUNG: führt einen echten Pipeline-/LLM-Lauf aus (API-Key bzw. Ollama nötig).
-    Für vertrauliche Eval-Dokumente mit enforce_routing lokal. Nicht in CI verwendet.
+    Schließt den End-to-End-Loop, ohne dass pipeline.run() sein internes Ergebnis
+    zurückgeben muss – der Trace enthält bewertung/confidence/review/groundedness/
+    term_drift bereits je Prüffeld (Block I).
     """
-    def runner(input_dir: str, regulatorik: str, sektion: str, prueffeld_id: str) -> dict:
-        from pipeline import AuditPipeline
-        import tempfile
-        pipe = AuditPipeline(
-            input_dir=input_dir, regulatorik=regulatorik,
-            output_dir=tempfile.mkdtemp(), sektionen_filter=[sektion],
-            data_class="confidential", enforce_routing=True, verbose=False,
-        )
-        # run() schreibt Berichte; wir greifen die Sektionsergebnisse intern ab
-        pipe.run()
-        # Hinweis: Für eine API müsste run() die sektionsergebnisse zurückgeben.
-        # Hier nur als Referenz-Schnittstelle dokumentiert.
-        return {"prueffeld_id": prueffeld_id, "note": "siehe Bericht/Trace im output_dir"}
-    return runner
+    from governance.trace import read_trace
+    traces = sorted(Path(output_dir).glob("decision_trace_*.jsonl"))
+    if not traces:
+        return None
+    for ev in read_trace(traces[-1]):
+        if ev.get("event") == "prueffeld" and ev.get("prueffeld_id") == prueffeld_id:
+            return {
+                "prueffeld_id": prueffeld_id,
+                "bewertung": ev.get("bewertung"),
+                "review_erforderlich": ev.get("review_erforderlich"),
+                "confidence": ev.get("confidence"),
+                "groundedness": ev.get("groundedness"),
+                "term_drift_warnings": ev.get("term_drift_warnings", []),
+            }
+    return None
+
+
+def pipeline_befund_runner(input_dir: str, regulatorik: str, sektion: str,
+                           prueffeld_id: str) -> dict | None:
+    """Echter Pipeline-Lauf über ein doctored Verzeichnis → Befund aus dem Trace.
+
+    ACHTUNG: LLM-/Ollama-gebunden (enforce_routing=True → lokal für vertrauliche Daten).
+    Nicht in CI; gedacht für den Docker-/Ollama-Lauf.
+    """
+    import tempfile
+    from pipeline import AuditPipeline
+    out = tempfile.mkdtemp()
+    AuditPipeline(
+        input_dir=input_dir, regulatorik=regulatorik, output_dir=out,
+        sektionen_filter=[sektion], data_class="confidential",
+        enforce_routing=True, verbose=False,
+    ).run()
+    return befund_from_trace(out, prueffeld_id)
+
+
+def run_eval(kind: str, runtime_dir: str | Path = "./eval_runtime", runner=None) -> dict:
+    """Führt das Security- oder Chaos-Set end-to-end aus und bewertet jeden Fall.
+
+    kind ∈ {security, chaos}. runner(input_dir, regulatorik, sektion, prueffeld_id)→Befund;
+    default = pipeline_befund_runner (LLM). Für Tests einen Stub-Runner übergeben.
+    """
+    runner = runner or pipeline_befund_runner
+    manifest_path = Path(runtime_dir) / "manifest.json"
+    if not manifest_path.exists():
+        generate_all(runtime_dir)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    cases = manifest.get(kind, [])
+    results, passed, run = [], 0, 0
+    for rec in cases:
+        try:
+            befund = runner(rec["input_dir"], rec["regulatorik"], rec["sektion"],
+                            rec["prueffeld_id"])
+        except Exception as e:  # ein Fall darf den Lauf nicht abbrechen
+            results.append({"case_id": rec["case_id"], "status": "error", "error": str(e)})
+            continue
+        if befund is None:
+            results.append({"case_id": rec["case_id"], "status": "no_befund"})
+            continue
+        run += 1
+        sc = score_case(befund, rec["expected"])
+        passed += int(sc["passed"])
+        results.append({"case_id": rec["case_id"], "passed": sc["passed"],
+                        "reasons": sc["reasons"], "befund": befund})
+    return {"kind": kind, "total": len(cases), "run": run, "passed": passed,
+            "pass_rate": round(passed / run, 4) if run else None, "results": results}
 
 
 if __name__ == "__main__":
     import sys
-    out = sys.argv[1] if len(sys.argv) > 1 else "./eval_runtime"
-    m = generate_all(out)
-    print(f"Security-Fälle: {len(m['security'])}, Chaos-Fälle: {len(m['chaos'])}")
-    print(f"Manifest: {Path(out) / 'manifest.json'}")
+    args = sys.argv[1:]
+    if args and args[0] == "run":
+        runtime = args[1] if len(args) > 1 else "./eval_runtime"
+        for kind in ("security", "chaos"):
+            res = run_eval(kind, runtime)
+            print(f"[{kind}] {res['passed']}/{res['run']} bestanden "
+                  f"(pass_rate={res['pass_rate']})")
+    else:
+        out = args[0] if args else "./eval_runtime"
+        m = generate_all(out)
+        print(f"Security-Fälle: {len(m['security'])}, Chaos-Fälle: {len(m['chaos'])}")
+        print(f"Manifest: {Path(out) / 'manifest.json'}")
+        print("End-to-End ausführen (LLM/Ollama): python -m governance.eval_docs run", out)
