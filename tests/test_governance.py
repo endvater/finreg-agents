@@ -7,6 +7,15 @@ from governance.agent_card import load_cards
 from governance import monitoring
 
 
+def test_report_labels_cover_all_regulatoriken():
+    """Regressions-Sperre: BerichtGenerator muss jede registrierte Regulatorik kennen."""
+    from pipeline import KATALOG_REGISTRY
+    from reports.bericht_generator import REGULATORIK_LABELS
+
+    missing = set(KATALOG_REGISTRY) - set(REGULATORIK_LABELS)
+    assert not missing, f"BerichtGenerator-Labels fehlen für: {missing}"
+
+
 # ── Block C: Evidence / Provenienz ──────────────────────────────────────────
 def test_quote_hash_stable_and_normalized():
     a = evidence.quote_hash("  Der  Kunde   wurde identifiziert. ")

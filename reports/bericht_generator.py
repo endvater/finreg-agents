@@ -69,6 +69,39 @@ REGULATORIK_LABELS = {
         "WpHG/MaComp-Prüfung",
         ["WpHG", "MaComp", "MAR", "MiFID II"],
     ),
+    "amlr": (
+        "AMLR-Prüfungsbericht",
+        "Simulierte Prüfung gemäß EU-AML-Paket (AMLR (EU) 2024/1624, AMLD6, AMLA)",
+        "AMLR-Prüfung (EU-AML-Paket)",
+        [
+            "VO (EU) 2024/1624 (AMLR)",
+            "RL (EU) 2024/1640 (AMLD6)",
+            "VO (EU) 2024/1620 (AMLA)",
+        ],
+    ),
+    "micar": (
+        "MiCAR-Prüfungsbericht",
+        "Prüfung gemäß Markets in Crypto-Assets Regulation (MiCAR (EU) 2023/1114)",
+        "MiCAR-Prüfung",
+        ["VO (EU) 2023/1114 (MiCAR)", "VO (EU) 2023/1113 (Travel Rule)"],
+    ),
+    "macomp": (
+        "MaComp-Prüfungsbericht",
+        "Prüfung der WpHG-Compliance gemäß MaComp (BaFin-Rundschreiben 05/2018 WA)",
+        "MaComp-Prüfung",
+        ["MaComp 05/2018 (WA)", "§§ 63 ff., 80 WpHG", "DelVO (EU) 2017/565"],
+    ),
+    "kwg_crr": (
+        "KWG/CRR-Prüfungsbericht",
+        "Prüfung aufsichtsrechtlicher Eigenmittel/Governance gemäß KWG, CRR III und CRD VI",
+        "KWG/CRR-III-Prüfung",
+        [
+            "KWG",
+            "VO (EU) 575/2013 i.d.F. CRR III",
+            "RL 2013/36/EU (CRD VI)",
+            "InstitutsVergV",
+        ],
+    ),
 }
 
 

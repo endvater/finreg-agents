@@ -25,6 +25,7 @@ Oder als Python-Modul:
 import argparse
 import json
 import logging
+import os
 import random
 import sys
 import time
@@ -205,7 +206,9 @@ class AuditPipeline:
         # Durchsetzung: LLM auf lokalen Provider zwingen
         if self.provider not in gov_routing.LOCAL_PROVIDERS:
             self.provider = route.provider
-            self.model = default_model(route.provider)
+            # Lokales Modell per OLLAMA_MODEL überschreibbar (z. B. kleines Modell
+            # für Tests/Ressourcensparen); sonst Provider-Default.
+            self.model = os.environ.get("OLLAMA_MODEL") or default_model(route.provider)
             self._route_enforced = True
             self._log(
                 f"   🔒 Routing erzwungen: vertrauliche Daten → lokales LLM "
