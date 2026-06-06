@@ -10,19 +10,21 @@ def _pipe(**kw):
 
 
 def test_enforce_confidential_forces_local_llm_and_embeddings():
-    p = _pipe(data_class="confidential", enforce_routing=True,
-              embedding_provider="openai")
+    p = _pipe(
+        data_class="confidential", enforce_routing=True, embedding_provider="openai"
+    )
     p._resolve_routing()
-    assert p.provider == "ollama"          # LLM lokal erzwungen
+    assert p.provider == "ollama"  # LLM lokal erzwungen
     assert p.embedding_provider == "fastembed"  # Embeddings lokal erzwungen
     assert p._route_enforced is True
 
 
 def test_no_enforce_keeps_configured_provider():
-    p = _pipe(data_class="confidential", enforce_routing=False,
-              embedding_provider="openai")
+    p = _pipe(
+        data_class="confidential", enforce_routing=False, embedding_provider="openai"
+    )
     p._resolve_routing()
-    assert p.provider == "anthropic"       # nur Monitoring, kein Override
+    assert p.provider == "anthropic"  # nur Monitoring, kein Override
     assert p.embedding_provider == "openai"
     assert p._route_enforced is False
     # Routing-Entscheidung trotzdem erfasst (advisory)

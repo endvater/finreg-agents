@@ -186,8 +186,12 @@ with tab_eval:
     st.subheader("Golden-Datasets je Verordnung")
     st.dataframe(
         [
-            {"regulatorik": reg, "dataset": (g.dataset_id if (g := load_golden(reg)) else "—"),
-             "version": (g.version if g else "—"), "fälle": (len(g.cases) if g else 0)}
+            {
+                "regulatorik": reg,
+                "dataset": (g.dataset_id if (g := load_golden(reg)) else "—"),
+                "version": (g.version if g else "—"),
+                "fälle": (len(g.cases) if g else 0),
+            }
             for reg in ["gwg", "amlr", "micar", "macomp", "kwg_crr"]
         ],
         use_container_width=True,

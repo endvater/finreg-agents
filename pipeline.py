@@ -188,7 +188,8 @@ class AuditPipeline:
         und – wenn enforce_routing aktiv – zwingt bei vertraulichen Daten LLM UND
         Embeddings auf den lokalen Pfad (Datenhoheit/DSGVO, fail-closed)."""
         route = gov_routing.decide_route(
-            self.data_class, risk_class="mittel",
+            self.data_class,
+            risk_class="mittel",
             configured_provider=self._configured_provider,
         )
         self._route = route
@@ -215,7 +216,9 @@ class AuditPipeline:
             self.embedding_provider = "fastembed"
             self.embedding_model = None
             self.local_embeddings = True
-            self._log("   🔒 Embeddings erzwungen lokal: fastembed (kein Datenabfluss).")
+            self._log(
+                "   🔒 Embeddings erzwungen lokal: fastembed (kein Datenabfluss)."
+            )
         return route
 
     def run(self) -> dict:
@@ -565,7 +568,9 @@ class AuditPipeline:
             )
             report_paths.update(gov_paths)
         except Exception as e:  # niemals den Lauf wegen Governance-Artefakten abbrechen
-            logger.warning("Governance-Artefakte konnten nicht geschrieben werden: %s", e)
+            logger.warning(
+                "Governance-Artefakte konnten nicht geschrieben werden: %s", e
+            )
 
         # ── Zusammenfassung ──────────────────────────────────────────────
         t_total = time.time() - t_start
@@ -591,9 +596,10 @@ class AuditPipeline:
         if not prov:
             return None
         grounded = sum(
-            1 for p in prov
-            if getattr(getattr(p, "status", None), "value", "") in
-            ("corroborated", "single_sourced")
+            1
+            for p in prov
+            if getattr(getattr(p, "status", None), "value", "")
+            in ("corroborated", "single_sourced")
         )
         return round(grounded / len(prov), 4)
 
@@ -615,8 +621,11 @@ class AuditPipeline:
         trace_path = out_dir / f"decision_trace_{run_id}.jsonl"
         dtrace = gov_trace.DecisionTrace(run_id, trace_path)
         dtrace.run_start(
-            regulatorik=self.regulatorik, provider=self.provider, model=self.model,
-            catalog_version=katalog_version, data_class=self.data_class,
+            regulatorik=self.regulatorik,
+            provider=self.provider,
+            model=self.model,
+            catalog_version=katalog_version,
+            data_class=self.data_class,
             agent_version="2.0",
         )
 
@@ -625,32 +634,40 @@ class AuditPipeline:
             for b in getattr(sektion, "befunde", []):
                 gnd = self._befund_groundedness(b)
                 schema_ok = validate_befund(b).ok
-                bew = getattr(getattr(b, "bewertung", None), "value",
-                              getattr(b, "bewertung", "?"))
+                bew = getattr(
+                    getattr(b, "bewertung", None), "value", getattr(b, "bewertung", "?")
+                )
                 dtrace.prueffeld(
                     prueffeld_id=getattr(b, "prueffeld_id", "?"),
                     sektion_id=getattr(sektion, "sektion_id", "?"),
                     bewertung=bew,
                     confidence=getattr(b, "confidence", 0.0),
                     review_erforderlich=getattr(b, "review_erforderlich", False),
-                    groundedness=gnd, model=self.model,
+                    groundedness=gnd,
+                    model=self.model,
                     routing_reason=route.reason,
                     term_drift_warnings=getattr(b, "term_drift_warnings", []),
                     schema_valid=schema_ok,
                 )
-                actual_befunde.append({
-                    "prueffeld_id": getattr(b, "prueffeld_id", "?"),
-                    "bewertung": bew,
-                    "review_erforderlich": getattr(b, "review_erforderlich", False),
-                    "confidence": getattr(b, "confidence", 0.0),
-                    "groundedness": gnd, "schema_valid": schema_ok,
-                })
+                actual_befunde.append(
+                    {
+                        "prueffeld_id": getattr(b, "prueffeld_id", "?"),
+                        "bewertung": bew,
+                        "review_erforderlich": getattr(b, "review_erforderlich", False),
+                        "confidence": getattr(b, "confidence", 0.0),
+                        "groundedness": gnd,
+                        "schema_valid": schema_ok,
+                    }
+                )
 
         # Kosten inkl. Self-Hosting + CPVCT
-        valid_tasks = sum(1 for x in actual_befunde if x["bewertung"] != "nicht_prüfbar")
+        valid_tasks = sum(
+            1 for x in actual_befunde if x["bewertung"] != "nicht_prüfbar"
+        )
         gov_costs = gov_cost.estimate_run_cost(
             {"nach_agent": self.run_token_stats["nach_agent"]},
-            route_is_local=route_is_local, valid_tasks=valid_tasks,
+            route_is_local=route_is_local,
+            valid_tasks=valid_tasks,
         )
 
         # Eval gegen Golden Dataset (falls vorhanden) + Release-Gate
@@ -665,16 +682,24 @@ class AuditPipeline:
 
         # Monitoring-Summary für das Dashboard
         summary = gov_monitoring.build_run_summary(
-            run_id=run_id, regulatorik=self.regulatorik, provider=self.provider,
-            model=self.model, catalog_version=katalog_version,
-            sektionsergebnisse=sektionsergebnisse, cost=gov_costs,
-            route={"data_class": self.data_class,
-                   "configured_provider": self._configured_provider,
-                   "effective_provider": self.provider,
-                   "requires_local": route.requires_local,
-                   "enforced": self._route_enforced,
-                   "is_local": route_is_local, "reason": route.reason},
-            eval_result=eval_result, gate_result=gate_result,
+            run_id=run_id,
+            regulatorik=self.regulatorik,
+            provider=self.provider,
+            model=self.model,
+            catalog_version=katalog_version,
+            sektionsergebnisse=sektionsergebnisse,
+            cost=gov_costs,
+            route={
+                "data_class": self.data_class,
+                "configured_provider": self._configured_provider,
+                "effective_provider": self.provider,
+                "requires_local": route.requires_local,
+                "enforced": self._route_enforced,
+                "is_local": route_is_local,
+                "reason": route.reason,
+            },
+            eval_result=eval_result,
+            gate_result=gate_result,
         )
         summary_path = gov_monitoring.write_run_summary(summary, out_dir)
 
@@ -682,8 +707,11 @@ class AuditPipeline:
             f"   🛡️  Governance: Trace + Summary geschrieben (run {run_id}); "
             f"Routing → {self.provider} (lokal={route_is_local}, "
             f"erzwungen={self._route_enforced})"
-            + (f"; Release-Gate: {'PASS' if gate_result.get('passed') else 'BLOCKED'}"
-               if gate_result else "")
+            + (
+                f"; Release-Gate: {'PASS' if gate_result.get('passed') else 'BLOCKED'}"
+                if gate_result
+                else ""
+            )
         )
         return {
             "decision_trace": str(trace_path),
@@ -1034,13 +1062,6 @@ Beispiele:
         dest="relevance_filter",
         help="Relevanz-Filter aktivieren: context_noise Chunks werden vor "
         "LLM-Auswertung herausgefiltert. Schreibt relevance_sampling.json.",
-    )
-    parser.add_argument(
-        "--review-budget",
-        type=int,
-        default=None,
-        dest="review_budget",
-        help="Pausiert die Prüfung nach N Befunden mit review_erforderlich=True und speichert einen Checkpoint.",
     )
     parser.add_argument(
         "--resume",

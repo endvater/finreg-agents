@@ -15,10 +15,13 @@ def test_quote_hash_stable_and_normalized():
 
 
 def test_evidence_package_groundedness():
-    pkg = evidence.EvidencePackage(prueffeld_id="S01-01", claims=[
-        evidence.EvidenceClaim("c1", evidence.ClaimStatus.CORROBORATED, quote="x"),
-        evidence.EvidenceClaim("c2", evidence.ClaimStatus.UNVERIFIED),
-    ])
+    pkg = evidence.EvidencePackage(
+        prueffeld_id="S01-01",
+        claims=[
+            evidence.EvidenceClaim("c1", evidence.ClaimStatus.CORROBORATED, quote="x"),
+            evidence.EvidenceClaim("c2", evidence.ClaimStatus.UNVERIFIED),
+        ],
+    )
     assert pkg.groundedness == 0.5
     assert pkg.has_unverified is True
     # quote_hash automatisch gesetzt
@@ -26,8 +29,14 @@ def test_evidence_package_groundedness():
 
 
 def test_from_claim_provenance_bridge():
-    prov = [SimpleNamespace(claim_text="a", status="corroborated",
-                            source_chunk_ids=["n1", "n2"], provenance_id="C001")]
+    prov = [
+        SimpleNamespace(
+            claim_text="a",
+            status="corroborated",
+            source_chunk_ids=["n1", "n2"],
+            provenance_id="C001",
+        )
+    ]
     pkg = evidence.from_claim_provenance("S01-01", prov, catalog_version="2025-02")
     assert pkg.claims[0].status == evidence.ClaimStatus.CORROBORATED
     assert pkg.claims[0].source_version == "2025-02"
@@ -35,9 +44,15 @@ def test_from_claim_provenance_bridge():
 
 # ── Block B: Schema-as-Contract ─────────────────────────────────────────────
 def _befund(**kw):
-    base = dict(prueffeld_id="S01-01", frage="f?", bewertung="konform",
-                begruendung="ok", confidence=0.9, confidence_level="high",
-                review_erforderlich=False)
+    base = dict(
+        prueffeld_id="S01-01",
+        frage="f?",
+        bewertung="konform",
+        begruendung="ok",
+        confidence=0.9,
+        confidence_level="high",
+        review_erforderlich=False,
+    )
     base.update(kw)
     return SimpleNamespace(**base)
 
@@ -68,12 +83,24 @@ def test_validate_run_aggregates():
 def test_trace_append_and_queries(tmp_path):
     p = tmp_path / "decision_trace_run1.jsonl"
     t = trace.DecisionTrace("run1", p)
-    t.run_start(regulatorik="gwg", provider="ollama", model="llama3",
-                catalog_version="2025-02")
-    t.prueffeld(prueffeld_id="S01-01", sektion_id="S01", bewertung="konform",
-                confidence=0.9, review_erforderlich=False, groundedness=0.95)
-    t.prueffeld(prueffeld_id="S01-02", sektion_id="S01", bewertung="nicht_konform",
-                confidence=0.8, review_erforderlich=True)
+    t.run_start(
+        regulatorik="gwg", provider="ollama", model="llama3", catalog_version="2025-02"
+    )
+    t.prueffeld(
+        prueffeld_id="S01-01",
+        sektion_id="S01",
+        bewertung="konform",
+        confidence=0.9,
+        review_erforderlich=False,
+        groundedness=0.95,
+    )
+    t.prueffeld(
+        prueffeld_id="S01-02",
+        sektion_id="S01",
+        bewertung="nicht_konform",
+        confidence=0.8,
+        review_erforderlich=True,
+    )
     t.run_end(status="ok")
     assert len(trace.read_trace(p)) == 4
     assert trace.why_flagged(p, "S01-02")["bewertung"] == "nicht_konform"
@@ -84,11 +111,21 @@ def test_trace_append_and_queries(tmp_path):
 def test_trace_what_changed(tmp_path):
     pa, pb = tmp_path / "a.jsonl", tmp_path / "b.jsonl"
     ta = trace.DecisionTrace("a", pa)
-    ta.prueffeld(prueffeld_id="S01-01", sektion_id="S01", bewertung="konform",
-                 confidence=0.9, review_erforderlich=False)
+    ta.prueffeld(
+        prueffeld_id="S01-01",
+        sektion_id="S01",
+        bewertung="konform",
+        confidence=0.9,
+        review_erforderlich=False,
+    )
     tb = trace.DecisionTrace("b", pb)
-    tb.prueffeld(prueffeld_id="S01-01", sektion_id="S01", bewertung="nicht_konform",
-                 confidence=0.7, review_erforderlich=True)
+    tb.prueffeld(
+        prueffeld_id="S01-01",
+        sektion_id="S01",
+        bewertung="nicht_konform",
+        confidence=0.7,
+        review_erforderlich=True,
+    )
     diffs = trace.what_changed(pa, pb)
     assert diffs and diffs[0]["prueffeld_id"] == "S01-01"
 
@@ -161,12 +198,27 @@ def test_evaluate_and_gate():
     g = evaluation.load_golden("gwg")
     # perfekter Lauf gegen Seed
     actual = [
-        {"prueffeld_id": "S01-01", "bewertung": "konform", "review_erforderlich": False,
-         "groundedness": 0.95, "schema_valid": True},
-        {"prueffeld_id": "S01-02", "bewertung": "nicht_konform", "review_erforderlich": True,
-         "groundedness": 0.98, "schema_valid": True},
-        {"prueffeld_id": "S01-03", "bewertung": "teilkonform", "review_erforderlich": True,
-         "groundedness": 0.98, "schema_valid": True},
+        {
+            "prueffeld_id": "S01-01",
+            "bewertung": "konform",
+            "review_erforderlich": False,
+            "groundedness": 0.95,
+            "schema_valid": True,
+        },
+        {
+            "prueffeld_id": "S01-02",
+            "bewertung": "nicht_konform",
+            "review_erforderlich": True,
+            "groundedness": 0.98,
+            "schema_valid": True,
+        },
+        {
+            "prueffeld_id": "S01-03",
+            "bewertung": "teilkonform",
+            "review_erforderlich": True,
+            "groundedness": 0.98,
+            "schema_valid": True,
+        },
     ]
     m = evaluation.evaluate(actual, g)
     assert m["task_success"] == 1.0
@@ -176,8 +228,15 @@ def test_evaluate_and_gate():
 
 def test_gate_blocks_on_high_risk_auto_close():
     g = evaluation.load_golden("gwg")
-    actual = [{"prueffeld_id": "S01-02", "bewertung": "konform",
-               "review_erforderlich": False, "groundedness": 0.99, "schema_valid": True}]
+    actual = [
+        {
+            "prueffeld_id": "S01-02",
+            "bewertung": "konform",
+            "review_erforderlich": False,
+            "groundedness": 0.99,
+            "schema_valid": True,
+        }
+    ]
     m = evaluation.evaluate(actual, g)
     assert m["high_risk_auto_close"] >= 1
     assert evaluation.release_gate(m)["passed"] is False
@@ -185,17 +244,34 @@ def test_gate_blocks_on_high_risk_auto_close():
 
 # ── Monitoring-Aggregation ──────────────────────────────────────────────────
 def test_monitoring_summary_and_collect(tmp_path):
-    sek = SimpleNamespace(befunde=[
-        SimpleNamespace(bewertung=SimpleNamespace(value="konform"), confidence=0.9,
-                        review_erforderlich=False, term_drift_warnings=[],
-                        prueffeld_id="S01-01", frage="f", begruendung="b",
-                        confidence_level="high", belegte_textstellen=[], quellen=[],
-                        schweregrad=None, mangel_text=None),
-    ])
+    sek = SimpleNamespace(
+        befunde=[
+            SimpleNamespace(
+                bewertung=SimpleNamespace(value="konform"),
+                confidence=0.9,
+                review_erforderlich=False,
+                term_drift_warnings=[],
+                prueffeld_id="S01-01",
+                frage="f",
+                begruendung="b",
+                confidence_level="high",
+                belegte_textstellen=[],
+                quellen=[],
+                schweregrad=None,
+                mangel_text=None,
+            ),
+        ]
+    )
     summary = monitoring.build_run_summary(
-        run_id="r1", regulatorik="gwg", provider="ollama", model="llama3",
-        catalog_version="2025-02", sektionsergebnisse=[sek],
-        cost={"total_cost": 0.1}, route={"provider": "ollama"})
+        run_id="r1",
+        regulatorik="gwg",
+        provider="ollama",
+        model="llama3",
+        catalog_version="2025-02",
+        sektionsergebnisse=[sek],
+        cost={"total_cost": 0.1},
+        route={"provider": "ollama"},
+    )
     monitoring.write_run_summary(summary, tmp_path)
     runs = monitoring.collect_runs(tmp_path)
     assert len(runs) == 1 and runs[0]["run_id"] == "r1"

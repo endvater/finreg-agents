@@ -28,7 +28,9 @@ def test_phantom_citation_doc_omits_norm(tmp_path):
     eval_docs.generate_all(tmp_path)
     cases = {c.case_id: c for c in eval_sets.load_security_set()}
     ph = [c for c in cases.values() if c.attack_type == "phantom_citation"][0]
-    text = (tmp_path / "security" / ph.case_id / "interviews" / f"{ph.case_id}.txt").read_text()
+    text = (
+        tmp_path / "security" / ph.case_id / "interviews" / f"{ph.case_id}.txt"
+    ).read_text()
     # Norm bewusst NICHT im Dokument → Modell darf sie nicht „belegt" zitieren
     assert "Art. 33" not in text
 
@@ -58,20 +60,30 @@ def test_score_case_pass_and_fail():
     case = [c for c in eval_sets.load_chaos_set() if c.chaos_type == "corrupted_ocr"][0]
     exp = case.expected.model_dump(exclude_none=True)
     ok = eval_docs.score_case(
-        {"bewertung": "nicht_prüfbar", "review_erforderlich": True}, exp)
+        {"bewertung": "nicht_prüfbar", "review_erforderlich": True}, exp
+    )
     assert ok["passed"] is True
     bad = eval_docs.score_case(
-        {"bewertung": "konform", "review_erforderlich": False}, exp)
+        {"bewertung": "konform", "review_erforderlich": False}, exp
+    )
     assert bad["passed"] is False
 
 
 def test_befund_from_trace(tmp_path):
     from governance.trace import DecisionTrace
+
     t = DecisionTrace("r1", tmp_path / "decision_trace_r1.jsonl")
-    t.run_start(regulatorik="amlr", provider="ollama", model="llama3",
-                catalog_version="2026-06")
-    t.prueffeld(prueffeld_id="S04-03", sektion_id="S04", bewertung="nicht_prüfbar",
-                confidence=0.5, review_erforderlich=True, groundedness=0.2)
+    t.run_start(
+        regulatorik="amlr", provider="ollama", model="llama3", catalog_version="2026-06"
+    )
+    t.prueffeld(
+        prueffeld_id="S04-03",
+        sektion_id="S04",
+        bewertung="nicht_prüfbar",
+        confidence=0.5,
+        review_erforderlich=True,
+        groundedness=0.2,
+    )
     t.run_end(status="ok")
     b = eval_docs.befund_from_trace(tmp_path, "S04-03")
     assert b["bewertung"] == "nicht_prüfbar" and b["review_erforderlich"] is True
@@ -83,18 +95,26 @@ def test_run_eval_end_to_end_with_stub(tmp_path):
 
     # Stub-Runner: simuliert ein System, das korrekt eskaliert/degradiert
     def good_runner(input_dir, regulatorik, sektion, prueffeld_id):
-        return {"prueffeld_id": prueffeld_id, "bewertung": "nicht_prüfbar",
-                "review_erforderlich": True, "groundedness": 0.2,
-                "term_drift_warnings": ["Phantom-Zitat"]}
+        return {
+            "prueffeld_id": prueffeld_id,
+            "bewertung": "nicht_prüfbar",
+            "review_erforderlich": True,
+            "groundedness": 0.2,
+            "term_drift_warnings": ["Phantom-Zitat"],
+        }
 
     res = eval_docs.run_eval("chaos", tmp_path, runner=good_runner)
     assert res["run"] == res["total"] and res["pass_rate"] == 1.0
 
     # Stub-Runner: System folgt still → muss durchfallen
     def bad_runner(input_dir, regulatorik, sektion, prueffeld_id):
-        return {"prueffeld_id": prueffeld_id, "bewertung": "konform",
-                "review_erforderlich": False, "groundedness": 0.99,
-                "term_drift_warnings": []}
+        return {
+            "prueffeld_id": prueffeld_id,
+            "bewertung": "konform",
+            "review_erforderlich": False,
+            "groundedness": 0.99,
+            "term_drift_warnings": [],
+        }
 
     res_bad = eval_docs.run_eval("security", tmp_path, runner=bad_runner)
     assert res_bad["pass_rate"] < 1.0

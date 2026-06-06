@@ -87,20 +87,34 @@ def load_drift_set() -> list[DriftCase]:
 # Prüf-Funktionen (bewerten einen tatsächlichen Lauf gegen die Erwartung)
 # ---------------------------------------------------------------------------
 
+
 def check_expectation(actual: dict, exp: EvalExpectation) -> tuple[bool, list[str]]:
     """actual: {bewertung, review_erforderlich, term_drift_warnings, groundedness}."""
     reasons: list[str] = []
     if exp.bewertung_in is not None and actual.get("bewertung") not in exp.bewertung_in:
-        reasons.append(f"bewertung {actual.get('bewertung')!r} nicht in {exp.bewertung_in}")
-    if exp.must_review is not None and bool(actual.get("review_erforderlich")) != exp.must_review:
+        reasons.append(
+            f"bewertung {actual.get('bewertung')!r} nicht in {exp.bewertung_in}"
+        )
+    if (
+        exp.must_review is not None
+        and bool(actual.get("review_erforderlich")) != exp.must_review
+    ):
         reasons.append(f"review_erforderlich != {exp.must_review}")
     if exp.must_flag_term_drift:
         if not (actual.get("term_drift_warnings") or []):
             reasons.append("term_drift_warning erwartet, aber keine vorhanden")
     gnd = actual.get("groundedness")
-    if exp.max_groundedness is not None and gnd is not None and gnd > exp.max_groundedness:
+    if (
+        exp.max_groundedness is not None
+        and gnd is not None
+        and gnd > exp.max_groundedness
+    ):
         reasons.append(f"groundedness {gnd} > erlaubt {exp.max_groundedness}")
-    if exp.min_groundedness is not None and gnd is not None and gnd < exp.min_groundedness:
+    if (
+        exp.min_groundedness is not None
+        and gnd is not None
+        and gnd < exp.min_groundedness
+    ):
         reasons.append(f"groundedness {gnd} < erforderlich {exp.min_groundedness}")
     return (len(reasons) == 0, reasons)
 
@@ -116,12 +130,22 @@ def run_security(actuals_by_case: dict) -> dict:
             continue
         ok, reasons = check_expectation(act, c.expected)
         passed += int(ok)
-        results.append({"case_id": c.case_id, "attack_type": c.attack_type,
-                        "passed": ok, "reasons": reasons})
+        results.append(
+            {
+                "case_id": c.case_id,
+                "attack_type": c.attack_type,
+                "passed": ok,
+                "reasons": reasons,
+            }
+        )
     run = [r for r in results if r.get("status") != "not_run"]
-    return {"total": len(cases), "run": len(run), "passed": passed,
-            "pass_rate": round(passed / len(run), 4) if run else None,
-            "results": results}
+    return {
+        "total": len(cases),
+        "run": len(run),
+        "passed": passed,
+        "pass_rate": round(passed / len(run), 4) if run else None,
+        "results": results,
+    }
 
 
 def run_chaos(actuals_by_case: dict) -> dict:
@@ -134,12 +158,22 @@ def run_chaos(actuals_by_case: dict) -> dict:
             continue
         ok, reasons = check_expectation(act, c.expected)
         passed += int(ok)
-        results.append({"case_id": c.case_id, "chaos_type": c.chaos_type,
-                        "passed": ok, "reasons": reasons})
+        results.append(
+            {
+                "case_id": c.case_id,
+                "chaos_type": c.chaos_type,
+                "passed": ok,
+                "reasons": reasons,
+            }
+        )
     run = [r for r in results if r.get("status") != "not_run"]
-    return {"total": len(cases), "run": len(run), "passed": passed,
-            "pass_rate": round(passed / len(run), 4) if run else None,
-            "results": results}
+    return {
+        "total": len(cases),
+        "run": len(run),
+        "passed": passed,
+        "pass_rate": round(passed / len(run), 4) if run else None,
+        "results": results,
+    }
 
 
 def check_drift(current_by_pf: dict) -> dict:
@@ -153,8 +187,14 @@ def check_drift(current_by_pf: dict) -> dict:
         key = (c.regulatorik, c.prueffeld_id)
         cur = current_by_pf.get(key, current_by_pf.get(c.prueffeld_id))
         if cur is not None and cur != c.baseline_bewertung:
-            drifted.append({"regulatorik": c.regulatorik, "prueffeld_id": c.prueffeld_id,
-                            "baseline": c.baseline_bewertung, "current": cur})
+            drifted.append(
+                {
+                    "regulatorik": c.regulatorik,
+                    "prueffeld_id": c.prueffeld_id,
+                    "baseline": c.baseline_bewertung,
+                    "current": cur,
+                }
+            )
     return {"sample_size": len(cases), "drifted": len(drifted), "items": drifted}
 
 
