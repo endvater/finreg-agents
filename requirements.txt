@@ -43,6 +43,7 @@ pillow>=10.3.0,<12.0.0
 python-dotenv>=1.0.0
 pyyaml>=6.0
 tqdm>=4.66.0
+pydantic>=2.0  # Schema-as-Contract / Governance-Verträge (governance/)
 
 # ── Testing & Linting ─────────────────────────────────────────────────
 pytest>=8.0.0

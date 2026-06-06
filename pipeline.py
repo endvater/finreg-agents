@@ -46,6 +46,14 @@ from agents.embedding_factory import (
 )
 from reports.bericht_generator import BerichtGenerator
 
+# Governance-Paket (QS-/Epistemik-Anforderungen, siehe docs/anforderungen-thinking-agentic.md)
+from governance import trace as gov_trace
+from governance import cost as gov_cost
+from governance import routing as gov_routing
+from governance import monitoring as gov_monitoring
+from governance import evaluation as gov_eval
+from governance.schemas import validate_befund
+
 load_dotenv(override=True)
 logger = logging.getLogger(__name__)
 
@@ -67,6 +75,10 @@ KATALOG_REGISTRY = {
     "dora": "catalog/dora_catalog.json",
     "marisk": "catalog/marisk_catalog.json",
     "wphg": "catalog/wphg_catalog.json",
+    "amlr": "catalog/amlr_catalog.json",
+    "micar": "catalog/micar_catalog.json",
+    "macomp": "catalog/macomp_catalog.json",
+    "kwg_crr": "catalog/kwg_crr_catalog.json",
 }
 
 KATALOG_LABELS = {
@@ -74,6 +86,10 @@ KATALOG_LABELS = {
     "dora": "DORA – Digital Operational Resilience Act",
     "marisk": "MaRisk-Prüfung",
     "wphg": "WpHG / MaComp-Prüfung",
+    "amlr": "EU-AML-Paket (AMLR / AMLD6 / AMLA)",
+    "micar": "MiCAR – Markets in Crypto-Assets",
+    "macomp": "MaComp – WpHG-Compliance",
+    "kwg_crr": "KWG / CRR III / CRD VI",
 }
 
 
@@ -108,6 +124,8 @@ class AuditPipeline:
         review_budget: int | None = None,
         resume: bool = False,
         local_embeddings: bool = False,
+        data_class: str = "confidential",
+        enforce_routing: bool = False,
     ):
         self.input_dir = input_dir
         self.institution = institution
@@ -115,6 +133,15 @@ class AuditPipeline:
         self.output_dir = output_dir
         self.provider = provider
         self.model = model or default_model(provider)
+        # Datenklasse + Routing-Durchsetzung (Block J-bis). data_class beschreibt die
+        # Sensitivität der ingestierten Dokumente; enforce_routing=True zwingt bei
+        # vertraulichen Daten LLM UND Embeddings auf den lokalen Pfad (fail-closed).
+        self.data_class = data_class
+        self.enforce_routing = enforce_routing
+        self._configured_provider = self.provider
+        self._configured_embedding = embedding_provider
+        self._route = None
+        self._route_enforced = False
         self.local_embeddings = local_embeddings
         # --local-embeddings erzwingt FastEmbed, sofern kein expliziter Provider gesetzt ist.
         if self.local_embeddings and embedding_provider is None:
@@ -156,10 +183,46 @@ class AuditPipeline:
                 f"Verfügbar: {list(KATALOG_REGISTRY.keys())}"
             )
 
+    def _resolve_routing(self):
+        """Routing nach Datenklasse (Block J-bis). Berechnet die Routing-Entscheidung
+        und – wenn enforce_routing aktiv – zwingt bei vertraulichen Daten LLM UND
+        Embeddings auf den lokalen Pfad (Datenhoheit/DSGVO, fail-closed)."""
+        route = gov_routing.decide_route(
+            self.data_class, risk_class="mittel",
+            configured_provider=self._configured_provider,
+        )
+        self._route = route
+        if not route.requires_local:
+            return route
+        if not self.enforce_routing:
+            self._log(
+                f"   ⚠️  Routing-Hinweis: Datenklasse '{self.data_class}' verlangt "
+                f"lokale Verarbeitung, aber enforce_routing=False – konfigurierter "
+                f"Provider '{self._configured_provider}' wird genutzt (nur Monitoring)."
+            )
+            return route
+        # Durchsetzung: LLM auf lokalen Provider zwingen
+        if self.provider not in gov_routing.LOCAL_PROVIDERS:
+            self.provider = route.provider
+            self.model = default_model(route.provider)
+            self._route_enforced = True
+            self._log(
+                f"   🔒 Routing erzwungen: vertrauliche Daten → lokales LLM "
+                f"'{self.provider}/{self.model}' statt '{self._configured_provider}'."
+            )
+        # Embeddings senden ebenfalls Dokumentinhalt → ebenfalls lokal erzwingen
+        if (self.embedding_provider or "") not in gov_routing.LOCAL_PROVIDERS:
+            self.embedding_provider = "fastembed"
+            self.embedding_model = None
+            self.local_embeddings = True
+            self._log("   🔒 Embeddings erzwungen lokal: fastembed (kein Datenabfluss).")
+        return route
+
     def run(self) -> dict:
         """Führt die komplette Pipeline aus. Gibt Pfade zu den Berichten zurück."""
         t_start = time.time()
         label = KATALOG_LABELS.get(self.regulatorik, self.regulatorik.upper())
+        self._resolve_routing()
 
         self._log("🚀 FinRegAgents Pipeline v2 gestartet")
         self._log(f"   Regulatorik: {label}")
@@ -495,6 +558,15 @@ class AuditPipeline:
                 self._write_relevance_filter_report(agent)
             )
 
+        # ── Governance-Artefakte (QS-/Epistemik): Trace, Summary, Eval/Gate ──
+        try:
+            gov_paths = self._write_governance_artifacts(
+                sektionsergebnisse, costs, katalog_version
+            )
+            report_paths.update(gov_paths)
+        except Exception as e:  # niemals den Lauf wegen Governance-Artefakten abbrechen
+            logger.warning("Governance-Artefakte konnten nicht geschrieben werden: %s", e)
+
         # ── Zusammenfassung ──────────────────────────────────────────────
         t_total = time.time() - t_start
         self._log(f"\n{'=' * 60}")
@@ -511,6 +583,112 @@ class AuditPipeline:
             self._log(f"     {fmt.upper()}: {pth}")
 
         return report_paths
+
+    @staticmethod
+    def _befund_groundedness(befund) -> float | None:
+        """Anteil belegter Claims (corroborated/single_sourced) aus der Provenienz."""
+        prov = getattr(befund, "claim_provenance", None) or []
+        if not prov:
+            return None
+        grounded = sum(
+            1 for p in prov
+            if getattr(getattr(p, "status", None), "value", "") in
+            ("corroborated", "single_sourced")
+        )
+        return round(grounded / len(prov), 4)
+
+    def _write_governance_artifacts(
+        self, sektionsergebnisse: list, costs: dict, katalog_version: str
+    ) -> dict:
+        """Schreibt Decision-Trace, Governance-Summary und (falls Golden vorhanden)
+        Eval-/Release-Gate-Ergebnis. Additiv und nicht-brechend."""
+        out_dir = Path(self.output_dir)
+        run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+
+        # Routing-Entscheidung aus _resolve_routing() wiederverwenden.
+        route = self._route or gov_routing.decide_route(
+            self.data_class, configured_provider=self._configured_provider
+        )
+        route_is_local = self.provider in gov_routing.LOCAL_PROVIDERS
+
+        # Append-only Decision-Trace
+        trace_path = out_dir / f"decision_trace_{run_id}.jsonl"
+        dtrace = gov_trace.DecisionTrace(run_id, trace_path)
+        dtrace.run_start(
+            regulatorik=self.regulatorik, provider=self.provider, model=self.model,
+            catalog_version=katalog_version, data_class=self.data_class,
+            agent_version="2.0",
+        )
+
+        actual_befunde: list[dict] = []
+        for sektion in sektionsergebnisse:
+            for b in getattr(sektion, "befunde", []):
+                gnd = self._befund_groundedness(b)
+                schema_ok = validate_befund(b).ok
+                bew = getattr(getattr(b, "bewertung", None), "value",
+                              getattr(b, "bewertung", "?"))
+                dtrace.prueffeld(
+                    prueffeld_id=getattr(b, "prueffeld_id", "?"),
+                    sektion_id=getattr(sektion, "sektion_id", "?"),
+                    bewertung=bew,
+                    confidence=getattr(b, "confidence", 0.0),
+                    review_erforderlich=getattr(b, "review_erforderlich", False),
+                    groundedness=gnd, model=self.model,
+                    routing_reason=route.reason,
+                    term_drift_warnings=getattr(b, "term_drift_warnings", []),
+                    schema_valid=schema_ok,
+                )
+                actual_befunde.append({
+                    "prueffeld_id": getattr(b, "prueffeld_id", "?"),
+                    "bewertung": bew,
+                    "review_erforderlich": getattr(b, "review_erforderlich", False),
+                    "confidence": getattr(b, "confidence", 0.0),
+                    "groundedness": gnd, "schema_valid": schema_ok,
+                })
+
+        # Kosten inkl. Self-Hosting + CPVCT
+        valid_tasks = sum(1 for x in actual_befunde if x["bewertung"] != "nicht_prüfbar")
+        gov_costs = gov_cost.estimate_run_cost(
+            {"nach_agent": self.run_token_stats["nach_agent"]},
+            route_is_local=route_is_local, valid_tasks=valid_tasks,
+        )
+
+        # Eval gegen Golden Dataset (falls vorhanden) + Release-Gate
+        eval_result, gate_result = {}, {}
+        golden = gov_eval.load_golden(self.regulatorik)
+        if golden:
+            eval_result = gov_eval.evaluate(actual_befunde, golden)
+            gate_result = gov_eval.release_gate(eval_result)
+
+        metrics = {"valid_tasks": valid_tasks, "befunde": len(actual_befunde)}
+        dtrace.run_end(status="ok", cost=gov_costs, metrics=metrics)
+
+        # Monitoring-Summary für das Dashboard
+        summary = gov_monitoring.build_run_summary(
+            run_id=run_id, regulatorik=self.regulatorik, provider=self.provider,
+            model=self.model, catalog_version=katalog_version,
+            sektionsergebnisse=sektionsergebnisse, cost=gov_costs,
+            route={"data_class": self.data_class,
+                   "configured_provider": self._configured_provider,
+                   "effective_provider": self.provider,
+                   "requires_local": route.requires_local,
+                   "enforced": self._route_enforced,
+                   "is_local": route_is_local, "reason": route.reason},
+            eval_result=eval_result, gate_result=gate_result,
+        )
+        summary_path = gov_monitoring.write_run_summary(summary, out_dir)
+
+        self._log(
+            f"   🛡️  Governance: Trace + Summary geschrieben (run {run_id}); "
+            f"Routing → {self.provider} (lokal={route_is_local}, "
+            f"erzwungen={self._route_enforced})"
+            + (f"; Release-Gate: {'PASS' if gate_result.get('passed') else 'BLOCKED'}"
+               if gate_result else "")
+        )
+        return {
+            "decision_trace": str(trace_path),
+            "governance_summary": summary_path,
+        }
 
     def _write_relevance_filter_report(self, agent: PrueferAgent) -> str:
         out_dir = Path(self.output_dir)
@@ -834,6 +1012,22 @@ Beispiele:
         "Wird automatisch aktiviert wenn OPENAI_API_KEY fehlt.",
     )
     parser.add_argument(
+        "--data-class",
+        default="confidential",
+        choices=["customer", "confidential", "internal", "public", "catalog"],
+        dest="data_class",
+        help="Datenklasse der ingestierten Dokumente (Routing nach Datenhoheit). "
+        "Vertrauliche Klassen verlangen lokale Verarbeitung.",
+    )
+    parser.add_argument(
+        "--enforce-routing",
+        action="store_true",
+        default=False,
+        dest="enforce_routing",
+        help="Routing nach Datenklasse DURCHSETZEN: vertrauliche Daten zwingen LLM "
+        "und Embeddings auf den lokalen Pfad (fail-closed). Ohne Flag nur Monitoring.",
+    )
+    parser.add_argument(
         "--relevance-filter",
         action="store_true",
         default=False,
@@ -878,6 +1072,8 @@ Beispiele:
         use_relevance_filter=args.relevance_filter,
         resume=args.resume,
         local_embeddings=args.local_embeddings,
+        data_class=args.data_class,
+        enforce_routing=args.enforce_routing,
     )
     try:
         pipeline.run()

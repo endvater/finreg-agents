@@ -1,0 +1,19 @@
+{
+  "agent_name": "SkeptikerAgent",
+  "version": "2.0",
+  "gattung": "G3",
+  "purpose": "Adversariale QS-Kontrolle: sucht schwache Evidenz, überkonfidente Bewertungen und Phantom-Zitate in den Befunden des PruefAgent.",
+  "non_purpose": [
+    "Ist Sensor, keine Freigabeinstanz (LLM-as-Judge ist nie alleiniges Gate)",
+    "Ersetzt das menschliche Review nicht"
+  ],
+  "risk_class": "mittel",
+  "business_owner": "Compliance / Interne Revision",
+  "technical_owner": "FinRegAgents-Team",
+  "allowed_data_classes": ["confidential", "internal", "catalog"],
+  "approved_models": ["anthropic:*", "openai:*", "ollama:*"],
+  "human_gate_states": ["empfehlung_eskalation"],
+  "prompt_version": "2.0-2025-02",
+  "is_decision_making": false,
+  "calls_tools": false
+}

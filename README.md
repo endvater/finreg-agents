@@ -794,6 +794,56 @@ Hinweise:
 
 ---
 
+## Governance & Monitoring
+
+FinRegAgents setzt den – für ein **internes Simulations-/QS-Werkzeug proportional sinnvollen** –
+Satz an Agenten-Governance-Anforderungen aus *„Thinking Agentic – das Playbook"* um
+(QS-/Epistemik-Kern). Die vollständige Herleitung samt Gattungs-Matrix steht in
+[`docs/anforderungen-thinking-agentic.md`](docs/anforderungen-thinking-agentic.md).
+
+Das `governance/`-Paket liefert:
+
+| Modul | Funktion |
+|---|---|
+| `schemas.py` | **Schema-as-Contract**: Pydantic-Output-Vertrag (`extra="forbid"`), Regel `confidence<0.7 ⇒ review` maschinell erzwungen |
+| `evidence.py` | **EvidencePackage** mit voller Claim-Provenienz (`source_version`, `retrieved_at`, `method`, `quote_hash`) |
+| `trace.py` | **Append-only Decision-Trace** + Diagnose-Abfragen `why_flagged` / `why_not_flagged` / `what_changed` |
+| `routing.py` | **Routing nach Datenklasse**: vertrauliche Dokumente → lokal (Datenhoheit/DSGVO) |
+| `cost.py` | Kostenmodell hosted **und** self-hosted, Cost per valid completed task, Break-even |
+| `evaluation.py` | **Golden Dataset** + Eval + **Release-Gate** (Schema/Groundedness/Hochrisiko) |
+| `registry.py` | Modell-/Quellen-Register, Provider-Konzentration (Anti-Lock-in) |
+| `agent_card.py` | Agent Cards (Gattung G2/G3, Zweck/Nicht-Zweck, Versionen) |
+
+### Routing-Durchsetzung (Datenhoheit)
+
+Bankdokumente gelten standardmäßig als `confidential`. Mit `--enforce-routing` werden
+vertrauliche Daten **fail-closed** lokal verarbeitet – LLM *und* Embeddings:
+
+```bash
+# Nur Monitoring (flaggt, erzwingt nicht):
+python pipeline.py --input ./docs --regulatorik gwg
+
+# Durchsetzung: vertrauliche Daten zwingen LLM+Embeddings lokal (Ollama/fastembed):
+python pipeline.py --input ./docs --regulatorik gwg --enforce-routing
+
+# Öffentlicher/Kataloginhalt darf fremdgehostet bleiben:
+python pipeline.py --input ./docs --regulatorik gwg --data-class public --provider anthropic
+```
+
+### Monitoring-Dashboard
+
+Jeder Lauf schreibt `decision_trace_*.jsonl` und `governance_summary_*.json` ins
+Output-Verzeichnis. Das Dashboard überwacht Qualität, Confidence, Drift, Routing/Datenhoheit
+und Release-Gate:
+
+```bash
+streamlit run dashboard.py -- --output-dir ./reports/output
+# CLI-Snapshot ohne Streamlit:
+python -m governance.monitoring ./reports/output
+```
+
+---
+
 ## Disclaimer
 
 FinRegAgents ist ein **Simulations- und Vorbereitungstool**. Es ersetzt **keine
