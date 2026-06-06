@@ -196,8 +196,8 @@ with tab_eval:
     st.json(eval_sets_summary())
     st.caption(
         "Security/Chaos/Drift sind Verhaltens-Sets (Block H/I/L): Angriff/Störung/Drift "
-        "mit erwartetem Abwehr-/Degradationsverhalten. Voll ausführbar mit doctored "
-        "Dokumenten; aktuell als Spezifikation hinterlegt."
+        "mit erwartetem Abwehr-/Degradationsverhalten. Doctored Eingabedokumente erzeugen: "
+        "`python -m governance.eval_docs ./eval_runtime` (Generator in governance/eval_docs.py)."
     )
 
 # ── Register & Agent Cards ──────────────────────────────────────────────────
