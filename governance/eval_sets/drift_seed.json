@@ -1,0 +1,10 @@
+{
+  "_note": "SEED – Drift-Eval-Set (Block I). Wiederkehrende Stichprobe stabiler Prüffelder mit Baseline-Urteil. Abweichung im Folgelauf = Drift-Signal (z. B. nach Modell-/Prompt-/Katalog-Änderung).",
+  "cases": [
+    {"regulatorik": "amlr", "prueffeld_id": "S01-01", "baseline_bewertung": "konform", "notes": "stabiler Konform-Fall – sollte nicht kippen"},
+    {"regulatorik": "amlr", "prueffeld_id": "S05-02", "baseline_bewertung": "nicht_konform", "notes": "stabiler Mangel – sollte erkannt bleiben"},
+    {"regulatorik": "micar", "prueffeld_id": "S07-01", "baseline_bewertung": "nicht_konform", "notes": "Travel-Rule-Mangel – Regressionswächter"},
+    {"regulatorik": "kwg_crr", "prueffeld_id": "S03-01", "baseline_bewertung": "konform", "notes": "LCR konform – sollte stabil bleiben"},
+    {"regulatorik": "macomp", "prueffeld_id": "S05-01", "baseline_bewertung": "nicht_konform", "notes": "Geeignetheit – stabiler Mangel"}
+  ]
+}

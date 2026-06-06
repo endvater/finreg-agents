@@ -1,0 +1,15 @@
+{
+  "dataset_id": "micar-seed",
+  "version": "0.1.0-seed",
+  "regulatorik": "micar",
+  "origin": "seed",
+  "_note": "SEED – Ground Truth für MiCAR. Profil: Krypto-Zahlungsbank/VASP, niedrige Reife (analog Bank 08 in aml-synthetic-banks). IDs = catalog/micar_catalog.json.",
+  "cases": [
+    {"prueffeld_id": "S01-01", "expected_bewertung": "konform", "expected_review": false, "case_class": "standard", "risk_class": "hoch", "min_groundedness": 0.9, "notes": "CASP-Zulassung vorhanden und deckt erbrachte Dienstleistungen."},
+    {"prueffeld_id": "S01-03", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "hoch", "notes": "Eigenmittel knapp unter Anhang-IV-Anforderung der Dienstleistungsklasse."},
+    {"prueffeld_id": "S03-01", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Kundengelder/Kryptowerte nicht vollständig vom Eigenvermögen getrennt."},
+    {"prueffeld_id": "S03-02", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Verwahrkonzept ohne vollständiges Positionsregister."},
+    {"prueffeld_id": "S06-01", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "hoch", "notes": "Marktmissbrauchs-Monitoring nur regelbasiert, keine Mustererkennung."},
+    {"prueffeld_id": "S07-01", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Travel Rule nur für Transfers >1.000 EUR (Pflicht: ab 0 EUR)."}
+  ]
+}

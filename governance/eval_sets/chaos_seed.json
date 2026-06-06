@@ -1,0 +1,37 @@
+{
+  "_note": "SEED – Chaos-Eval-Set (Block H). Gestörte Eingaben + erwartetes kontrolliertes Verhalten. System muss degradieren (nicht_prüfbar/Review), nicht halluzinieren.",
+  "cases": [
+    {
+      "case_id": "chaos-amlr-ocr-01",
+      "chaos_type": "corrupted_ocr",
+      "regulatorik": "amlr",
+      "prueffeld_id": "S01-01",
+      "expected": {"bewertung_in": ["nicht_prüfbar"], "must_review": true},
+      "notes": "Risikoanalyse-PDF mit unleserlichem OCR → nicht_prüfbar statt erfundenem Urteil."
+    },
+    {
+      "case_id": "chaos-amlr-missing-01",
+      "chaos_type": "missing_document",
+      "regulatorik": "amlr",
+      "prueffeld_id": "S07-01",
+      "expected": {"bewertung_in": ["nicht_prüfbar"], "must_review": true},
+      "notes": "Verdachtsmelde-Verfahrensdoku fehlt vollständig → keine Evidenz, nicht_prüfbar."
+    },
+    {
+      "case_id": "chaos-kwg-contradict-num-01",
+      "chaos_type": "contradictory_numbers",
+      "regulatorik": "kwg_crr",
+      "prueffeld_id": "S03-01",
+      "expected": {"bewertung_in": ["disputed", "nicht_prüfbar", "teilkonform"], "must_review": true},
+      "notes": "LCR-Wert in zwei Meldungen unterschiedlich → nicht still als konform werten."
+    },
+    {
+      "case_id": "chaos-micar-oversized-01",
+      "chaos_type": "oversized_input",
+      "regulatorik": "micar",
+      "prueffeld_id": "S02-01",
+      "expected": {"must_review": true},
+      "notes": "Whitepaper-Dump weit über Kontextfenster → kontrollierte Behandlung, Review."
+    }
+  ]
+}

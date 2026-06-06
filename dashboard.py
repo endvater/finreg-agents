@@ -22,6 +22,7 @@ from governance import monitoring, registry
 from governance.agent_card import load_cards, cards_summary
 from governance.routing import load_policy
 from governance.evaluation import load_golden
+from governance.eval_sets import eval_sets_summary
 
 
 def _output_dir() -> str:
@@ -182,12 +183,22 @@ with tab_eval:
             "Noch keine Eval-/Gate-Ergebnisse. Golden Datasets liegen in "
             "`governance/golden/` (aktuell nur Seed)."
         )
-    g = load_golden("gwg")
-    if g:
-        st.caption(
-            f"Golden (gwg): {g.dataset_id} v{g.version} · {len(g.cases)} Fälle "
-            f"({g.origin})."
-        )
+    st.subheader("Golden-Datasets je Verordnung")
+    st.dataframe(
+        [
+            {"regulatorik": reg, "dataset": (g.dataset_id if (g := load_golden(reg)) else "—"),
+             "version": (g.version if g else "—"), "fälle": (len(g.cases) if g else 0)}
+            for reg in ["gwg", "amlr", "micar", "macomp", "kwg_crr"]
+        ],
+        use_container_width=True,
+    )
+    st.subheader("Eval-Splits (Security / Chaos / Drift)")
+    st.json(eval_sets_summary())
+    st.caption(
+        "Security/Chaos/Drift sind Verhaltens-Sets (Block H/I/L): Angriff/Störung/Drift "
+        "mit erwartetem Abwehr-/Degradationsverhalten. Voll ausführbar mit doctored "
+        "Dokumenten; aktuell als Spezifikation hinterlegt."
+    )
 
 # ── Register & Agent Cards ──────────────────────────────────────────────────
 with tab_reg:

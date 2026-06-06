@@ -1,0 +1,15 @@
+{
+  "dataset_id": "kwg_crr-seed",
+  "version": "0.1.0-seed",
+  "regulatorik": "kwg_crr",
+  "origin": "seed",
+  "_note": "SEED – Ground Truth für KWG / CRR III / CRD VI. Profil: mittelgroße Universalbank mit Eigenmittel-/Meldemängeln. IDs = catalog/kwg_crr_catalog.json.",
+  "cases": [
+    {"prueffeld_id": "S01-01", "expected_bewertung": "konform", "expected_review": false, "case_class": "standard", "risk_class": "hoch", "min_groundedness": 0.9, "notes": "Eigenmittelquoten inkl. Puffer eingehalten."},
+    {"prueffeld_id": "S01-02", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "hoch", "notes": "Output Floor (CRR III) Übergangsregelung nicht korrekt angewandt."},
+    {"prueffeld_id": "S02-01", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Großkreditobergrenze bei einer Kreditnehmergruppe überschritten."},
+    {"prueffeld_id": "S03-01", "expected_bewertung": "konform", "expected_review": false, "case_class": "standard", "risk_class": "mittel", "min_groundedness": 0.9, "notes": "LCR ≥ 100 % nachgewiesen."},
+    {"prueffeld_id": "S04-01", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "hoch", "notes": "ICAAP dokumentiert, ökonomische Perspektive unvollständig."},
+    {"prueffeld_id": "S06-01", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "COREP-Meldungen wiederholt verspätet eingereicht."}
+  ]
+}

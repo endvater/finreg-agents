@@ -2,8 +2,6 @@
 
 from types import SimpleNamespace
 
-import pytest
-
 from governance import evidence, schemas, trace, routing, cost, registry, evaluation
 from governance.agent_card import load_cards
 from governance import monitoring

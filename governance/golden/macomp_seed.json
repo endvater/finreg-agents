@@ -1,0 +1,14 @@
+{
+  "dataset_id": "macomp-seed",
+  "version": "0.1.0-seed",
+  "regulatorik": "macomp",
+  "origin": "seed",
+  "_note": "SEED – Ground Truth für MaComp (WpHG-Compliance). Profil: Private Banking / Wealth Management. IDs = catalog/macomp_catalog.json.",
+  "cases": [
+    {"prueffeld_id": "S01-01", "expected_bewertung": "konform", "expected_review": false, "case_class": "standard", "risk_class": "mittel", "min_groundedness": 0.9, "notes": "Compliance-Funktion unabhängig und ausgestattet."},
+    {"prueffeld_id": "S01-02", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "mittel", "notes": "Überwachungsplan vorhanden, aber nicht vollständig umgesetzt."},
+    {"prueffeld_id": "S04-01", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Zuwendungen ohne Qualitätsverbesserungsnachweis, Offenlegung lückenhaft."},
+    {"prueffeld_id": "S05-01", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Geeignetheitserklärungen teils erst nach Geschäftsabschluss übergeben."},
+    {"prueffeld_id": "S06-02", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "mittel", "notes": "Taping aktiv, aber Aufbewahrungsfrist nicht durchgängig eingehalten."}
+  ]
+}

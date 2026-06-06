@@ -1,0 +1,16 @@
+{
+  "dataset_id": "amlr-seed",
+  "version": "0.1.0-seed",
+  "regulatorik": "amlr",
+  "origin": "seed",
+  "_note": "SEED – Ground Truth für EU-AML-Paket (AMLR). Profil: mittelgroße Bank mit Mängeln. Pseudonymisiert/fiktiv. IDs = catalog/amlr_catalog.json.",
+  "cases": [
+    {"prueffeld_id": "S01-01", "expected_bewertung": "konform", "expected_review": false, "case_class": "standard", "risk_class": "mittel", "min_groundedness": 0.9, "notes": "Unternehmensweite Risikobewertung vorhanden, von Leitung genehmigt."},
+    {"prueffeld_id": "S01-02", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "mittel", "notes": "SNRA berücksichtigt, aber Kanalrisiko nicht adressiert."},
+    {"prueffeld_id": "S04-03", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Transaktionsmonitoring deckt nur Schwellenwerte, kein Verhaltensmuster."},
+    {"prueffeld_id": "S05-02", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "PEP-Screening ohne Mittelherkunftsprüfung, keine Senior-Management-Freigabe."},
+    {"prueffeld_id": "S06-01", "expected_bewertung": "teilkonform", "expected_review": true, "case_class": "grenzfall", "risk_class": "hoch", "notes": "UBO bei verschachtelten Strukturen nur bis Ebene 2 ermittelt."},
+    {"prueffeld_id": "S07-01", "expected_bewertung": "konform", "expected_review": false, "case_class": "standard", "risk_class": "mittel", "min_groundedness": 0.9, "notes": "Verdachtsmeldeprozess etabliert und genutzt."},
+    {"prueffeld_id": "S08-03", "expected_bewertung": "nicht_konform", "expected_review": true, "case_class": "hochrisiko", "risk_class": "hoch", "notes": "Travel Rule (VO 2023/1113) nur teilweise umgesetzt."}
+  ]
+}
