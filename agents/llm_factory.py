@@ -72,6 +72,25 @@ OLLAMA_MIN_RECOMMENDED_MODELS = {
     "mixtral",
 }
 
+# Kleine Modelle für Tests/lokale Ausführung (geringe Prüfqualität, aber lauffähig).
+# Sie lösen einen einmaligen Hinweis aus statt der vollen Qualitätswarnung.
+OLLAMA_SMALL_TEST_MODELS = {
+    "gemma4:e2b",
+    "gemma4:e4b",
+    "gemma4:e2b-mlx",
+    "gemma4:e4b-mlx",
+    "gemma3:1b",
+    "gemma3:4b",
+    "gemma2:2b",
+    "llama3.2:1b",
+    "llama3.2:3b",
+    "qwen2.5:0.5b",
+    "qwen2.5:1.5b",
+}
+
+# Verhindert wiederholte Warnungen je Modell (eine Warnung pro Prozess/Modell).
+_WARNED_OLLAMA_MODELS: set[str] = set()
+
 
 # ------------------------------------------------------------------ #
 # Factory
@@ -261,13 +280,21 @@ def _build_ollama(model, temperature, max_tokens, **kwargs):
         "base_url", os.environ.get("OLLAMA_HOST", "http://localhost:11434")
     )
 
-    if model not in OLLAMA_MIN_RECOMMENDED_MODELS:
-        logger.warning(
-            "Ollama-Modell '%s' ist nicht in der empfohlenen Modell-Liste für "
-            "regulatorische Prüfqualität. Empfohlen: %s",
-            model,
-            sorted(OLLAMA_MIN_RECOMMENDED_MODELS),
-        )
+    if model not in OLLAMA_MIN_RECOMMENDED_MODELS and model not in _WARNED_OLLAMA_MODELS:
+        _WARNED_OLLAMA_MODELS.add(model)
+        if model in OLLAMA_SMALL_TEST_MODELS:
+            logger.info(
+                "Ollama-Modell '%s' ist ein kleines Test-Modell – lauffähig, aber für "
+                "regulatorische Prüfqualität nicht geeignet (nur Test/lokal).",
+                model,
+            )
+        else:
+            logger.warning(
+                "Ollama-Modell '%s' ist nicht in der empfohlenen Modell-Liste für "
+                "regulatorische Prüfqualität. Empfohlen: %s",
+                model,
+                sorted(OLLAMA_MIN_RECOMMENDED_MODELS),
+            )
 
     return ChatOllama(
         model=model,
@@ -302,7 +329,16 @@ def list_providers() -> list[str]:
 
 
 def default_model(provider: str) -> str:
-    """Gibt das Default-Modell für einen Provider zurück."""
+    """Gibt das Default-Modell für einen Provider zurück.
+
+    Für Ollama wird ein gesetztes OLLAMA_MODEL-Env vorrangig verwendet – so lässt sich
+    das lokale Modell (z. B. ein kleines gemma) global wählen, ohne überall --model zu
+    setzen.
+    """
     if provider not in PROVIDER_DEFAULTS:
         raise ValueError(f"Unbekannter Provider: '{provider}'")
+    if provider == "ollama":
+        env_model = os.environ.get("OLLAMA_MODEL")
+        if env_model:
+            return env_model
     return PROVIDER_DEFAULTS[provider]["model"]
