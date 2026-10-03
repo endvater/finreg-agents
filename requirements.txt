@@ -47,5 +47,5 @@ pydantic>=2.0  # Schema-as-Contract / Governance-Verträge (governance/)
 
 # ── Testing & Linting ─────────────────────────────────────────────────
 pytest>=8.0.0
-ruff>=0.4.0
+ruff==0.15.22
 streamlit>=1.30.0
